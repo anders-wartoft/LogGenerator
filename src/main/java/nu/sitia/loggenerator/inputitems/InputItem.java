@@ -1,4 +1,4 @@
-package nu.sitia.loggenerator.io;
+package nu.sitia.loggenerator.inputitems;
 
 
 import java.util.List;

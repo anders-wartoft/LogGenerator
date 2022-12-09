@@ -1,4 +1,4 @@
-package nu.sitia.loggenerator.io;
+package nu.sitia.loggenerator.outputitems;
 
 import java.util.ArrayList;
 import java.util.List;

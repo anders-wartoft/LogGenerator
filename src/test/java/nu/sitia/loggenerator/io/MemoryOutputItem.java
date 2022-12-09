@@ -1,6 +1,9 @@
 package nu.sitia.loggenerator.io;
 
 
+import nu.sitia.loggenerator.outputitems.AbstractOutputItem;
+import nu.sitia.loggenerator.outputitems.SendListener;
+
 import java.util.ArrayList;
 import java.util.List;
 

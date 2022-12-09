@@ -1,4 +1,4 @@
-package nu.sitia.loggenerator.io;
+package nu.sitia.loggenerator.inputitems;
 
 import nu.sitia.loggenerator.filter.Substitution;
 import nu.sitia.loggenerator.util.Configuration;
@@ -39,6 +39,9 @@ public class TemplateFileInputItem extends AbstractInputItem {
     /** The lines from the file */
     private final List<String> rows = new ArrayList<>();
 
+    /** End time (used for template time:{seconds} ) */
+    private final long endTime;
+
     /**
      * Create a new FileInputItem
      * @param config The Configuration object
@@ -48,6 +51,12 @@ public class TemplateFileInputItem extends AbstractInputItem {
         this.config = config;
         setBatchSize(config.getInputBatchSize());
         this.template = config.getTemplate();
+        if (template == Configuration.Template.TIME) {
+            // Set last time we are allowed to process input
+            this.endTime = new Date().getTime() + config.getDurationMilliSeconds();
+        } else {
+            this.endTime = 0;
+        }
     }
 
     /**
@@ -89,9 +98,18 @@ public class TemplateFileInputItem extends AbstractInputItem {
                 result.add(Configuration.BEGIN_FILE_TEXT + fileName);
             }
         }
+        if (this.endTime > 0) {
+            // We are limited in time (for example with flag -t time:1000)
+            long now = new Date().getTime();
+            if (now > this.endTime) {
+                // We are done now. Make sure we won't continue but run the normal path
+                rows.clear();
+            }
+        }
+
         int lines = this.batchSize;
         Random random = new Random();
-        do {
+        while (rows.size() > 0 && lines-- > 0) {
             // Pick one line. lineNr will be in the range [0-rows.size()-1]
             int lineNr = random.nextInt(rows.size());
             String line = rows.get(lineNr);
@@ -102,11 +120,11 @@ public class TemplateFileInputItem extends AbstractInputItem {
             result.add(line);
 
             // Should we remove the sent line?
-            if (template != Configuration.Template.CONTINUOUS) {
+            if (template == Configuration.Template.FILE &&
+                    template == Configuration.Template.NONE) {
                 rows.remove(lineNr);
             }
-        } while (rows.size() > 0 && --lines > 0);
-
+        }
 
         if (rows.size() == 0 && config.isStatistics()) {
             // End of file

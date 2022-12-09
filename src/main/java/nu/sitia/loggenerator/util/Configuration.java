@@ -9,18 +9,19 @@ public class Configuration {
     /** template possible values */
     public  enum Template {
         CONTINUOUS,
+        TIME,
         FILE,
         NONE
     }
     /** Guard sent as an event for each transmission if statistics is enabled */
-    public static final String BEGIN_TRANSACTION_TEXT = "------BEGIN_TRANSACTION------";
+    public static final String BEGIN_TRANSACTION_TEXT = "--------BEGIN_TRANSACTION--------";
     /** Guard sent as an event for each file if statistics is enabled */
-    public static final String BEGIN_FILE_TEXT = "------BEGIN_FILE------";
+    public static final String BEGIN_FILE_TEXT = "--------BEGIN_FILE--------";
 
     /** Guard sent as an end event for each transmission if statistics is enabled */
-    public static final String END_TRANSACTION_TEXT = "------END_TRANSACTION------";
+    public static final String END_TRANSACTION_TEXT = "--------END_TRANSACTION--------";
     /** Guard sent as an end event for each file if statistics is enabled */
-    public static final String END_FILE_TEXT = "------END_FILE------";
+    public static final String END_FILE_TEXT = "--------END_FILE--------";
     /** Start of transaction */
     public static final List<String> BEGIN_TRANSACTION = new ArrayList<>();
     /** Start of file */
@@ -93,6 +94,9 @@ public class Configuration {
     /** Should the statistics messages be removed before the data is written to the output? */
     private boolean removeGuards = true;
 
+    /** When the template enginge is set to time, this is the duration */
+    private long durationSeconds;
+
     public String getInputName() {
         return inputName;
     }
@@ -152,10 +156,6 @@ public class Configuration {
         return inputBatchSize;
     }
 
-    public int getOutputBatchSize() {
-        return outputBatchSize;
-    }
-
     public String getBootstrapServer() {
         return bootstrapServer;
     }
@@ -212,12 +212,16 @@ public class Configuration {
         this.eps = eps;
     }
 
-    public boolean isTemplate() {
-        return template != Template.NONE;
-    }
-
     public Template getTemplate() {
         return template;
+    }
+
+    public long getDurationMilliSeconds() {
+        return durationSeconds;
+    }
+
+    public void setDurationSeconds(long durationSeconds) {
+        this.durationSeconds = durationSeconds;
     }
 
     public void setTemplate(String template) {
@@ -228,8 +232,16 @@ public class Configuration {
                 this.template = Template.FILE;
             } else if ("none".equalsIgnoreCase(template)) {
                 this.template = Template.NONE;
+            } else if (template.startsWith("time:")) {
+                String [] parts = template.split(":");
+                if (parts.length != 2) {
+                    throw new RuntimeException("Illegal template time value. Set as time:30 for 30 seconds. Value was: " + template);
+                }
+                long duration = Long.valueOf(parts[1]);
+                this.durationSeconds = duration;
+                this.template = Template.TIME;
             } else {
-                throw new RuntimeException("Illegal template value. Legal values are: continuous, file or none. Value was: " + template);
+                throw new RuntimeException("Illegal template value. Legal values are: continuous, file, time or none. Value was: " + template);
             }
         } else { // null
             this.template = Template.NONE;
@@ -246,23 +258,23 @@ public class Configuration {
 
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        if (inputType != null)  sb.append("InputType: " + inputType + "\n");
-        if (inputName != null) sb.append("InputName: " + inputName + "\n");
-        if (outputType != null) sb.append("OutputType: " + outputType + "\n");
-        if (outputName != null) sb.append("OutputName: " + outputName + "\n");
-        if (inputBatchSize != 0) sb.append("InputBatchSize: " + inputBatchSize + "\n");
-        if (outputBatchSize != 0) sb.append("OutputBatchSize: " + outputBatchSize + "\n");
-        if (clientName != null) sb.append("ClientName: " + clientName + "\n");
-        if (topicName != null) sb.append("TopicName: " + topicName + "\n");
-        if (bootstrapServer != null) sb.append("BootstrapServer: " + bootstrapServer + "\n");
-        if (header != null) sb.append("Header: " + header + "\n");
-        if (regex != null) sb.append("Regex: " + regex + "\n");
-        if (value != null) sb.append("Value: " + value + "\n");
+        if (inputType != null)  sb.append("InputType: ").append(inputType).append("\n");
+        if (inputName != null) sb.append("InputName: ").append(inputName).append("\n");
+        if (outputType != null) sb.append("OutputType: ").append(outputType).append("\n");
+        if (outputName != null) sb.append("OutputName: ").append(outputName).append("\n");
+        if (inputBatchSize != 0) sb.append("InputBatchSize: ").append(inputBatchSize).append("\n");
+        if (outputBatchSize != 0) sb.append("OutputBatchSize: ").append(outputBatchSize).append("\n");
+        if (clientName != null) sb.append("ClientName: ").append(clientName).append("\n");
+        if (topicName != null) sb.append("TopicName: ").append(topicName).append("\n");
+        if (bootstrapServer != null) sb.append("BootstrapServer: ").append(bootstrapServer).append("\n");
+        if (header != null) sb.append("Header: ").append(header).append("\n");
+        if (regex != null) sb.append("Regex: ").append(regex).append("\n");
+        if (value != null) sb.append("Value: ").append(value).append("\n");
         if (statistics) sb.append("Statistics: true\n");
-        if (glob != null) sb.append("Glob: " + glob + "\n");
-        if (eps != 0) sb.append("EPS: " + eps + "\n");
-        if (template != Template.NONE) sb.append("Template: " + template + "\n");
-        sb.append("Remove-guards: " + removeGuards + "\n");
+        if (glob != null) sb.append("Glob: ").append(glob).append("\n");
+        if (eps != 0) sb.append("EPS: ").append(eps).append("\n");
+        if (template != Template.NONE) sb.append("Template: ").append(template).append("\n");
+        sb.append("Remove-guards: ").append(removeGuards).append("\n");
 
         return sb.toString();
     }

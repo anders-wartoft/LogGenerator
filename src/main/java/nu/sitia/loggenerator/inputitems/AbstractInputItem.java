@@ -1,4 +1,4 @@
-package nu.sitia.loggenerator.io;
+package nu.sitia.loggenerator.inputitems;
 
 public abstract class AbstractInputItem implements InputItem {
     /** How many lines will be returned in one batch? */

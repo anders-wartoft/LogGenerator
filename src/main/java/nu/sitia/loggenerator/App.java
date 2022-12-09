@@ -2,7 +2,10 @@ package nu.sitia.loggenerator;
 import nu.sitia.loggenerator.filter.FilterFactory;
 import nu.sitia.loggenerator.filter.GuardFilter;
 import nu.sitia.loggenerator.filter.ProcessFilter;
-import nu.sitia.loggenerator.io.*;
+import nu.sitia.loggenerator.inputitems.InputItem;
+import nu.sitia.loggenerator.inputitems.InputItemFactory;
+import nu.sitia.loggenerator.outputitems.OutputItem;
+import nu.sitia.loggenerator.outputitems.OutputItemFactory;
 import org.apache.commons.cli.*;
 import nu.sitia.loggenerator.util.Configuration;
 
@@ -100,7 +103,6 @@ public class App
         } catch (ParseException e) {
             System.out.println(e.getMessage());
             formatter.printHelp("utility-name", options);
-
             System.exit(1);
         }
         // Create a configuration object
@@ -120,6 +122,9 @@ public class App
 
 
         if (cmd.getOptionValue("eps") != null) {
+            if (!config.isStatistics()) {
+                throw new RuntimeException("eps requires statistics");
+            }
             config.setEps(Long.parseLong(cmd.getOptionValue("eps")));
         }
 

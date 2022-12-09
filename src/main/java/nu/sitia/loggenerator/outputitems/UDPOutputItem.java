@@ -1,4 +1,4 @@
-package nu.sitia.loggenerator.io;
+package nu.sitia.loggenerator.outputitems;
 
 
 import nu.sitia.loggenerator.util.Configuration;
@@ -6,7 +6,6 @@ import nu.sitia.loggenerator.util.Configuration;
 import java.io.IOException;
 import java.net.*;
 import java.nio.charset.StandardCharsets;
-import java.util.Iterator;
 import java.util.List;
 import java.util.logging.Logger;
 

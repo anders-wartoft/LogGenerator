@@ -1,5 +1,6 @@
 package nu.sitia.loggenerator.io;
 
+import nu.sitia.loggenerator.inputitems.FileInputItem;
 import nu.sitia.loggenerator.util.Configuration;
 
 import java.util.ArrayList;

@@ -1,14 +1,13 @@
 package nu.sitia.loggenerator;
 
 import nu.sitia.loggenerator.filter.ProcessFilter;
-import nu.sitia.loggenerator.io.InputItem;
-import nu.sitia.loggenerator.io.OutputItem;
+import nu.sitia.loggenerator.inputitems.InputItem;
+import nu.sitia.loggenerator.outputitems.OutputItem;
 import nu.sitia.loggenerator.util.Configuration;
 import nu.sitia.loggenerator.util.LogStatistics;
 import sun.misc.Signal;
 
 import java.util.Date;
-import java.util.Iterator;
 import java.util.List;
 import java.util.logging.Logger;
 
@@ -44,6 +43,14 @@ public class ItemProxy {
         this.filterList = filterList;
         this.config = config;
         this.eps = config.getEps();
+
+        // Ctrl-C
+        Signal.handle(new Signal("INT"),  // SIGINT
+                signal -> {
+                    System.out.println("Sigint");
+                    System.exit(-1);
+                });
+
     }
 
     /**
@@ -59,15 +66,9 @@ public class ItemProxy {
         output.setup();
 
         if (config.isStatistics()) {
-            output.write(Configuration.BEGIN_TRANSACTION);
-            // Ctrl-C
-            Signal.handle(new Signal("INT"),  // SIGINT
-                    signal -> {
-                        output.write(Configuration.END_TRANSACTION);
-                        System.exit(0);
-                    });
+            statistics.setTransactionStart(new Date().getTime());
+            output.write(filterOutput(Configuration.BEGIN_TRANSACTION));
         }
-
 
         // Grab inputs
         while (input.hasNext()) {
@@ -76,35 +77,55 @@ public class ItemProxy {
             if (config.isStatistics()) {
                 statistics.printStatistics(filtered);
             }
-            for (ProcessFilter filter : filterList) {
-                // We had at least one filter. Process:
-                filtered = filter.filter(filtered);
-            }
-            output.write(filtered);
-            // Should we throttle the output?
-            if (eps != 0 && config.isStatistics()) {
-                long transactionStart = statistics.getTransactionStart();
-                long sentMessages = statistics.getTransactionMessages();
-                long now = new Date().getTime();
-                if (eps != 0) {
-                    // how long time should we spend on sending these messages?
-                    long estimatedTime = 1000 * sentMessages / eps;
-                    long waitTime = transactionStart + estimatedTime - now;
-                    if (waitTime > 10) {
-                        try {
-                            Thread.sleep(waitTime - 10);
-                        } catch (InterruptedException e) {
-                            // Ignore
-                        }
-                    }
-                } // end of throttling
-            }
+            output.write(filterOutput(filtered));
+            // Should we throttle the output to lower the eps?
+            throttle(statistics);
         }
         if (config.isStatistics()) {
-            output.write(Configuration.END_TRANSACTION);
+            statistics.printStatistics(Configuration.END_TRANSACTION);
+            output.write(filterOutput(Configuration.END_TRANSACTION));
         }
         input.teardown();
         output.teardown();
+    }
+
+    /**
+     * ItemProxy want's to write transaction messages to the stream, but
+     * the user might have added a filter for that. Run all filters
+     * on that data
+     * @param toFilter the data to filter
+     * @return the filtered data (empty list or the argument)
+     */
+    private List<String> filterOutput(List<String> toFilter) {
+        for (ProcessFilter filter : filterList) {
+            // We had at least one filter. Process:
+            toFilter = filter.filter(toFilter);
+        }
+        return toFilter;
+    }
+
+    /**
+     * When eps is limited, throttle by using Thread.sleep()
+     * @param statistics The Statistics to use to determine if we should throttle
+     */
+    private void throttle(LogStatistics statistics) {
+        if (eps != 0 && config.isStatistics()) {
+            long transactionStart = statistics.getTransactionStart();
+            long sentMessages = statistics.getTransactionMessages();
+            long now = new Date().getTime();
+            if (eps != 0) {
+                // how long time should we spend on sending these messages?
+                long estimatedTime = 1000 * sentMessages / eps;
+                long waitTime = transactionStart + estimatedTime - now;
+                if (waitTime > 10) {
+                    try {
+                        Thread.sleep(waitTime - 10);
+                    } catch (InterruptedException e) {
+                        // Ignore
+                    }
+                }
+            } // end of throttling
+        }
     }
 
 }
