@@ -1,0 +1,270 @@
+package nu.sitia.loggenerator.util;
+
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+
+public class Configuration {
+    /** template possible values */
+    public  enum Template {
+        CONTINUOUS,
+        FILE,
+        NONE
+    }
+    /** Guard sent as an event for each transmission if statistics is enabled */
+    public static final String BEGIN_TRANSACTION_TEXT = "------BEGIN_TRANSACTION------";
+    /** Guard sent as an event for each file if statistics is enabled */
+    public static final String BEGIN_FILE_TEXT = "------BEGIN_FILE------";
+
+    /** Guard sent as an end event for each transmission if statistics is enabled */
+    public static final String END_TRANSACTION_TEXT = "------END_TRANSACTION------";
+    /** Guard sent as an end event for each file if statistics is enabled */
+    public static final String END_FILE_TEXT = "------END_FILE------";
+    /** Start of transaction */
+    public static final List<String> BEGIN_TRANSACTION = new ArrayList<>();
+    /** Start of file */
+    public static final List<String> BEGIN_FILE = new ArrayList<>();
+    /** End of transaction */
+    public static final List<String> END_TRANSACTION = new ArrayList<>();
+    /** End of file */
+    public static final List<String> END_FILE = new ArrayList<>();
+
+    static {
+        BEGIN_TRANSACTION.add(BEGIN_TRANSACTION_TEXT);
+        BEGIN_FILE.add(BEGIN_FILE_TEXT);
+        END_TRANSACTION.add(END_TRANSACTION_TEXT);
+        END_FILE.add(END_FILE_TEXT);
+    }
+
+
+    /** Name of the input module */
+    private String inputType;
+    /** Name of the output module */
+    private String outputType;
+
+     /** Name for the input module to load */
+    private String inputName;
+    /** Name the output module use to send */
+    private String outputName;
+
+    /** How many rows to read before sending to the proxy? */
+    private int inputBatchSize = 1;
+    /** How many rows to send in each batch */
+    private int outputBatchSize = 1;
+
+    /** The name to use to identify to e.g., kafka */
+    private String clientName;
+
+    /** The Kafka Topic Name */
+    private String topicName;
+
+    /** The Kafka Bootstrap Server */
+    private String bootstrapServer;
+
+    /** A header to add to all events */
+    private String header;
+
+    /** A Regex to find and change to value */
+    private String regex;
+
+    /** The value to add instead of the regex */
+    private String value;
+
+    /** Default variable substitutions */
+    private final Map<String, String> variableSubstitutions = new LinkedHashMap<>();
+
+    /** Statistics for i/o */
+    private boolean statistics = false;
+
+    /** Directory glob */
+    private String glob;
+
+    /** Preferred eps */
+    private long eps = 0;
+
+    public Configuration() {
+        variableSubstitutions.put("syslog-header", "<34>{date:MMM dd HH:mm:ss} machine-name su: ");
+    }
+
+    /** Should the input be treated as a template and variables resolved? In that case, how?*/
+    private Template template = Template.NONE;
+
+    /** Should the statistics messages be removed before the data is written to the output? */
+    private boolean removeGuards = true;
+
+    public String getInputName() {
+        return inputName;
+    }
+
+    public void setInputName(String inputName) {
+        this.inputName = inputName;
+    }
+
+    public String getOutputName() {
+        return outputName;
+    }
+
+    public void setOutputName(String outputName) {
+        this.outputName = outputName;
+    }
+
+    public String getInputType() {
+        return inputType;
+    }
+
+    public void setInputType(String inputType) {
+        this.inputType = inputType;
+    }
+
+    public String getOutputType() {
+        return outputType;
+    }
+
+    public void setOutputType(String outputType) {
+        this.outputType = outputType;
+    }
+
+    public String getClientName() {
+        return clientName;
+    }
+
+    public void setClientName(String clientName) {
+        this.clientName = clientName;
+    }
+
+    public String getTopicName() {
+        return topicName;
+    }
+
+    public void setTopicName(String topicName) {
+        this.topicName = topicName;
+    }
+    public void setInputBatchSize(Integer value) {
+        this.inputBatchSize = value;
+    }
+
+    public void setOutputBatchSize(Integer value) {
+        this.outputBatchSize = value;
+    }
+
+    public int getInputBatchSize() {
+        return inputBatchSize;
+    }
+
+    public int getOutputBatchSize() {
+        return outputBatchSize;
+    }
+
+    public String getBootstrapServer() {
+        return bootstrapServer;
+    }
+
+    public void setBootstrapServer(String bootstrapServer) {
+        this.bootstrapServer = bootstrapServer;
+    }
+
+    public String getHeader() {
+        return header;
+    }
+
+    public void setHeader(String header) {
+        this.header = header;
+    }
+
+    public String getRegex() {
+        return regex;
+    }
+
+    public void setRegex(String regex) {
+        this.regex = regex;
+    }
+
+    public String getValue() {
+        return value;
+    }
+
+    public void setValue(String value) {
+        this.value = value;
+    }
+
+    public boolean isStatistics() {
+        return statistics;
+    }
+
+    public void setStatistics(boolean statistics) {
+        this.statistics = statistics;
+    }
+
+    public String getGlob() {
+        return glob;
+    }
+
+    public void setGlob(String glob) {
+        this.glob = glob;
+    }
+
+    public long getEps() {
+        return eps;
+    }
+
+    public void setEps(long eps) {
+        this.eps = eps;
+    }
+
+    public boolean isTemplate() {
+        return template != Template.NONE;
+    }
+
+    public Template getTemplate() {
+        return template;
+    }
+
+    public void setTemplate(String template) {
+        if (template != null) {
+            if ("continuous".equalsIgnoreCase(template)) {
+                this.template = Template.CONTINUOUS;
+            } else if ("file".equalsIgnoreCase(template)) {
+                this.template = Template.FILE;
+            } else if ("none".equalsIgnoreCase(template)) {
+                this.template = Template.NONE;
+            } else {
+                throw new RuntimeException("Illegal template value. Legal values are: continuous, file or none. Value was: " + template);
+            }
+        } else { // null
+            this.template = Template.NONE;
+        }
+    }
+
+    public boolean isRemoveGuards() {
+        return removeGuards;
+    }
+
+    public void setRemoveGuards(boolean removeGuards) {
+        this.removeGuards = removeGuards;
+    }
+
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        if (inputType != null)  sb.append("InputType: " + inputType + "\n");
+        if (inputName != null) sb.append("InputName: " + inputName + "\n");
+        if (outputType != null) sb.append("OutputType: " + outputType + "\n");
+        if (outputName != null) sb.append("OutputName: " + outputName + "\n");
+        if (inputBatchSize != 0) sb.append("InputBatchSize: " + inputBatchSize + "\n");
+        if (outputBatchSize != 0) sb.append("OutputBatchSize: " + outputBatchSize + "\n");
+        if (clientName != null) sb.append("ClientName: " + clientName + "\n");
+        if (topicName != null) sb.append("TopicName: " + topicName + "\n");
+        if (bootstrapServer != null) sb.append("BootstrapServer: " + bootstrapServer + "\n");
+        if (header != null) sb.append("Header: " + header + "\n");
+        if (regex != null) sb.append("Regex: " + regex + "\n");
+        if (value != null) sb.append("Value: " + value + "\n");
+        if (statistics) sb.append("Statistics: true\n");
+        if (glob != null) sb.append("Glob: " + glob + "\n");
+        if (eps != 0) sb.append("EPS: " + eps + "\n");
+        if (template != Template.NONE) sb.append("Template: " + template + "\n");
+        sb.append("Remove-guards: " + removeGuards + "\n");
+
+        return sb.toString();
+    }
+
+}
