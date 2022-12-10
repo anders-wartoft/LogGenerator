@@ -48,9 +48,6 @@ public class Substitution {
     /** Cached pattern for ipv4 */
     private static final Pattern ipv4Pattern = Pattern.compile(ipv4Regex);
 
-    /** The date to use in {date:...} variables. Using variable to make unit testing easier */
-    private Date date;
-
     /**
      * Freemarker-like substitution.
      * All occurrences of {key} in the template will be replaced with value from the
@@ -61,38 +58,40 @@ public class Substitution {
      */
     public static String substitute(String template, Map<String, String> translations, Date date) {
         String result = template;
-        while (result.indexOf("{lorem:") >= 0) {
-            // Lorem ipsum requested. Replace with an number of words
+        while (result.contains("{lorem:")) {
+            // Lorem ipsum requested. Replace with a number of words
             result = calculateLorem(result);
         }
-        while (result.indexOf("{oneOf:") >= 0) {
+        while (result.contains("{oneOf:")) {
             // one of several choices. Several instances might have different chosen entry
             result = calculateOneOf(result);
         }
-        while (result.indexOf("{random:") >= 0) {
+        while (result.contains("{random:")) {
             // Random number
             result = calculateRandom(result);
         }
-        if (result.indexOf("{date:") >= 0) {
+        if (result.contains("{date:")) {
             // Date requested. All instances will use the same value
             result = calculateDate(result, date);
         }
-        while (result.indexOf("{ipv4:") >= 0) {
+        while (result.contains("{ipv4:")) {
             // ipv4 requested. Replace with a random IP in the specified range
             result = calculateIp(result);
         }
-        while (result.indexOf("{string:") >= 0) {
+        while (result.contains("{string:")) {
             // string requested. Replace with a random string
             result = calculateString(result);
         }
-        while (result.indexOf("{counter:") >= 0) {
+        while (result.contains("{counter:")) {
             // counter requested. Replace with an enumerable field
             result = calculateCounter(result);
         }
-        for (Iterator<String> iter = translations.keySet().iterator(); iter.hasNext(); ) {
-            String key = iter.next();
+        while (result.contains("{pri:}")) {
+            result = calculatePriority(result);
+        }
+        for (String key : translations.keySet()) {
             String value = translations.get(key);
-            result = result.replaceAll("\\{" + key + "\\}", value);
+            result = result.replaceAll("\\{" + key + "}", value);
         }
         return result;
     }
@@ -106,8 +105,11 @@ public class Substitution {
      * @return input with the current date/time instead of the pattern {date:pattern}
      */
     protected static String calculateDate(String input, Date time) {
+        int startPos = input.indexOf("{date:");
+        int endPos = getExpressionEnd(input, startPos);
+        String part = input.substring(startPos, endPos);
         // First, get the date format string
-        Matcher matcher = datePattern.matcher(input);
+        Matcher matcher = datePattern.matcher(part);
         if (matcher.find()) {
             String datePattern = matcher.group(1);
             String locale = "en:US";
@@ -119,8 +121,7 @@ public class Substitution {
             }
             SimpleDateFormat formatter = new SimpleDateFormat(datePattern, Locale.forLanguageTag(locale));
             String formattedDateString = formatter.format(time);
-            String result = input.replaceAll(dateRegex, formattedDateString);
-            return result;
+            return input.substring(0, startPos) + formattedDateString + input.substring(endPos);
         }
         throw new RuntimeException(("Illegal date pattern: " + input));
     }
@@ -133,15 +134,38 @@ public class Substitution {
      * @return The input but with an actual ip number instead of the specification
      */
     protected static String calculateIp(String input) {
+        int startPos = input.indexOf("{ipv4:");
+        int endPos = getExpressionEnd(input, startPos);
+        String part = input.substring(startPos, endPos);
         // First, get the ip subnet and mask string
-        Matcher matcher = ipv4Pattern.matcher(input);
+        Matcher matcher = ipv4Pattern.matcher(part);
         if (matcher.find()) {
             String ipString = matcher.group(1);
             String cidr = matcher.group(2);
             String result = Ipv4.longToIpv4(Ipv4.getRandomIpv4(ipString, cidr));
-            return input.replaceFirst(ipv4Regex, result);
+            return input.substring(0, startPos) + result + input.substring(endPos);
         }
         throw new RuntimeException(("Illegal ipv4 pattern: " + input));
+    }
+
+    /**
+     * A valid syslog priority.
+     * @param input The string containing the pri variable specification
+     * @return The input but with an actual priority number instead of the specification
+     */
+    protected static String calculatePriority(String input) {
+        int startPos = input.indexOf("{pri:}");
+        int endPos = startPos + "{pri:}".length();
+
+        Random random = new Random();
+        // Facility
+        // 0 -- 23
+        int facility = random.nextInt(24);
+        // Severity
+        // 0 -- 7
+        int severity = random.nextInt(8);
+        int priority = 8 * facility + severity;
+        return input.substring(0, startPos) + priority + input.substring(endPos);
     }
 
     /**
@@ -153,8 +177,12 @@ public class Substitution {
      * @return The input but with one of the choices instead of the specification
      */
     protected static String calculateOneOf(String input) {
+        // Since Java doesn't have recursive regexes, we search for the end of the expression manually:
+        int startPos = input.indexOf("{oneOf:");
+        int endPos = getExpressionEnd(input, startPos);
+        String part = input.substring(startPos, endPos);
         // First, get the choices
-        Matcher matcher = oneOfPattern.matcher(input);
+        Matcher matcher = oneOfPattern.matcher(part);
         if (matcher.find()) {
             String delimiter = ",";
             String choicesString = matcher.group(1);
@@ -166,7 +194,7 @@ public class Substitution {
             String [] choices = choicesString.split(delimiter);
             int nr = new Random().nextInt(choices.length);
             String selected = choices[nr];
-            return input.replaceFirst(oneOfRegex, selected);
+            return input.substring(0, startPos) + selected + input.substring(endPos);
         }
         throw new RuntimeException(("Illegal oneOf pattern: " + input));
     }
@@ -178,15 +206,18 @@ public class Substitution {
      * @return The input but with one of the random number instead of the specification
      */
     protected static String calculateRandom(String input) {
+        int startPos = input.indexOf("{random:");
+        int endPos = getExpressionEnd(input, startPos);
+        String part = input.substring(startPos, endPos);
         // First, get the interval
-        Matcher matcher = randomPattern.matcher(input);
+        Matcher matcher = randomPattern.matcher(part);
         if (matcher.find()) {
             String from = matcher.group(1);
             String to = matcher.group(2);
-            int low = Integer.valueOf(from);
-            int high = Integer.valueOf(to);
+            int low = Integer.parseInt(from);
+            int high = Integer.parseInt(to);
             int nr = new Random().nextInt(high-low) + low;
-            return input.replaceFirst(randomRegex, String.valueOf(nr));
+            return input.substring(0, startPos) + nr + input.substring(endPos);
         }
         throw new RuntimeException(("Illegal random pattern: " + input));
     }
@@ -198,8 +229,11 @@ public class Substitution {
      * @return The input but with a random string instead of the specification
      */
     protected static String calculateString(String input) {
+        int startPos = input.indexOf("{string:");
+        int endPos = getExpressionEnd(input, startPos);
+        String part = input.substring(startPos, endPos);
         // First, get the character values and length
-        Matcher matcher = stringPattern.matcher(input);
+        Matcher matcher = stringPattern.matcher(part);
         if (matcher.find()) {
             String characterString = matcher.group(1);
             String lengthString = matcher.group(2);
@@ -219,13 +253,13 @@ public class Substitution {
                     charList.add('-');
                 }
                 if (c == '-' && char_1 == '-') {
-                    // The last char was a - and this is -. Illegal
+                    // The last char was a '-' and this is also a '-'. Illegal
                     throw new RuntimeException("Illegal character string in expression. Two - chars are not allowed after each other: " + input);
                 }
 
                 // We can only have a sequence if loopNr is at least 1
                 if (char_1 == '-' && loopNr >=2 && char_2 != '\\') {
-                    // sequence, like a-z. The a is already added
+                    // sequence, like a-z. The 'a' is already added
                     // Remove the '-'
                     charList.remove(charList.size()-1);
                     // add the rest of the characters but the last, c
@@ -237,7 +271,7 @@ public class Substitution {
 
                 // Add the c character to the list
                 charList.add(c);
-                // update the lastlast char
+                // update the second last char
                 char_2 = char_1;
                 // and update last char
                 char_1 = c;
@@ -245,7 +279,7 @@ public class Substitution {
                 loopNr++;
             } // for
 
-            int length = Integer.valueOf(lengthString);
+            int length = Integer.parseInt(lengthString);
             // Now we have a list of characters and a length
             // Create the string
             StringBuilder sb = new StringBuilder();
@@ -257,7 +291,7 @@ public class Substitution {
                 int pos = random.nextInt(charArray.length);
                 sb.append(charArray[pos]);
             }
-            return sb.toString();
+            return input.substring(0, startPos) + sb + input.substring(endPos);
         } // if match
         throw new RuntimeException(("Illegal string pattern: " + input));
     }
@@ -271,8 +305,11 @@ public class Substitution {
      * @return The input but with one of the counter numbers instead of the specification
      */
     protected static String calculateCounter(String input) {
+        int startPos = input.indexOf("{counter:");
+        int endPos = getExpressionEnd(input, startPos);
+        String part = input.substring(startPos, endPos);
         // First, get the interval
-        Matcher matcher = counterPattern.matcher(input);
+        Matcher matcher = counterPattern.matcher(part);
         if (matcher.find()) {
             String name = matcher.group(1);
             String startValue = matcher.group(2);
@@ -281,7 +318,7 @@ public class Substitution {
             if (counters.containsKey(name)) {
                 value = counters.get(name);
             }
-            String result =  input.replaceFirst(counterRegex, String.valueOf(value));
+            String result = input.substring(0, startPos) + value + input.substring(endPos);
             value++;
             counters.put(name, value);
             return result;
@@ -300,13 +337,16 @@ public class Substitution {
      * @return The input but with a list of words instead of the specification
      */
     protected static String calculateLorem(String input) {
+        int startPos = input.indexOf("{lorem:");
+        int endPos = getExpressionEnd(input, startPos);
+        String part = input.substring(startPos, endPos);
         // First, get the interval
-        Matcher matcher = loremPattern.matcher(input);
+        Matcher matcher = loremPattern.matcher(part);
         if (matcher.find()) {
             String length = matcher.group(1);
             String words = matcher.group(2);
             String delimiter = matcher.group(3);
-            int len = Integer.valueOf(length);
+            int len = Integer.parseInt(length);
             String [] wordList = words.split(delimiter);
             Random random = new Random();
             StringBuilder sb = new StringBuilder();
@@ -317,9 +357,33 @@ public class Substitution {
                     sb.append(delimiter);
                 }
             }
-            return input.replaceFirst(loremRegex, sb.toString());
+            return input.substring(0, startPos) + sb + input.substring(endPos);
         }
         throw new RuntimeException(("Illegal lorem pattern: " + input));
+    }
+
+
+    /**
+     * In a string like "test {first:a,b,{second:d,e}}", the call to
+     * searchMatchingBrace("test {first:a,b,{second:d,e}}", 5) will result in
+     * 28, pointing to the second }
+     * @param input The string to examine
+     * @param startPos Where the starting brace is
+     */
+    protected static int getExpressionEnd(String input, int startPos) {
+        int counter = 0;
+        for (int i=startPos; i<input.length(); i++) {
+            if (input.charAt(i) == '{') {
+                counter++;
+            }
+            if (input.charAt(i) == '}') {
+                counter--;
+            }
+            if (counter == 0) {
+                return i+1;
+            }
+        }
+        throw new RuntimeException("Error parsing the expression " + input.substring(startPos));
     }
 
 }

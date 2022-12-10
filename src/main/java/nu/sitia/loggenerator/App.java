@@ -94,6 +94,10 @@ public class App
         removeGuards.setRequired(false);
         options.addOption(removeGuards);
 
+        Option limit = new Option("l", "limit", true, "Only send this number of messages");
+        limit.setRequired(false);
+        options.addOption(limit);
+
         CommandLineParser parser = new DefaultParser();
         HelpFormatter formatter = new HelpFormatter();
         CommandLine cmd = null; //not a good practice, it serves it purpose
@@ -117,7 +121,7 @@ public class App
         config.setHeader(cmd.getOptionValue("header"));
         config.setRegex(cmd.getOptionValue("regex"));
         config.setValue(cmd.getOptionValue("value"));
-        config.setStatistics(cmd.getOptionValue("statistics") == null ? false : cmd.getOptionValue("statistics").equalsIgnoreCase("true"));
+        config.setStatistics(cmd.getOptionValue("statistics") != null && cmd.getOptionValue("statistics").equalsIgnoreCase("true"));
         config.setGlob(cmd.getOptionValue(glob));
 
 
@@ -128,15 +132,19 @@ public class App
             config.setEps(Long.parseLong(cmd.getOptionValue("eps")));
         }
 
+        if (cmd.getOptionValue("limit") != null) {
+            config.setLimit(Long.parseLong(cmd.getOptionValue("limit")));
+        }
+
         int inputBatchSizeInt = 1;
         if (cmd.getOptionValue(inputBatchSize) != null) {
-            inputBatchSizeInt = Integer.valueOf(cmd.getOptionValue(inputBatchSize));
+            inputBatchSizeInt = Integer.parseInt(cmd.getOptionValue(inputBatchSize));
         }
         config.setInputBatchSize(inputBatchSizeInt);
 
         int outputBatchSizeInt = 1;
         if (cmd.getOptionValue(outputBatchSize) != null) {
-            outputBatchSizeInt = Integer.valueOf(cmd.getOptionValue(outputBatchSize));
+            outputBatchSizeInt = Integer.parseInt(cmd.getOptionValue(outputBatchSize));
         }
         config.setOutputBatchSize(outputBatchSizeInt);
 
@@ -158,17 +166,17 @@ public class App
             // remove those
             filterList.add(new GuardFilter(config));
         }
-        if (config.getHeader() != null) {
-            filterList.add(FilterFactory.createFilter("header", config));
-        }
         if (config.getRegex() != null) {
             filterList.add(FilterFactory.createFilter("regex", config));
         }
-        if (config.isRemoveGuards()) {
-            // The sender will send control messages, like --------BEGIN_...
-            // remove those
-            filterList.add(new GuardFilter(config));
+        if (config.getHeader() != null) {
+            filterList.add(FilterFactory.createFilter("header", config));
         }
+        if (config.getRegex() != null || config.getHeader() != null || config.getTemplate() != Configuration.Template.NONE) {
+            // {date: etc
+            filterList.add(FilterFactory.createFilter("substitution", config));
+        }
+
         // Now create the input and output items
         InputItem inputItem = InputItemFactory.create(config);
         OutputItem outputItem = OutputItemFactory.create(config);

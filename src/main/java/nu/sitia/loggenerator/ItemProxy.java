@@ -32,6 +32,12 @@ public class ItemProxy {
     /** Preferred eps */
     private final long eps;
 
+    /** Limit the number of events to send */
+    private final long limit;
+
+    /** The number of sent events (used with limit) */
+    private long sentEvents;
+
     /**
      * Default constructor
      * @param input Input to use
@@ -43,6 +49,8 @@ public class ItemProxy {
         this.filterList = filterList;
         this.config = config;
         this.eps = config.getEps();
+        this.limit = config.getLimit();
+        this.sentEvents = 0;
 
         // Ctrl-C
         Signal.handle(new Signal("INT"),  // SIGINT
@@ -71,13 +79,19 @@ public class ItemProxy {
         }
 
         // Grab inputs
-        while (input.hasNext()) {
+        while (input.hasNext() && (limit == 0 || sentEvents < limit)) {
             // Assume we have no filters
             List<String> filtered = input.next();
             if (config.isStatistics()) {
                 statistics.printStatistics(filtered);
             }
-            output.write(filterOutput(filtered));
+            List<String> toSend = filterOutput(filtered);
+            // in case of a batch of logs that will become more than the limit of logs
+            while (limit != 0 && sentEvents + toSend.size() > limit) {
+                toSend.remove(toSend.size()-1); // remove last entry
+            }
+            output.write(toSend);
+            sentEvents += toSend.size();
             // Should we throttle the output to lower the eps?
             throttle(statistics);
         }
@@ -113,16 +127,14 @@ public class ItemProxy {
             long transactionStart = statistics.getTransactionStart();
             long sentMessages = statistics.getTransactionMessages();
             long now = new Date().getTime();
-            if (eps != 0) {
-                // how long time should we spend on sending these messages?
-                long estimatedTime = 1000 * sentMessages / eps;
-                long waitTime = transactionStart + estimatedTime - now;
-                if (waitTime > 10) {
-                    try {
-                        Thread.sleep(waitTime - 10);
-                    } catch (InterruptedException e) {
-                        // Ignore
-                    }
+            // how long time should we spend on sending these messages?
+            long estimatedTime = 1000 * sentMessages / eps;
+            long waitTime = transactionStart + estimatedTime - now;
+            if (waitTime > 10) {
+                try {
+                    Thread.sleep(waitTime - 10);
+                } catch (InterruptedException e) {
+                    // Ignore
                 }
             } // end of throttling
         }

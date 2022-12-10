@@ -18,7 +18,7 @@ import java.util.Map;
 public class SubstitutionTest
     extends TestCase
 {
-    private final Map testData = new HashMap();
+    private final Map<String, String> testData = new HashMap<>();
 
     /**
      * Create the test case
@@ -71,9 +71,8 @@ public class SubstitutionTest
     public void testSubstitution3()
     {
         String template = "Test if one illegal {foo2} will be substituted";
-        String expected = template;
         String actual = Substitution.substitute(template, testData, new Date());
-        assertEquals(expected, actual);
+        assertEquals(template, actual);
     }
 
     /**
@@ -83,7 +82,7 @@ public class SubstitutionTest
         String template = "{date:yyyy-MM-dd}";
         String expected = "2100-01-01";
         SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd", Locale.ENGLISH);
-        Date date = null;
+        Date date;
         try {
             date = formatter.parse(expected);
             String actual = Substitution.calculateDate(template, date);
@@ -100,9 +99,27 @@ public class SubstitutionTest
         String template = "{date:yyyy-MM-dd/sv:SE}";
         String expected = "2100-01-01";
         SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd", Locale.ENGLISH);
-        Date date = null;
+        Date date;
         try {
             date = formatter.parse(expected);
+            String actual = Substitution.calculateDate(template, date);
+            assertEquals(expected, actual);
+        } catch (ParseException e) {
+            fail(e.getMessage());
+        }
+    }
+
+    /**
+     * Test date patterns
+     */
+    public void testDatePatternsWithLocale2() {
+        String template = "{date:MMM dd HH:mm:ss/en:US}";
+        String dateString = "2100-01-01";
+        String expected = "Jan 01 00:00:00";
+        SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd", Locale.ENGLISH);
+        Date date;
+        try {
+            date = formatter.parse(dateString);
             String actual = Substitution.calculateDate(template, date);
             assertEquals(expected, actual);
         } catch (ParseException e) {
@@ -120,6 +137,20 @@ public class SubstitutionTest
         String actual = Substitution.substitute(template, testData, new Date());
         assertEquals(expected, actual);
     }
+
+    /**
+     * Test ipv4 substitution
+     */
+    public void testSubstitutionIpv4b()
+    {
+        String template = "Test if one {oneOf:{ipv4:192.168.0.0/16},{ipv4:172.16.0.0/12},{ipv4:10.0.0.0/8}} can be substituted";
+        String left = "Test if one ";
+        String right = " can be substituted";
+        String actual = Substitution.substitute(template, testData, new Date());
+        assertTrue(actual.startsWith(left));
+        assertTrue(actual.endsWith(right));
+    }
+
 
     /**
      * Test number of addresses in a subnet
@@ -177,7 +208,7 @@ public class SubstitutionTest
     public void testOneOf() {
         String template = "test foo {oneOf:a,b,c,d} bar";
         String actual = Substitution.calculateOneOf(template);
-        assertTrue(actual.length() == 14);
+        assertEquals(14, actual.length());
 
     }
 
@@ -201,6 +232,7 @@ public class SubstitutionTest
         assertEquals(expected, actual);
     }
 
+
     /**
      * Test string generation
      */
@@ -208,7 +240,7 @@ public class SubstitutionTest
         String template = "{string:a-z/10}";
         String actual = Substitution.calculateString(template);
         assertNotSame(template, actual);
-        assertTrue(actual.length() == 10);
+        assertEquals(10, actual.length());
     }
 
     /**
@@ -218,9 +250,28 @@ public class SubstitutionTest
         String template = "{string:a-z0-9\\-/100}";
         String actual = Substitution.calculateString(template);
         assertNotSame(template, actual);
-        assertTrue(actual.length() == 100);
+        assertEquals(100, actual.length());
     }
 
+    /**
+     * Test string generation
+     */
+    public void testString4() {
+        String template = "{string:a-c\\-/8}";
+        String actual = Substitution.calculateString(template);
+        assertNotSame(template, actual);
+        assertEquals(8, actual.length());
+    }
+
+    /**
+     * Test string generation
+     */
+    public void testString5() {
+        String template = "{string:a-z\\-_\\/8}";
+        String actual = Substitution.calculateString(template);
+        assertNotSame(template, actual);
+        assertEquals(8, actual.length());
+    }
 
     /**
      * Test counter generation
@@ -250,12 +301,11 @@ public class SubstitutionTest
      */
     public void testLorem2() {
         String template = "{lorem:myword myword2 myword3/ }";
-        String expected = template;
         try {
-            String actual = Substitution.calculateLorem(template);
+            Substitution.calculateLorem(template);
             fail("Should throw exception");
         } catch (RuntimeException e) {
-
+            // ignore. Should throw exception
         }
 
     }
@@ -278,5 +328,26 @@ public class SubstitutionTest
         String actual = Substitution.calculateLorem(template);
         assertNotSame(template, actual);
     }
+
+    /**
+     * Test to extract an expression from a String
+     */
+    public void testMatchingBrace() {
+        String template = "test {first:a,b,{second:d,e}}";
+        int pos = template.indexOf("{first:");
+        int end = Substitution.getExpressionEnd(template, pos);
+        assertEquals(29, end);
+    }
+
+    /**
+     * Test to extract an expression from a String
+     */
+    public void testMatchingBrace2() {
+        String template = "<{pri:}>{date:MMM DD HH:mm:ss} {oneOf:mymachine,yourmachine,localhost,{ipv4:192.168.0.0/16}} {string:a-z0-9/9}[{random:1-65535}]: ";
+        int pos = template.indexOf("{oneOf:");
+        int end = Substitution.getExpressionEnd(template, pos);
+        assertEquals(92, end);
+    }
+
 
 }

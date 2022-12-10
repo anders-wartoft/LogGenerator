@@ -14,6 +14,7 @@ public class FilterFactory {
         return switch (name) {
             case "header", "HEADER" -> new HeaderFilter(config);
             case "regex", "REGEX" -> new RegexFilter(config);
+            case "substitution", "SUBSTITUTION" -> new SubstitutionFilter(config);
             default -> throw new RuntimeException("Illegal filter type: " + name);
         };
 

@@ -97,6 +97,9 @@ public class Configuration {
     /** When the template enginge is set to time, this is the duration */
     private long durationSeconds;
 
+    /** Send at most this number of events */
+    private long limit = 0;
+
     public String getInputName() {
         return inputName;
     }
@@ -220,8 +223,12 @@ public class Configuration {
         return durationSeconds;
     }
 
-    public void setDurationSeconds(long durationSeconds) {
-        this.durationSeconds = durationSeconds;
+    public long getLimit() {
+        return limit;
+    }
+
+    public void setLimit(long limit) {
+        this.limit = limit;
     }
 
     public void setTemplate(String template) {
@@ -237,8 +244,7 @@ public class Configuration {
                 if (parts.length != 2) {
                     throw new RuntimeException("Illegal template time value. Set as time:30 for 30 seconds. Value was: " + template);
                 }
-                long duration = Long.valueOf(parts[1]);
-                this.durationSeconds = duration;
+                this.durationSeconds = Long.parseLong(parts[1]);
                 this.template = Template.TIME;
             } else {
                 throw new RuntimeException("Illegal template value. Legal values are: continuous, file, time or none. Value was: " + template);
@@ -274,6 +280,7 @@ public class Configuration {
         if (glob != null) sb.append("Glob: ").append(glob).append("\n");
         if (eps != 0) sb.append("EPS: ").append(eps).append("\n");
         if (template != Template.NONE) sb.append("Template: ").append(template).append("\n");
+        if (limit != 0) sb.append("Limit: ").append(limit).append("\n");
         sb.append("Remove-guards: ").append(removeGuards).append("\n");
 
         return sb.toString();
