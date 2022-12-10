@@ -98,6 +98,10 @@ public class App
         limit.setRequired(false);
         options.addOption(limit);
 
+        Option gapRegex = new Option("gd", "gap-detection", true, "Regex for gap detection");
+        gapRegex.setRequired(false);
+        options.addOption(gapRegex);
+
         CommandLineParser parser = new DefaultParser();
         HelpFormatter formatter = new HelpFormatter();
         CommandLine cmd = null; //not a good practice, it serves it purpose
@@ -123,6 +127,7 @@ public class App
         config.setValue(cmd.getOptionValue("value"));
         config.setStatistics(cmd.getOptionValue("statistics") != null && cmd.getOptionValue("statistics").equalsIgnoreCase("true"));
         config.setGlob(cmd.getOptionValue(glob));
+        config.setGapRegex(cmd.getOptionValue(gapRegex));
 
 
         if (cmd.getOptionValue("eps") != null) {
@@ -175,6 +180,9 @@ public class App
         if (config.getRegex() != null || config.getHeader() != null || config.getTemplate() != Configuration.Template.NONE) {
             // {date: etc
             filterList.add(FilterFactory.createFilter("substitution", config));
+        }
+        if (config.getGapRegex() != null) {
+            filterList.add(FilterFactory.createFilter("gap-detection", config));
         }
 
         // Now create the input and output items

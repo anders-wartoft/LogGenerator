@@ -101,6 +101,9 @@ public class ItemProxy {
         }
         input.teardown();
         output.teardown();
+        if (config.getDetector() != null) {
+            System.out.println(config.getDetector().toString());
+        }
     }
 
     /**

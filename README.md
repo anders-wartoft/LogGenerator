@@ -179,7 +179,36 @@ To use the syslog-header built-in variable, add `{syslog-header}` to either the 
 Now that we have an understanding of the basics, we can progress to the more advanced use cases for LogGenerator.
 To locate bottlenecks or bad connections in a log chain, one or more components can be substituted with LogGenerator to create a known set of data to send and receive.
 
+LogGenerator can be used to generate logs and receive logs, count them, calculate events per second and even detect lost events.
 
+### Lost events - Gap detection
+If the events transferred contains an increasing value, then the receiver can detect if any of the values are missing.
+
+To generate a header with that kind of value, use the {counter: variable.
+
+`{counter:name:1}`
+
+Example: Send data from a file, add a header with a counter and some text around the counter so we can identify that on the server side.
+First, send to cmd so we can see that the counter is working:
+
+`java -jar LogGenerator-with-dependencies.jar -i file -in src/test/data/log-with-time.log -he "<{counter:test:1}>" -o cmd`
+
+We should se some events starting with <1>, <2> etc. Since we'd like to be able to see if the Gap Detection is working, 
+set the initial value to, e.g., 42.
+
+In a new terminal, start the server:
+`java -jar LogGenerator-with-dependencies.jar -i tcp -in 9999 -o cmd`
+
+Start the client:
+
+`java -jar LogGenerator-with-dependencies.jar -i file -in src/test/data/log-with-time.log -he "<{counter:test:41}>" -o cmd`
+
+You should see the received data (probably on one line) and the detected gaps:
+
+`1-41`
+
+Now it's easy to configure the first LogGenerator to send logs to, e.g., Kafka or rsyslog and connect the LogGenerator receiver to accept UDP connections or read from Kafka.
+By sending more data and possibly throttle the data, you can test how much load different parts of the log chain can handle.
 
 ## Q&A
 ### Why does my cmd printout have square brackets around every line?

@@ -1,5 +1,7 @@
 package nu.sitia.loggenerator.util;
 
+import nu.sitia.loggenerator.util.gapdetector.GapDetector;
+
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -100,6 +102,13 @@ public class Configuration {
 
     /** Send at most this number of events */
     private long limit = 0;
+
+    /** Gap detection regex */
+    private String gapRegex;
+
+    /** The gap detector */
+    private GapDetector detector;
+
 
     public String getInputName() {
         return inputName;
@@ -268,6 +277,22 @@ public class Configuration {
         this.removeGuards = removeGuards;
     }
 
+    public String getGapRegex() {
+        return gapRegex;
+    }
+
+    public void setGapRegex(String gapRegex) {
+        this.gapRegex = gapRegex;
+    }
+
+    public GapDetector getDetector() {
+        return detector;
+    }
+
+    public void setDetector(GapDetector detector) {
+        this.detector = detector;
+    }
+
     public String toString() {
         StringBuilder sb = new StringBuilder();
         if (inputType != null)  sb.append("InputType: ").append(inputType).append("\n");
@@ -288,6 +313,7 @@ public class Configuration {
         if (template != Template.NONE) sb.append("Template: ").append(template).append("\n");
         if (limit != 0) sb.append("Limit: ").append(limit).append("\n");
         sb.append("Remove-guards: ").append(removeGuards).append("\n");
+        if (gapRegex != null) sb.append("Gap Regex: ").append(gapRegex).append("\n");
 
         return sb.toString();
     }

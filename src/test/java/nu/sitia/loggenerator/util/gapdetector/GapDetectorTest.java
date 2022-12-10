@@ -45,5 +45,6 @@ public class GapDetectorTest
         assertTrue(detector.check(5) < 0);
         detector.setExpectedNumber(100);
         assertTrue(detector.check(77) < 0);
+        System.out.println(detector);
     }
 }

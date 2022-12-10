@@ -88,4 +88,17 @@ public class GapDetector {
         }
         return null;
     }
+
+    /**
+     * Return all gaps as a printable string
+     * @return The gaps, one gap for each line
+     */
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        for (Gap gap:gaps) {
+            sb.append(gap.getFrom()).append("-").append(gap.getTo()).append(System.lineSeparator());
+        }
+        return sb.toString();
+    }
 }

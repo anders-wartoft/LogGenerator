@@ -15,6 +15,7 @@ public class FilterFactory {
             case "header", "HEADER" -> new HeaderFilter(config);
             case "regex", "REGEX" -> new RegexFilter(config);
             case "substitution", "SUBSTITUTION" -> new SubstitutionFilter(config);
+            case "gap-detection", "GAP-DETECTION" -> new GapDetectionFilter(config);
             default -> throw new RuntimeException("Illegal filter type: " + name);
         };
 
