@@ -130,7 +130,7 @@ Example:
 
 Example: If a log locks like this: 
 
-`Sat Dec 10 00:35:57.108 Usb Host Notification Apple80211Set: seqNum 5459 Total 1 chg 0 en0`
+`Sat Dec 03 00:35:57.108 Usb Host Notification Apple80211Set: seqNum 5459 Total 1 chg 0 en0`
 
 `java -jar LogGenerator-with-dependencies.jar -i file -in log-with-time.log -r "[a-zA-Z]{3} [a-zA-Z]{3} \d{1,2} \d\d:\d\d:\d\d\.\d{3}" -v "{date:EEE MMM dd HH:mm:ss}" -o cmd`
 
