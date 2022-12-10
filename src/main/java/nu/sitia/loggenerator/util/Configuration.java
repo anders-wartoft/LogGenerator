@@ -85,7 +85,8 @@ public class Configuration {
     private long eps = 0;
 
     public Configuration() {
-        variableSubstitutions.put("syslog-header", "<34>{date:MMM dd HH:mm:ss} machine-name su: ");
+        variableSubstitutions.put("syslog-header", "<{pri:}>{date:MMM dd HH:mm:ss} {oneOf:mymachine,yourmachine,localhost,{ipv4:192.168.0.0/16}} {string:a-z0-9/9}[{random:1-65535}]: ");
+        variableSubstitutions.put("ip", "{<ipv4:0.0.0.0/0}");
     }
 
     /** Should the input be treated as a template and variables resolved? In that case, how?*/
@@ -230,6 +231,11 @@ public class Configuration {
     public void setLimit(long limit) {
         this.limit = limit;
     }
+
+    public Map<String, String> getVariableSubstitutions() {
+        return this.variableSubstitutions;
+    }
+
 
     public void setTemplate(String template) {
         if (template != null) {

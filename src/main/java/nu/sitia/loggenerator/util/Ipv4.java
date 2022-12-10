@@ -44,8 +44,7 @@ public class Ipv4 {
     public static long nrValuesInSubnet(String subnet) {
         long cidr = Long.parseLong(subnet);
         long mask = 32 - cidr;
-        long nrAddresses = 1 << (mask + 1) - 1;
-        return nrAddresses;
+        return 1L << (mask + 1) - 1;
     }
 
     /**
@@ -79,8 +78,7 @@ public class Ipv4 {
         long mask = 32 - Long.parseLong(cidr);
         // zero out the rightmost bits
         bitmask = bitmask >> mask << mask;
-        long startAddress = address & bitmask;
-        return startAddress;
+        return address & bitmask;
     }
 
     /**
@@ -94,8 +92,7 @@ public class Ipv4 {
         long startingAddress = getStartingAddress(ipv4, cidr);
         long nrValues = nrValuesInSubnet(cidr);
         if (nrValues > 1) {
-            long random = new Random().nextLong(nrValues - 1) + startingAddress;
-            return random;
+            return new Random().nextLong(nrValues - 1) + startingAddress;
         }
         // Special case. /32 cidr. Return the ip number supplied as an argument
         return ipv4ToLong(ipv4);

@@ -168,14 +168,21 @@ will be 10.000 lines beginning with `row1` or `row2` and ending with a letter a-
 
 With a syslog template, a great number of unique logs can be generated.
 
+### System variables
+Some variables are built-in, expanding to other variables and thus easier to use.
+To use the syslog-header built-in variable, add `{syslog-header}` to either the template file or the header command line argument. 
 
-== Chaining LogGenerator
+- syslog-header: `<{pri:}>{date:MMM dd HH:mm:ss} {oneOf:mymachine,yourmachine,localhost,{ipv4:192.168.0.0/16}} {string:a-z0-9/9}[{random:1-65535}]: `
+- ip: `{<ipv4:0.0.0.0/0}`
+
+## Chaining LogGenerator
 Now that we have an understanding of the basics, we can progress to the more advanced use cases for LogGenerator.
 To locate bottlenecks or bad connections in a log chain, one or more components can be substituted with LogGenerator to create a known set of data to send and receive.
 
 
-== Q&A
-=== Why does my cmd printout have square brackets around every line?
+
+## Q&A
+### Why does my cmd printout have square brackets around every line?
 When using the -o cmd each batch of events will be printed on one line, separated by , and with [] around the batch. 
 This behaviour is to illustrate the batch mechanism and will not be present if you write to file with `-o file -on {filename}`.
 

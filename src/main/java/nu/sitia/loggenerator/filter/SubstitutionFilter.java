@@ -7,12 +7,13 @@ import java.util.*;
 public class SubstitutionFilter implements ProcessFilter {
 
     /** Other variables we want to change. Name, Value */
-    private final Map<String, String> variableMap = new HashMap<>();
+    private final Map<String, String> variableMap;
     /**
      * Create a filter and set all parameters
-     * @param ignoredConfig The configuration object to get parameters from
+     * @param config The configuration object to get parameters from
      */
-    public SubstitutionFilter(Configuration ignoredConfig) {
+    public SubstitutionFilter(Configuration config) {
+        variableMap = config.getVariableSubstitutions();
     }
 
     /**

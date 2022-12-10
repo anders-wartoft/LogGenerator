@@ -58,6 +58,12 @@ public class Substitution {
      */
     public static String substitute(String template, Map<String, String> translations, Date date) {
         String result = template;
+        // Start with initialized valued, like {syslogheader}:
+        for (String key : translations.keySet()) {
+            String value = translations.get(key);
+            result = result.replaceAll("\\{" + key + "}", value);
+        }
+
         while (result.contains("{lorem:")) {
             // Lorem ipsum requested. Replace with a number of words
             result = calculateLorem(result);
@@ -88,10 +94,6 @@ public class Substitution {
         }
         while (result.contains("{pri:}")) {
             result = calculatePriority(result);
-        }
-        for (String key : translations.keySet()) {
-            String value = translations.get(key);
-            result = result.replaceAll("\\{" + key + "}", value);
         }
         return result;
     }

@@ -141,6 +141,17 @@ public class SubstitutionTest
     /**
      * Test ipv4 substitution
      */
+    public void testAllSubstitutionIpv4()
+    {
+        String template = "{ipv4:0.0.0.0/0}";
+        String actual = Substitution.substitute(template, testData, new Date());
+        System.out.println(actual);
+        assertTrue(actual.length() <= 15 && actual.length() >= 7);
+    }
+
+    /**
+     * Test ipv4 substitution
+     */
     public void testSubstitutionIpv4b()
     {
         String template = "Test if one {oneOf:{ipv4:192.168.0.0/16},{ipv4:172.16.0.0/12},{ipv4:10.0.0.0/8}} can be substituted";
