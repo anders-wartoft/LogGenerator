@@ -5,8 +5,8 @@ import nu.sitia.loggenerator.util.Configuration;
 import java.util.List;
 
 /**
- * A StaticInputItem always return the same string. It's intended to
- * measure the performance of a system.
+ * A CounterInputItem always return the same string but with an
+ * ever-increasing number added at the end.
  */
 public class CounterInputItem extends AbstractInputItem {
     /** The string to return */
