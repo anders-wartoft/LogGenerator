@@ -10,7 +10,7 @@ import java.util.regex.Pattern;
 public class RegexFilter implements ProcessFilter {
 
     /** What to write instead */
-    private String value;
+    private final String value;
 
     /** Cached regex pattern */
     private final Pattern pattern;
@@ -20,7 +20,7 @@ public class RegexFilter implements ProcessFilter {
      * @param config The configuration object to get parameters from
      */
     public RegexFilter(Configuration config) {
-        /** What to look for */
+        // What to look for
         String regex = config.getRegex();
         if (null == regex) {
             throw new RuntimeException("regex is null");
@@ -41,8 +41,7 @@ public class RegexFilter implements ProcessFilter {
     private String filter(String toFilter) {
         Matcher matcher = pattern.matcher(toFilter);
         if (matcher.find()) {
-            String result = toFilter.replaceAll(matcher.group(), value);
-            return result;
+            return toFilter.replaceAll(matcher.group(), value);
         }
         return toFilter;
     }

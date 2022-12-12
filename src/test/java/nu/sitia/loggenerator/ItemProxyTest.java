@@ -67,7 +67,7 @@ public class ItemProxyTest
         int batchSize = 3;
         Configuration config = new Configuration();
         config.setInputName("src/test/data/test.txt");
-        // This is a FileInputItem that also caches all data so we can get it with fii.getData() later
+        // This is a FileInputItem that also caches all data, so we can get it with fii.getData() later
         WrappedFileInputItem fii = new WrappedFileInputItem(config);
         fii.setBatchSize(batchSize);
         MemoryOutputItem moi = new MemoryOutputItem();

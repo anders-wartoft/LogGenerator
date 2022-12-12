@@ -87,8 +87,9 @@ public class Configuration {
     private long eps = 0;
 
     public Configuration() {
-        variableSubstitutions.put("syslog-header", "<{pri:}>{date:MMM dd HH:mm:ss} {oneOf:mymachine,yourmachine,localhost,{ipv4:192.168.0.0/16}} {string:a-z0-9/9}[{random:1-65535}]: ");
+        variableSubstitutions.put("syslog-header", "<{pri:}>{date:MMM dd HH:mm:ss} {oneOf:my-machine,your-machine,localhost,{ipv4:192.168.0.0/16}} {string:a-z0-9/9}[{random:1-65535}]: ");
         variableSubstitutions.put("ip", "{<ipv4:0.0.0.0/0}");
+        variableSubstitutions.put("rfc1918","{oneOf:{ipv4:192.168.0.0/16},{ipv4:172.16.0.0/12},{ipv4:10.0.0.0/8}}");
     }
 
     /** Should the input be treated as a template and variables resolved? In that case, how?*/
@@ -97,7 +98,7 @@ public class Configuration {
     /** Should the statistics messages be removed before the data is written to the output? */
     private boolean removeGuards = true;
 
-    /** When the template enginge is set to time, this is the duration */
+    /** When the template engine is set to time, this is the duration */
     private long durationSeconds;
 
     /** Send at most this number of events */

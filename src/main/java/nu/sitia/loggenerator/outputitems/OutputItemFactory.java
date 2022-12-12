@@ -16,6 +16,7 @@ public class OutputItemFactory {
             case "tcp", "TCP" -> new TCPOutputItem(config);
             case "file", "FILE" -> new FileOutputItem(config);
             case "kafka", "KAFKA" -> new KafkaOutputItem(config);
+            case "null", "NULL" -> new NullOutputItem(config);
             default -> throw new RuntimeException("Illegal output type: " + config.getOutputType());
         };
     }

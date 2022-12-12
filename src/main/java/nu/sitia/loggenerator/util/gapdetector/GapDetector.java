@@ -96,6 +96,7 @@ public class GapDetector {
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
+        sb.append("Next expected number: ").append(expectedNumber).append(System.lineSeparator());
         for (Gap gap:gaps) {
             sb.append(gap.getFrom()).append("-").append(gap.getTo()).append(System.lineSeparator());
         }

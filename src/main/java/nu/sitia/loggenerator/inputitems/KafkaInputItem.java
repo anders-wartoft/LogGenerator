@@ -23,7 +23,7 @@ public class KafkaInputItem extends AbstractInputItem {
     private final Properties properties = new Properties();
 
     /** The Kafka consumer */
-    private KafkaConsumer consumer;
+    private KafkaConsumer<Integer, String> consumer;
 
     /** The topic name */
     private final String topicName;
@@ -58,7 +58,7 @@ public class KafkaInputItem extends AbstractInputItem {
         properties.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.IntegerDeserializer");
         properties.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.StringDeserializer");
 
-        consumer = new KafkaConsumer(properties);
+        consumer = new KafkaConsumer<>(properties);
         logger.info("Connected to kafka " + this.bootstrapServer);
         consumer.subscribe(Collections.singletonList(this.topicName));
         logger.info("Subscribed to topic " + this.topicName);

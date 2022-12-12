@@ -1,6 +1,6 @@
 package nu.sitia.loggenerator.inputitems;
 
-import nu.sitia.loggenerator.filter.Substitution;
+import nu.sitia.loggenerator.filter.substituters.Substitution;
 import nu.sitia.loggenerator.util.Configuration;
 
 import java.io.File;
@@ -109,18 +109,21 @@ public class TemplateFileInputItem extends AbstractInputItem {
 
         int lines = this.batchSize;
         Random random = new Random();
+        Substitution substitution = new Substitution();
         while (rows.size() > 0 && lines-- > 0) {
             // Pick one line. lineNr will be in the range [0-rows.size()-1]
             int lineNr = random.nextInt(rows.size());
             String line = rows.get(lineNr);
             if (template != Configuration.Template.NONE) {
                 // Do translation
-                line = Substitution.substitute(line, new HashMap<>(), new Date());
+                result.add(substitution.substitute(line, new HashMap<>(), new Date()));
+            } else {
+                result.add(line);
             }
-            result.add(line);
 
-            // Should we remove the sent line?
-            if (template == Configuration.Template.FILE &&
+            // Should we remove the line? In that case the file content will be
+            // sent only once
+            if (template == Configuration.Template.FILE ||
                     template == Configuration.Template.NONE) {
                 rows.remove(lineNr);
             }

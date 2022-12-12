@@ -3,24 +3,174 @@ LogGenerator is a tool to debug log streams, i.e., syslog, Kafka, UDP diodes and
 The tool reads input from an input module, filters the input (add a header, replace text etc.) and finally writes the output with an output module.
 
 ### Input modules:
+There are input module for the following tasks:
 - Read files
-- Read files in a directory (with glob)
+- Read files in a directory
+- Read files in a directory with globs
 - Receive UDP
-- Receive TCP
+- Receive TCP 
 - Fetch from Kafka topics
+- Static string
+- Static string ending with a counter starting from 1
 
-### Filter modules:
-- Add a header
-- Replace by regex
-- Replace variables
+#### Read files
+Read a local file
+
+Parameters: `-i file -in {file name}`
+
+Example: `-i file -in ./src/test/data/test.txt`
+
+#### Read files in a directory
+Read all files in a directory
+
+Parameters: `-i file -in {directory name}`
+
+Example: `-i file -in ./src/test/data/`
+
+#### Read files in a directory with globs
+Read all files in a directory that matches a glob. See https://javapapers.com/java/glob-with-java-nio/ for details on how to write globs.
+
+Parameters: `-i file -in {directory name -g {glob}`). 
+
+Example: `-i file -in ./src/test/data/**.txt`
+
+#### Receive UDP
+Set up a UDP server. You have to specify what address to bond to. If you don't care, use localhost.
+
+Parameters: `-i udp -in {address:port number}`
+
+Example: `-i udp -in localhost:5999`
+
+#### Receive TCP
+Set up a TCP server. You have to specify what address to bond to. If you don't care, use localhost.
+
+Parameters: `-i tcp -in {address:port number}`
+
+Example: `-i tcp -in 192.168.1.2:5999`
+
+#### Fetch from Kafka topics
+Connect to a Kafka server and read from a topic
+
+Parameters: `-i kafka -cm {client name} -tn {topic name} -bs {boostrap server}`
+
+Example: `-i kafka -cn test -tn testtopic -bs localhost:9092`
+
+#### Static string
+Send the same string over and over again. 
+
+Parameters: `-i static -in {the string to send}`
+
+Example: `-i static -in "Test string to send"`
+
+Example: `-i static -in "Test string to send" -l 1000` (only send 1000 events)
+
+#### Static string ending with a counter starting from 1
+This is used to send a static string that is appended with an increasing number, starting from 1. This is a very fast way to send events ending with a counter.
+To send 1.000.000 events from "Test:1" to "Test:1000000", use `java -jar LogGenerator-with-dependencies.jar -i counter -in "Test:" -limit 1000000 -o cmd`
+
+Parameters: `-i counter -in {the string to send}`
+
+Example: `-i counter -in "Test string number:"`
+
 
 ### Output modules
+These are the output modules available:
 - Write to file
 - Write to console
 - Write to UDP
 - Write to TCP
 - Write to Kafka
+- Write to null (throw away the result, used for performance testing)
 
+#### Write to file
+Write the received events to a local file.
+
+Parameters: `-o file -on {file name}`
+
+Example: `-o file -on ./received.txt`
+
+#### Write to console
+Write the received events to the console. 
+
+Parameters: `-o cmd`
+
+Example: `-o cmd`
+
+#### Write to UDP
+Send events with UDP.
+
+Parameters: `-o udp -on {host:port}`
+
+Example `-o udp -on localhost:5999}`
+
+#### Write to TCP
+Send events with TCP.
+
+Parameters: `-o tcp -on {host:port}`
+
+Example `-o tcp -on localhost:5999}`
+
+#### Write to Kafka
+Connect to a Kafka server and write the events to a topic. N.B., these are not unique arguments for kafka input and output so there is no way to read from a Kafka topic and write to another topic. The tool is not meant to be used for that kind of usage.
+
+Parameters: `-o kafka -cm {client name} -tn {topic name} -bs {boostrap server}`
+
+Example: `-o kafka -cn test -tn testtopic -bs localhost:9092`
+
+#### Write to null
+This will throw away the result. It is useful, e.g., when testing for performance.
+
+To send the text "test" 100.000 times and discard the result, but to see the eps and bps, use:
+
+`java -jar LogGenerator-with-dependencies.jar -i static  -in "test" -o null  -s true -l 100000`
+
+Parameters: `-o null`
+
+Example: `-o null`
+
+### Filter modules:
+- Add a header
+- Replace by regex
+- Replace variables
+- Detect gaps
+
+#### Add a header
+To send a file line by line but to each line prepend a header, that can contain text and variables.
+
+Parameters: `-he {header text}`
+
+Example: `-he {syslog-header}`, `-he "My custom header with date: {date:yyyyMMdd}: "`
+
+#### Replace by regex
+A use case is if you have a lot of nice logs, but the date is not possible to use. You can load the file and add a regex to find the date, then replace the date with a {date:...} variable or a static string.
+There must be a capture group in the regex. The text matched by the capture group will be replaced by the value.
+
+Parameters: `-r {regex to find} -v {value to insert instead of the part matched by the regex}`
+
+Example: `-r "<(\\d+)>" -v "<2>"`
+
+If you have a file with a lot of logs, like:
+
+`[Sat Dec 03 00:35:57.399 Usb Host Notification Apple80211Set: seqNum 5460 Total 1 chg 0 en0]`
+
+Then the following invocation will change the date to today:
+
+`java -jar LogGenerator-with-dependencies.jar -i file -in src/test/data/log-with-time.log -o cmd -s true -l 10 -r "([a-zA-Z]{3} [a-zA-Z]{3} \d\d \d\d:\d\d:\d\d\.\d{3})" -v "{date:EEE MMM HH:mm:ss.sss}"`
+
+#### Replace variables
+Variable substitution will be present for template, regex and header processing. If a file is loaded as "file" or template "none" then the (processor intensive) substitutions will not be loaded.
+
+#### Detect gaps
+Gaps are a continuous block of missing numbers. We use gaps to inform the filter that we are missing some events.
+The GapDetector will inspect each event, search for an identification number by a regex and then check if the event has been seen before.
+If an event is missing then this will be reported after the end of processing.
+
+Parameters `-gd {regex with caputure group}`
+
+Example: `-gd "<(\d+)>"`
+
+A good use of gap detection is to send events over unreliable media and check if all events were delivered.
+To assure that the gap detection is on, start the counter on the sending side with a number that is larger than 1. In that case, the gap detector will produce at least one gap (1-your start number).
 
 ### Variables
 #### Date
@@ -90,21 +240,11 @@ return the priority value that is used in the syslog header.
 
 Syntax: `{pri:}`
 
-Example: `{pri:}` migh be substituted by `165`
+Example: `{pri:}` might be substituted by `165`
 
 
 ## Order of substitution
-The order of substitution is the following:
-1. lorem
-2. oneOf
-3. random
-4. date
-5. ipv4
-6. string
-7. counter
-8. pri
-
-The substitutions can in some cases be chained.
+The substitutions will process one after another and repeat until the result is stable, so the output of one filter can be the input to another.
 
 Example: `{oneOf:{ipv4:192.168.0.0/16},{ipv4:172.16.0.0/12},{ipv4:10.0.0.0/8}}` will evaluate to a random RFC 1918 address.
 
@@ -172,8 +312,11 @@ With a syslog template, a great number of unique logs can be generated.
 Some variables are built-in, expanding to other variables and thus easier to use.
 To use the syslog-header built-in variable, add `{syslog-header}` to either the template file or the header command line argument. 
 
+The following system variables can be used:
+
 - syslog-header: `<{pri:}>{date:MMM dd HH:mm:ss} {oneOf:mymachine,yourmachine,localhost,{ipv4:192.168.0.0/16}} {string:a-z0-9/9}[{random:1-65535}]: `
 - ip: `{<ipv4:0.0.0.0/0}`
+- rfc1918: `{oneOf:{ipv4:192.168.0.0/16},{ipv4:172.16.0.0/12},{ipv4:10.0.0.0/8}}`
 
 ## Chaining LogGenerator
 Now that we have an understanding of the basics, we can progress to the more advanced use cases for LogGenerator.
@@ -188,8 +331,8 @@ To generate a header with that kind of value, use the {counter: variable.
 
 `{counter:name:1}`
 
-Example: Send data from a file, add a header with a counter and some text around the counter so we can identify that on the server side.
-First, send to cmd so we can see that the counter is working:
+Example: Send data from a file, add a header with a counter and some text around the counter, so we can identify that on the server side.
+First, send to cmd, so we can see that the counter is working:
 
 `java -jar LogGenerator-with-dependencies.jar -i file -in src/test/data/log-with-time.log -he "<{counter:test:1}>" -o cmd`
 
@@ -210,8 +353,25 @@ You should see the received data (probably on one line) and the detected gaps:
 Now it's easy to configure the first LogGenerator to send logs to, e.g., Kafka or rsyslog and connect the LogGenerator receiver to accept UDP connections or read from Kafka.
 By sending more data and possibly throttle the data, you can test how much load different parts of the log chain can handle.
 
+## Improving performance
+First, regexes can be really slow. If you want good performance, use the static or counter input module and no headers. 
+A good way to improve performance is to create a lot of events in a file or Kafka, with all the bells and whistles of the template regexes and then use that precompiled data in the performance tuning.
+
+Also, you can batch input and output in mini batches that will sometimes improve the sending and receiving rate.
+
+`-ib {number of events in each batch}`
+
+`-ob {number of events in each batch}`
+
 ## Q&A
 ### Why does my cmd printout have square brackets around every line?
 When using the -o cmd each batch of events will be printed on one line, separated by , and with [] around the batch. 
 This behaviour is to illustrate the batch mechanism and will not be present if you write to file with `-o file -on {filename}`.
+
+### What is a good regex to use with the -i counter module?
+A regex could be `"(\d+)$"` since $ denotes end-of-string.
+
+Example:
+
+`java -jar LogGenerator-with-dependencies.jar -i counter -in "Test:" -limit 100000 -o null -s true -gd "(\d+)$"`
 

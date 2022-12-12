@@ -18,6 +18,8 @@ public class InputItemFactory {
             case "udp", "UDP" -> new UDPInputItem(config);
             case "tcp", "TCP" -> new TCPInputItem(config);
             case "kafka", "KAFKA" -> new KafkaInputItem(config);
+            case "static", "STACIC" -> new StaticInputItem(config);
+            case "counter", "COUNTER" -> new CounterInputItem(config);
             default -> throw new RuntimeException("Illegal input type: " + config.getInputType());
         };
     }
@@ -26,7 +28,7 @@ public class InputItemFactory {
      * Helper method to return a FileInputItem or a DirectoryInputItem
      * @param name The name of the item
      * @param config The configuration object
-     * @return A File or Directory iput item
+     * @return A File or Directory input item
      */
     private static InputItem getFileInputItem(String name, Configuration config) {
         File file = new File(name);
@@ -34,10 +36,8 @@ public class InputItemFactory {
             throw new RuntimeException("File not found: " + file.getAbsolutePath());
         }
         if (file.isDirectory()) {
-            DirectoryInputItem dir = new DirectoryInputItem(config);
-            return dir;
+            return new DirectoryInputItem(config);
         }
-        FileInputItem fi = new FileInputItem(name, config);
-        return fi;
+        return new FileInputItem(name, config);
     }
 }

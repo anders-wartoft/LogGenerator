@@ -30,7 +30,7 @@ public class WrappedFileInputItem extends FileInputItem {
      *
      * @return The internal data structure
      */
-    public List getData() {
+    public List<String> getData() {
         return receivedData;
     }
 }

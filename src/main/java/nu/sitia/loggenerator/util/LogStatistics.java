@@ -27,7 +27,7 @@ public class LogStatistics {
     private long fileBytes;
 
     /** Even if no end of file has been detected, do a printout every 30 second */
-    private final long extraPrintoutEveryMs = 30000;
+    private long extraPrintoutEveryMs = 30000;
 
     /** When did we print statistics last? Set to creation time. */
     private long lastPrintout = new Date().getTime();
@@ -43,6 +43,14 @@ public class LogStatistics {
 
     public long getTransactionMessages() {
         return transactionMessages;
+    }
+
+    public long getExtraPrintoutEveryMs() {
+        return extraPrintoutEveryMs;
+    }
+
+    public void setExtraPrintoutEveryMs(long extraPrintoutEveryMs) {
+        this.extraPrintoutEveryMs = extraPrintoutEveryMs;
     }
 
     /**

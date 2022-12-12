@@ -70,6 +70,7 @@ public class ItemProxy {
      */
     public void pump() {
         LogStatistics statistics = new LogStatistics();
+        logger.fine("ItemProxy starting up...");
         input.setup();
         output.setup();
 
@@ -78,6 +79,7 @@ public class ItemProxy {
             output.write(filterOutput(Configuration.BEGIN_TRANSACTION));
         }
 
+        logger.finer("ItemProxy pumping messages...");
         // Grab inputs
         while (input.hasNext() && (limit == 0 || sentEvents < limit)) {
             // Assume we have no filters

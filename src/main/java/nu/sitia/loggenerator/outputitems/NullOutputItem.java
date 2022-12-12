@@ -1,18 +1,17 @@
-package nu.sitia.loggenerator.io;
+package nu.sitia.loggenerator.outputitems;
 
 
-import nu.sitia.loggenerator.outputitems.AbstractOutputItem;
-import nu.sitia.loggenerator.outputitems.SendListener;
+import nu.sitia.loggenerator.util.Configuration;
 
-import java.util.ArrayList;
 import java.util.List;
 
-public class MemoryOutputItem extends AbstractOutputItem implements SendListener {
-    private final List<String> receivedData = new ArrayList<>();
+public class NullOutputItem extends AbstractOutputItem implements SendListener {
+
     /**
      * Constructor. Add the callback method from this class.
+     * @param ignoredConfig The Configuration object
      */
-    public MemoryOutputItem() {
+    public NullOutputItem(Configuration ignoredConfig) {
         super();
         super.addListener(this);
     }
@@ -34,14 +33,6 @@ public class MemoryOutputItem extends AbstractOutputItem implements SendListener
      */
     @Override
     public void send(List<String> toSend) {
-        this.receivedData.addAll(toSend);
-    }
 
-    /**
-     * Test usage
-     * @return The internal data structure
-     */
-    public List<String> getData() {
-        return receivedData;
     }
 }

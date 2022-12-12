@@ -1,12 +1,17 @@
 package nu.sitia.loggenerator.filter;
 
+import nu.sitia.loggenerator.filter.substituters.Substitution;
 import nu.sitia.loggenerator.util.Configuration;
 
 import java.util.*;
 
 public class HeaderFilter implements ProcessFilter {
+    /** Cached header template */
+    private final String header;
 
-    private String header;
+    /** Cached list of substitute */
+    private final Substitution substitution = new Substitution();
+
     /**
      * Create a HeaderFilter and set all parameters
      * @param config The configuration object to get parameters from
@@ -26,7 +31,7 @@ public class HeaderFilter implements ProcessFilter {
      */
     private String filter(String toFilter) {
         // Fix possible {date...} fields, and {lorem, ...:
-        String filteredHeader = Substitution.substitute(header, new HashMap<>(), new Date());
+        String filteredHeader = substitution.substitute(header, new HashMap<>(), new Date());
         return filteredHeader + toFilter;
     }
 

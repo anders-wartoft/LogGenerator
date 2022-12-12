@@ -48,7 +48,7 @@ public class Ipv4 {
     }
 
     /**
-     * Is an adress within a subnet?
+     * Is an address within a subnet?
      *
      * @param address1 Address 1
      * @param address2 Address 2
@@ -82,7 +82,7 @@ public class Ipv4 {
     }
 
     /**
-     * Randomize an adress within a given subnet
+     * Randomize an address within a given subnet
      *
      * @param ipv4 An address in the subnet
      * @param cidr The subnet

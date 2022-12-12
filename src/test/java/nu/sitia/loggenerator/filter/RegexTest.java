@@ -6,7 +6,7 @@ import junit.framework.TestSuite;
 import nu.sitia.loggenerator.util.Configuration;
 
 import java.util.List;
-import java.util.*;
+
 
 /**
  * Unit test for simple App.
@@ -14,10 +14,8 @@ import java.util.*;
 public class RegexTest
     extends TestCase
 {
-    private final Map testData = new HashMap();
-    private Configuration config = new Configuration();
 
-
+    private final Configuration config = new Configuration();
 
     /**
      * Create the test case
@@ -46,7 +44,7 @@ public class RegexTest
         config.setValue("{date:yyyy-MM-dd/sv:SE}");
         RegexFilter regexFilter = new RegexFilter(config);
 
-        List<String> result = regexFilter.filter(Arrays.asList(template));
+        List<String> result = regexFilter.filter(List.of(template));
 
         assertNotSame(template, result.get(0));
     }

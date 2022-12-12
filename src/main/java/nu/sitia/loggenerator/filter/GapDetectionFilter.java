@@ -27,7 +27,7 @@ public class GapDetectionFilter implements ProcessFilter {
     }
 
     /**
-     * The regex should be like "text(\\d+}other text" so the capture group is the next number.
+     * The regex should be like "text(\\d+)other text" so the capture group is the next number.
      * @param toFilter The data to filter
      * @return The data without transmission and file guards.
      */
