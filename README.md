@@ -351,9 +351,16 @@ Server and client:
 
 `java -jar LogGenerator-with-dependencies.jar -i file -in src/test/data/test.txt -he "<{counter:test:42}>" -o cmd -gd "<(\\d+)>"`
 
-You should see the received data (probably on one line) and the detected gaps:
+You should see the received data and the detected gaps:
 
-`1-41`
+```
+[<42>Test row 1]
+[<43>Test row 2]
+[<44>Test row 3]
+[<45>Test row 4]
+Next expected number: 46
+1-41
+```
 
 Example with one client and one server:
 
