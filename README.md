@@ -35,18 +35,18 @@ Parameters: `-i file -in {directory name -g {glob}`).
 Example: `-i file -in ./src/test/data/**.txt`
 
 #### Receive UDP
-Set up a UDP server. You have to specify what address to bond to. If you don't care, use localhost.
+Set up a UDP server. 
 
-Parameters: `-i udp -in {address:port number}`
+Parameters: `-i udp -in {address[:port number]}`
 
-Example: `-i udp -in localhost:5999`
+Example: `-i udp -in localhost:5999` or `-i udp -in 5999`
 
 #### Receive TCP
-Set up a TCP server. You have to specify what address to bond to. If you don't care, use localhost.
+Set up a TCP server. 
 
-Parameters: `-i tcp -in {address:port number}`
+Parameters: `-i tcp -in {address[:port number]}`
 
-Example: `-i tcp -in 192.168.1.2:5999`
+Example: `-i tcp -in 192.168.1.2:5999` or `-i tcp -in 5999`
 
 #### Fetch from Kafka topics
 Connect to a Kafka server and read from a topic
@@ -120,13 +120,19 @@ Example: `-o kafka -cn test -tn testtopic -bs localhost:9092`
 #### Write to null
 This will throw away the result. It is useful, e.g., when testing for performance.
 
-To send the text "test" 100.000 times and discard the result, but to see the eps and bps, use:
-
-`java -jar LogGenerator-with-dependencies.jar -i static  -in "test" -o null  -s true -l 100000`
-
 Parameters: `-o null`
 
 Example: `-o null`
+
+To send the text "test" 100.000 times over UDP and discard the result, but to see the eps and bps, use:
+
+Server:
+
+`java -jar LogGenerator-with-dependencies.jar -i udp -in 9999  -o cmd  -s true  -gd "(\\d+)$"`
+
+In another command window, start the client (same jar file):
+
+`java -jar LogGenerator-with-dependencies.jar -i counter  -in "test" -o udp -on localhost:9999  -s true -limit 1000`
 
 ### Filter modules:
 - Add a header
@@ -384,7 +390,7 @@ I won't be uploading a jar file, but you can easily get the jar by:
 
 `mvn clean package`
 
-The jar is not in a directory called `target`.
+The jar is now in a directory called `target`.
 
 Note that the package is developed with Java 17. It might work on earlier releases but that is not a goal with the project.
 
@@ -397,3 +403,12 @@ Example: `java -Djava.util.logging.config.file=logging.properties -jar target/Lo
 
 ### How do I send and receive from Kafka?
 Example of sending a few lines to Kafka:
+
+Server:
+
+`java -Djava.util.logging.config.file=logging.properties -jar LogGenerator-with-dependencies.jar -o cmd -i kafka -cn testclient -tn test -bs 192.168.1.116:9092  -gd "Test:(\d+)$" -s true  -rg true`
+
+Client:
+
+`java -jar target/LogGenerator-with-dependencies.jar -o kafka -cn test2 -tn test -bs 192.168.1.116:9092 -i counter -in "Test:" -limit 100  -s true -ob 10`
+
