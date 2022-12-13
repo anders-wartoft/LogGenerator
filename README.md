@@ -345,14 +345,27 @@ First, send to cmd, so we can see that the counter is working:
 We should se some events starting with <1>, <2> etc. Since we'd like to be able to see if the Gap Detection is working, 
 set the initial value to, e.g., 42.
 
+Example with only one instance of LogGenerator:
+
+Server and client:
+
+`java -jar LogGenerator-with-dependencies.jar -i file -in src/test/data/test.txt -he "<{counter:test:42}>" -o cmd -gd "<(\\d+)>"`
+
+You should see the received data (probably on one line) and the detected gaps:
+
+`1-41`
+
+Example with one client and one server:
+
 In a new terminal, start the server:
-`java -jar LogGenerator-with-dependencies.jar -i tcp -in 9999 -o cmd`
+`java -jar LogGenerator-with-dependencies.jar -i tcp -in 9999 -o cmd  -gd "<(\\d+)>"`
 
 Start the client:
 
-`java -jar LogGenerator-with-dependencies.jar -i file -in src/test/data/log-with-time.log -he "<{counter:test:41}>" -o cmd`
+`java -jar LogGenerator-with-dependencies.jar -i file -in src/test/data/test.txt -he "<{counter:test:42}>" -o tcp -on localhost:9999`
 
-You should see the received data (probably on one line) and the detected gaps:
+You should see the received data. To see the gaps, press Ctrl-C:
+`Next expected number: 48`
 
 `1-41`
 
