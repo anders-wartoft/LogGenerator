@@ -5,14 +5,13 @@ import nu.sitia.loggenerator.util.Configuration;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 
-import java.util.Iterator;
 import java.util.List;
 import java.util.Properties;
 import java.util.concurrent.ExecutionException;
 import java.util.logging.Logger;
 
 public class KafkaOutputItem extends AbstractOutputItem implements SendListener {
-    static Logger logger = Logger.getLogger(KafkaOutputItem.class.getName());
+    static final Logger logger = Logger.getLogger(KafkaOutputItem.class.getName());
     /** The hostname:port to connect to */
     private final String bootstrapServer;
     /** The client id to use */
@@ -22,17 +21,20 @@ public class KafkaOutputItem extends AbstractOutputItem implements SendListener 
     private final Properties properties = new Properties();
 
     /** The Kafka consumer */
-    private KafkaProducer producer;
+    private KafkaProducer<Integer, String> producer;
 
     /** The topic name */
     private final String topicName;
+
+    /** The Kafka message number */
+    private int messageNr = 1;
 
     /**
      * Constructor. Add the callback method from this class.
      * @param config The Configuration object
      */
     public KafkaOutputItem(Configuration config) {
-        super();
+        super(config);
         super.addListener(this);
         bootstrapServer = config.getBootstrapServer();
         clientId = config.getClientName();
@@ -63,22 +65,20 @@ public class KafkaOutputItem extends AbstractOutputItem implements SendListener 
     @Override
     public void send(List<String> toSend) {
         logger.info("Sending " + toSend.size() + " messages to " + topicName);
-        int messageNr = 1;
-        try {
-            for (Iterator<String> i=toSend.iterator(); i.hasNext(); ) {
-                String message = i.next();
-                logger.fine("Sending: " + message);
+        if (toSend.size() > 0) {
+            try {
+                String message = String.join("\n", toSend);
+                logger.finest("Sending: " + message);
                 producer.send(new ProducerRecord<>(
                         topicName,
-                        messageNr,
+                        messageNr++,
                         message)).get();
-                messageNr++;
+                logger.finer("Sent message without exception");
+            } catch (InterruptedException e) {
+                // ignore (terminate)
+            } catch (ExecutionException e) {
+                throw new RuntimeException(e);
             }
-            logger.finer("Sent message without exception");
-        } catch (InterruptedException  e) {
-            // ignore (terminate)
-        } catch (ExecutionException e) {
-            throw new RuntimeException(e);
         }
     }
 
@@ -89,9 +89,9 @@ public class KafkaOutputItem extends AbstractOutputItem implements SendListener 
         properties.put("client.id", clientId);
         properties.put("key.serializer", "org.apache.kafka.common.serialization.IntegerSerializer");
         properties.put("value.serializer", "org.apache.kafka.common.serialization.StringSerializer");
-
-        producer = new KafkaProducer(properties);
+        producer = new KafkaProducer<>(properties);
         logger.info("Connected to kafka " + this.bootstrapServer);
+        addTransactionMessages = true;
     }
 
     @Override

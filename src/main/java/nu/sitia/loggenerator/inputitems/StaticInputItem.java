@@ -17,6 +17,7 @@ public class StaticInputItem extends AbstractInputItem {
      * @param config The Configuration object
      */
     public StaticInputItem(Configuration config) {
+        super(config);
         this.strings = List.of(config.getInputName());
     }
 

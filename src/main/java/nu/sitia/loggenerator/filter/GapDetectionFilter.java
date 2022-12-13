@@ -33,15 +33,23 @@ public class GapDetectionFilter implements ProcessFilter {
      */
     @Override
     public List<String> filter(List<String> toFilter) {
-        toFilter.forEach(s -> {
+        toFilter.forEach(this::filterLine);
+        return toFilter;
+    }
+
+    /**
+     * Each line can contain several events, separated by a newline
+     * @param line The line to check
+     */
+    private void filterLine(String line) {
+        // The input can be many lines in one element.
+        for (String s : line.split("\n")) {
             Matcher matcher = pattern.matcher(s);
             if (matcher.find()) {
                 String numberString = matcher.group(1);
                 long number = Long.parseLong(numberString);
                 detector.check(number);
             }
-        });
-
-        return toFilter;
+        }
     }
 }

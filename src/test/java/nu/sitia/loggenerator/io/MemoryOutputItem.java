@@ -3,6 +3,7 @@ package nu.sitia.loggenerator.io;
 
 import nu.sitia.loggenerator.outputitems.AbstractOutputItem;
 import nu.sitia.loggenerator.outputitems.SendListener;
+import nu.sitia.loggenerator.util.Configuration;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -12,8 +13,8 @@ public class MemoryOutputItem extends AbstractOutputItem implements SendListener
     /**
      * Constructor. Add the callback method from this class.
      */
-    public MemoryOutputItem() {
-        super();
+    public MemoryOutputItem(Configuration config) {
+        super(config);
         super.addListener(this);
     }
 

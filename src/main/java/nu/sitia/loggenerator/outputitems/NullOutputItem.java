@@ -9,10 +9,10 @@ public class NullOutputItem extends AbstractOutputItem implements SendListener {
 
     /**
      * Constructor. Add the callback method from this class.
-     * @param ignoredConfig The Configuration object
+     * @param config The Configuration object
      */
-    public NullOutputItem(Configuration ignoredConfig) {
-        super();
+    public NullOutputItem(Configuration config) {
+        super(config);
         super.addListener(this);
     }
 

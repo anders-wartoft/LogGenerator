@@ -10,7 +10,7 @@ import java.util.List;
 import java.util.logging.Logger;
 
 public class UDPOutputItem extends AbstractOutputItem implements SendListener {
-    static Logger logger = Logger.getLogger(UDPOutputItem.class.getName());
+    static final Logger logger = Logger.getLogger(UDPOutputItem.class.getName());
     /** The InetAddress to connect to */
     private final InetAddress address;
     /** Port number to connect to */
@@ -23,7 +23,7 @@ public class UDPOutputItem extends AbstractOutputItem implements SendListener {
      * @param config The Configuration object
      */
     public UDPOutputItem(Configuration config) {
-        super();
+        super(config);
         super.addListener(this);
         // OutputName is host:port
         String [] temp = config.getOutputName().split(":");
@@ -39,6 +39,7 @@ public class UDPOutputItem extends AbstractOutputItem implements SendListener {
             throw new RuntimeException("Socket exception", e);
         }
         port = Integer.parseInt(temp[1]);
+        addTransactionMessages = true;
     }
 
     /**

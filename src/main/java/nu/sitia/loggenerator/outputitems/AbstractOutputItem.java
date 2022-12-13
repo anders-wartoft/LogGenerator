@@ -1,11 +1,12 @@
 package nu.sitia.loggenerator.outputitems;
 
-import java.util.ArrayList;
-import java.util.List;
+import nu.sitia.loggenerator.util.Configuration;
+
+import java.util.*;
 
 public abstract class AbstractOutputItem implements OutputItem {
     /** How many lines will be returned in one batch? */
-    protected int batchSize = 1;
+    protected int batchSize;
 
     /** Callback method for sending the cache */
     private SendListener sl = null;
@@ -13,16 +14,26 @@ public abstract class AbstractOutputItem implements OutputItem {
     /** If batchSize > 1, then store the elements in a cache until they can be written */
     private final List<String> cache = new ArrayList<>();
 
+    /** Should this output item add transaction messages? */
+    protected boolean addTransactionMessages = false;
+
+    /** Print transaction messages? */
+    public boolean printTransactionMessages() {
+        return addTransactionMessages;
+    }
+
     /**
      * When the cache reaches batchSize numbers, or when the teardown is called,
      * the SendListener object will receive a call to the 'send()' method.
      * @param sl An object implementing the SendListener interface.
      */
+    @Override
     public void addListener (SendListener sl) {
         this.sl = sl;
     }
 
-    public AbstractOutputItem() {
+    public AbstractOutputItem(Configuration config) {
+        batchSize = config.getOutputBatchSize();
     }
 
     /**
@@ -43,9 +54,35 @@ public abstract class AbstractOutputItem implements OutputItem {
         // We must have a send method to call...
         assert(sl != null);
         cache.addAll(elements);
-        if (cache.size() >= batchSize) {
-            sl.send(cache);
+        if (cache.size() >= batchSize && cache.size() > 0) {
+            sendBatch(cache);
             cache.clear();
+        }
+    }
+
+    /**
+     * Call sl.send() with at most batch size items
+     * @param elements What to send
+     */
+    public void sendBatch(List<String> elements) {
+        List<String> batch = new LinkedList<>();
+        if (batchSize > 0) {
+            // The input can be many lines in one element.
+            // Unpack the elements and add to the batch
+            elements.forEach(e -> batch.addAll(Arrays.asList(e.split("\n"))));
+
+            // Now, repack in a good size for the output (batchSize)
+            List<String> output = new LinkedList<>();
+            for (int j = 0; j < batch.size(); j += batchSize) {
+                for (int i = 0; i < batchSize && i + j < batch.size(); i++) {
+                    output.add(batch.get(i + j));
+                }
+                sl.send(List.of(String.join("\n", output)));
+                output.clear();
+            }
+        } else {
+            // batchSize == 0, just send everything
+            sl.send(elements);
         }
     }
 

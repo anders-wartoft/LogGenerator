@@ -2,12 +2,11 @@ package nu.sitia.loggenerator.filter;
 
 import nu.sitia.loggenerator.util.Configuration;
 
-import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 
 public class GuardFilter implements ProcessFilter {
 
-    private static final String GUARD_START = "--------";
     /**
      * Create a guardFilter and set all parameters
      * @param ignoredConfig The configuration object to get parameters from
@@ -23,13 +22,38 @@ public class GuardFilter implements ProcessFilter {
      */
     @Override
     public List<String> filter(List<String> toFilter) {
-        List<String> filtered = new ArrayList<>();
-        toFilter.forEach(s -> {
-            if (!s.startsWith(GUARD_START)) {
-                filtered.add(s);
-            }
-        });
+        List<String> result = new LinkedList<>();
+        toFilter.forEach(s -> result.add(filterLine(s)));
 
-        return filtered;
+        return result;
+    }
+
+    /**
+     * Each line can contain several events, separated by a newline
+     * @param line The line to check
+     */
+    private String filterLine(String line) {
+        List<String> result = new LinkedList<>();
+
+        // The input can be many lines in one element.
+        for (String s : line.split("\n")) {
+            if (!removeLine(s)) {
+                result.add(s);
+            }
+        }
+        return String.join("\n", result);
+    }
+
+
+    /**
+     * If the line contains any guard, then return true
+     * @param toCheck The line to check
+     * @return True iff toCheck contains a guard
+     */
+    public boolean removeLine(String toCheck) {
+        return (toCheck.startsWith(Configuration.BEGIN_TRANSACTION_TEXT)
+            ||  toCheck.startsWith(Configuration.END_TRANSACTION_TEXT)
+            ||  toCheck.startsWith(Configuration.BEGIN_FILE_TEXT)
+            ||  toCheck.startsWith(Configuration.END_FILE_TEXT));
     }
 }

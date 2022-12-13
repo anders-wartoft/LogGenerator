@@ -25,9 +25,9 @@ public class FileInputItem extends AbstractInputItem {
      * @param config The Configuration object
      */
     public FileInputItem(String name, Configuration config) {
+        super(config);
         this.fileName = name;
         this.config = config;
-        setBatchSize(config.getInputBatchSize());
     }
 
     /**

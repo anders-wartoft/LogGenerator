@@ -41,7 +41,7 @@ public class ItemProxyTest
         Configuration config = new Configuration();
         config.setInputName("src/test/data/test.txt");
         WrappedFileInputItem fii = new WrappedFileInputItem(config);
-        MemoryOutputItem moi = new MemoryOutputItem();
+        MemoryOutputItem moi = new MemoryOutputItem(config);
         ItemProxy proxy = new ItemProxy(fii, moi, new ArrayList<>(), config);
         proxy.pump();
         List<String> result = moi.getData();
@@ -69,8 +69,8 @@ public class ItemProxyTest
         config.setInputName("src/test/data/test.txt");
         // This is a FileInputItem that also caches all data, so we can get it with fii.getData() later
         WrappedFileInputItem fii = new WrappedFileInputItem(config);
-        fii.setBatchSize(batchSize);
-        MemoryOutputItem moi = new MemoryOutputItem();
+        config.setInputBatchSize(batchSize);
+        MemoryOutputItem moi = new MemoryOutputItem(config);
         moi.setBatchSize(batchSize);
         ItemProxy proxy = new ItemProxy(fii, moi, new ArrayList<>(), config);
         proxy.pump();

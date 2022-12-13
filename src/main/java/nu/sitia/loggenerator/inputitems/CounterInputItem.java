@@ -20,6 +20,7 @@ public class CounterInputItem extends AbstractInputItem {
      * @param config The Configuration object
      */
     public CounterInputItem(Configuration config) {
+        super(config);
         this.string = config.getInputName();
     }
 

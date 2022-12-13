@@ -51,7 +51,7 @@ Example: `-i tcp -in 192.168.1.2:5999`
 #### Fetch from Kafka topics
 Connect to a Kafka server and read from a topic
 
-Parameters: `-i kafka -cm {client name} -tn {topic name} -bs {boostrap server}`
+Parameters: `-i kafka -cn {client name} -tn {topic name} -bs {boostrap server}`
 
 Example: `-i kafka -cn test -tn testtopic -bs localhost:9092`
 
@@ -375,3 +375,25 @@ Example:
 
 `java -jar LogGenerator-with-dependencies.jar -i counter -in "Test:" -limit 100000 -o null -s true -gd "(\d+)$"`
 
+### This sounds nice and all, but how do I start? Can I get the built jar?
+I won't be uploading a jar file, but you can easily get the jar by:
+
+`git clone https://github.com/anders-wartoft/LogGenerator.git`
+
+`cd LogGenerator`
+
+`mvn clean package`
+
+The jar is not in a directory called `target`.
+
+Note that the package is developed with Java 17. It might work on earlier releases but that is not a goal with the project.
+
+### I want to enable logging, how do I do that?
+Logging can be enabled by adding instructions to the logging framework. The amount of logging is not great though.
+
+Start the program as usual, but add `-Djava.util.logging.config.file=logging.properties` to java. 
+
+Example: `java -Djava.util.logging.config.file=logging.properties -jar target/LogGenerator-with-dependencies.jar -o cmd -on src/test/data/test-result.txt -i udp -in localhost:9999 -s true -g "**.txt" -e 100000`
+
+### How do I send and receive from Kafka?
+Example of sending a few lines to Kafka:

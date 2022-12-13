@@ -47,9 +47,9 @@ public class TemplateFileInputItem extends AbstractInputItem {
      * @param config The Configuration object
      */
     public TemplateFileInputItem(Configuration config) {
+        super(config);
         this.fileName = config.getInputName();
         this.config = config;
-        setBatchSize(config.getInputBatchSize());
         this.template = config.getTemplate();
         if (template == Configuration.Template.TIME) {
             // Set last time we are allowed to process input

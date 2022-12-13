@@ -19,7 +19,7 @@ import java.util.logging.Logger;
  */
 public class App 
 {
-    static Logger logger = Logger.getLogger(App.class.getName());
+    static final Logger logger = Logger.getLogger(App.class.getName());
 
     public static void main( String[] args )
     {
@@ -102,6 +102,11 @@ public class App
         gapRegex.setRequired(false);
         options.addOption(gapRegex);
 
+        Option printouts = new Option("pp", "printouts", true, "MS between extra printout for statistics");
+        printouts.setRequired(false);
+        options.addOption(printouts);
+
+
         CommandLineParser parser = new DefaultParser();
         HelpFormatter formatter = new HelpFormatter();
         CommandLine cmd = null; //not a good practice, it serves it purpose
@@ -141,17 +146,13 @@ public class App
             config.setLimit(Long.parseLong(cmd.getOptionValue("limit")));
         }
 
-        int inputBatchSizeInt = 1;
         if (cmd.getOptionValue(inputBatchSize) != null) {
-            inputBatchSizeInt = Integer.parseInt(cmd.getOptionValue(inputBatchSize));
+            config.setInputBatchSize(Integer.parseInt(cmd.getOptionValue(inputBatchSize)));
         }
-        config.setInputBatchSize(inputBatchSizeInt);
 
-        int outputBatchSizeInt = 1;
         if (cmd.getOptionValue(outputBatchSize) != null) {
-            outputBatchSizeInt = Integer.parseInt(cmd.getOptionValue(outputBatchSize));
+            config.setOutputBatchSize(Integer.parseInt(cmd.getOptionValue(outputBatchSize)));
         }
-        config.setOutputBatchSize(outputBatchSizeInt);
 
         if (cmd.getOptionValue("template") != null) {
             config.setTemplate(cmd.getOptionValue("template"));
@@ -159,6 +160,10 @@ public class App
 
         if (cmd.getOptionValue("remove-guards") != null) {
             config.setRemoveGuards(cmd.getOptionValue("remove-guards").equalsIgnoreCase("true"));
+        }
+
+        if (cmd.getOptionValue("printouts") != null) {
+            config.setPrintouts(Integer.parseInt(cmd.getOptionValue(printouts)));
         }
 
         // Print the variables

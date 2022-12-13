@@ -54,7 +54,7 @@ public class Configuration {
     /** How many rows to read before sending to the proxy? */
     private int inputBatchSize = 1;
     /** How many rows to send in each batch */
-    private int outputBatchSize = 1;
+    private int outputBatchSize = 0; // don't care
 
     /** The name to use to identify to e.g., kafka */
     private String clientName;
@@ -96,7 +96,7 @@ public class Configuration {
     private Template template = Template.NONE;
 
     /** Should the statistics messages be removed before the data is written to the output? */
-    private boolean removeGuards = true;
+    private boolean removeGuards = false;
 
     /** When the template engine is set to time, this is the duration */
     private long durationSeconds;
@@ -110,6 +110,8 @@ public class Configuration {
     /** The gap detector */
     private GapDetector detector;
 
+    /** How many ms between extra statistics printouts? */
+    private long printouts = -1; // not user defined yet
 
     public String getInputName() {
         return inputName;
@@ -158,8 +160,9 @@ public class Configuration {
     public void setTopicName(String topicName) {
         this.topicName = topicName;
     }
-    public void setInputBatchSize(Integer value) {
-        this.inputBatchSize = value;
+    public void setInputBatchSize(Integer value) { this.inputBatchSize = value; }
+    public int getOutputBatchSize() {
+        return outputBatchSize;
     }
 
     public void setOutputBatchSize(Integer value) {
@@ -246,6 +249,13 @@ public class Configuration {
         return this.variableSubstitutions;
     }
 
+    public long getPrintouts() {
+        return printouts;
+    }
+
+    public void setPrintouts(long printouts) {
+        this.printouts = printouts;
+    }
 
     public void setTemplate(String template) {
         if (template != null) {
@@ -296,25 +306,26 @@ public class Configuration {
 
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        if (inputType != null)  sb.append("InputType: ").append(inputType).append("\n");
-        if (inputName != null) sb.append("InputName: ").append(inputName).append("\n");
-        if (outputType != null) sb.append("OutputType: ").append(outputType).append("\n");
-        if (outputName != null) sb.append("OutputName: ").append(outputName).append("\n");
-        if (inputBatchSize != 0) sb.append("InputBatchSize: ").append(inputBatchSize).append("\n");
-        if (outputBatchSize != 0) sb.append("OutputBatchSize: ").append(outputBatchSize).append("\n");
-        if (clientName != null) sb.append("ClientName: ").append(clientName).append("\n");
-        if (topicName != null) sb.append("TopicName: ").append(topicName).append("\n");
-        if (bootstrapServer != null) sb.append("BootstrapServer: ").append(bootstrapServer).append("\n");
-        if (header != null) sb.append("Header: ").append(header).append("\n");
-        if (regex != null) sb.append("Regex: ").append(regex).append("\n");
-        if (value != null) sb.append("Value: ").append(value).append("\n");
+        if (inputType != null)  sb.append("InputType: ").append(inputType).append(System.lineSeparator());
+        if (inputName != null) sb.append("InputName: ").append(inputName).append(System.lineSeparator());
+        if (outputType != null) sb.append("OutputType: ").append(outputType).append(System.lineSeparator());
+        if (outputName != null) sb.append("OutputName: ").append(outputName).append(System.lineSeparator());
+        if (inputBatchSize != 0) sb.append("InputBatchSize: ").append(inputBatchSize).append(System.lineSeparator());
+        if (outputBatchSize != 0) sb.append("OutputBatchSize: ").append(outputBatchSize).append(System.lineSeparator());
+        if (clientName != null) sb.append("ClientName: ").append(clientName).append(System.lineSeparator());
+        if (topicName != null) sb.append("TopicName: ").append(topicName).append(System.lineSeparator());
+        if (bootstrapServer != null) sb.append("BootstrapServer: ").append(bootstrapServer).append(System.lineSeparator());
+        if (header != null) sb.append("Header: ").append(header).append(System.lineSeparator());
+        if (regex != null) sb.append("Regex: ").append(regex).append(System.lineSeparator());
+        if (value != null) sb.append("Value: ").append(value).append(System.lineSeparator());
         if (statistics) sb.append("Statistics: true\n");
-        if (glob != null) sb.append("Glob: ").append(glob).append("\n");
-        if (eps != 0) sb.append("EPS: ").append(eps).append("\n");
-        if (template != Template.NONE) sb.append("Template: ").append(template).append("\n");
-        if (limit != 0) sb.append("Limit: ").append(limit).append("\n");
-        sb.append("Remove-guards: ").append(removeGuards).append("\n");
-        if (gapRegex != null) sb.append("Gap Regex: ").append(gapRegex).append("\n");
+        if (glob != null) sb.append("Glob: ").append(glob).append(System.lineSeparator());
+        if (eps != 0) sb.append("EPS: ").append(eps).append(System.lineSeparator());
+        if (template != Template.NONE) sb.append("Template: ").append(template).append(System.lineSeparator());
+        if (limit != 0) sb.append("Limit: ").append(limit).append(System.lineSeparator());
+        sb.append("Remove-guards: ").append(removeGuards).append(System.lineSeparator());
+        if (gapRegex != null) sb.append("Gap Regex: ").append(gapRegex).append(System.lineSeparator());
+        if (printouts >= 0) sb.append("Statistics printouts every ms: ").append(printouts).append(System.lineSeparator());
 
         return sb.toString();
     }

@@ -6,10 +6,9 @@ import nu.sitia.loggenerator.util.Configuration;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.List;
-import java.util.logging.Logger;
+
 
 public class FileOutputItem extends AbstractOutputItem implements SendListener {
-    static Logger logger = Logger.getLogger(FileOutputItem.class.getName());
     /** The name of the file this item will write to */
     private final String fileName;
 
@@ -18,10 +17,11 @@ public class FileOutputItem extends AbstractOutputItem implements SendListener {
      * @param config The Configuration object
      */
     public FileOutputItem(Configuration config) {
-        super();
+        super(config);
         super.addListener(this);
         this.fileName = config.getOutputName();
         setBatchSize(config.getInputBatchSize());
+        addTransactionMessages = true;
     }
 
     /**

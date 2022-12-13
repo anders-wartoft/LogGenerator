@@ -11,7 +11,7 @@ import java.util.List;
 import java.util.logging.Logger;
 
 public class TCPOutputItem extends AbstractOutputItem implements SendListener {
-    static Logger logger = Logger.getLogger(TCPOutputItem.class.getName());
+    static final Logger logger = Logger.getLogger(TCPOutputItem.class.getName());
     /** The address:port to use */
     private final String hostName;
     /** The socket to use */
@@ -22,9 +22,10 @@ public class TCPOutputItem extends AbstractOutputItem implements SendListener {
      * @param config The Configuration object
      */
     public TCPOutputItem(Configuration config) {
-        super();
+        super(config);
         super.addListener(this);
         hostName = config.getOutputName();
+        addTransactionMessages = true;
     }
 
     /**

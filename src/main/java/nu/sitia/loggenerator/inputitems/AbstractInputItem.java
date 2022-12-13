@@ -1,16 +1,17 @@
 package nu.sitia.loggenerator.inputitems;
 
+import nu.sitia.loggenerator.util.Configuration;
+
 public abstract class AbstractInputItem implements InputItem {
     /** How many lines will be returned in one batch? */
-    protected int batchSize = 1;
+    protected int batchSize;
 
     /**
-     * How many elements should be read at a time?
-     * Default is 1.
-     * @param size The new size
+     * Set the input batch size
+     * @param config The configuration object to use
      */
-    public void setBatchSize(int size) {
-        this.batchSize = size;
+    public AbstractInputItem(Configuration config) {
+        batchSize = config.getInputBatchSize();
     }
 
 }

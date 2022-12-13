@@ -27,7 +27,7 @@ public class LogStatistics {
     private long fileBytes;
 
     /** Even if no end of file has been detected, do a printout every 30 second */
-    private long extraPrintoutEveryMs = 30000;
+    private final long extraPrintoutEveryMs;
 
     /** When did we print statistics last? Set to creation time. */
     private long lastPrintout = new Date().getTime();
@@ -45,12 +45,16 @@ public class LogStatistics {
         return transactionMessages;
     }
 
-    public long getExtraPrintoutEveryMs() {
-        return extraPrintoutEveryMs;
-    }
-
-    public void setExtraPrintoutEveryMs(long extraPrintoutEveryMs) {
-        this.extraPrintoutEveryMs = extraPrintoutEveryMs;
+    /**
+     * Constructor
+     * @param config Used to get the printout every ms value
+     */
+    public LogStatistics(Configuration config) {
+        if (config.getPrintouts() > 0) {
+            this.extraPrintoutEveryMs = config.getPrintouts();
+        } else {
+            this.extraPrintoutEveryMs = 30000; // If not configured on the command line
+        }
     }
 
     /**
@@ -59,8 +63,19 @@ public class LogStatistics {
      * messages.
      * @param filtered The list of strings to send
      */
-    public void printStatistics(List<String> filtered) {
-        filtered.forEach(this::checkLog);
+    public void calculateStatistics(List<String> filtered) {
+        filtered.forEach(this::checkMessage);
+    }
+
+    /**
+     * A line may contain a lot of messages with \n delimiter
+     * @param line The line to check
+     */
+    private void checkMessage(String line) {
+        String [] messages = line.split("\n");
+        for(String message: messages) {
+            checkLog(message);
+        }
     }
 
     /**
@@ -69,20 +84,21 @@ public class LogStatistics {
      * @param log The message to inspect
      */
     private void checkLog(String log) {
-        if (log.startsWith(Configuration.BEGIN_TRANSACTION_TEXT)) {
+        if (log.contains(Configuration.BEGIN_TRANSACTION_TEXT)) {
             transactionStart = new Date().getTime();
             transactionMessages = 0;
             transactionBytes = 0;
-        } else if (log.startsWith(Configuration.BEGIN_FILE_TEXT)) {
-            fileName = log.substring(Configuration.BEGIN_FILE_TEXT.length());
+        } else if (log.contains(Configuration.BEGIN_FILE_TEXT)) {
+            fileName = log.substring(Configuration.BEGIN_FILE_TEXT.length()
+                + log.indexOf(Configuration.BEGIN_FILE_TEXT));
             fileTransferStart = new Date().getTime();
             fileMessages = 0;
             fileBytes = 0;
-        } else if (log.startsWith(Configuration.END_TRANSACTION_TEXT)) {
+        } else if (log.contains(Configuration.END_TRANSACTION_TEXT)) {
             Date now = new Date();
             long elapsed = now.getTime() - transactionStart;
             printMetrics("Transaction", elapsed, transactionMessages, "", transactionBytes);
-        } else if (log.startsWith(Configuration.END_FILE_TEXT)) {
+        } else if (log.contains(Configuration.END_FILE_TEXT)) {
             Date now = new Date();
             long elapsed = now.getTime() - fileTransferStart;
             printMetrics("File", elapsed, fileMessages, fileName, fileBytes);
@@ -94,11 +110,14 @@ public class LogStatistics {
         }
         // Check if we should print for file again:
         Date now = new Date();
-        if (now.getTime() >= lastPrintout + extraPrintoutEveryMs) {
+        if (now.getTime() >= (lastPrintout + extraPrintoutEveryMs)) {
             long elapsed = now.getTime() - fileTransferStart;
-            printMetrics("Transferring file", elapsed, fileMessages, fileName, fileBytes);
+            if (null != fileName)
+                printMetrics("Transferring file", elapsed, fileMessages, fileName, fileBytes);
+            printMetrics("Transaction transfer", now.getTime() - transactionStart, transactionMessages, "TRANSACTION", transactionBytes);
         }
     }
+
 
     /**
      * Print some useful information on the receiving side if -s flag is used on the sending side

@@ -10,13 +10,11 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public class UDPInputItem extends AbstractInputItem {
-    static Logger logger = Logger.getLogger(UDPInputItem.class.getName());
+    static final Logger logger = Logger.getLogger(UDPInputItem.class.getName());
     /** The name:port to connect to */
     private final String hostName;
     /** The InetAddress to connect to */
     private InetAddress address;
-    /** Port number to connect to */
-    private int port;
     /** The socket to use */
     private DatagramSocket socket;
 
@@ -25,8 +23,7 @@ public class UDPInputItem extends AbstractInputItem {
      * @param config The Configuration object
      */
     public UDPInputItem(Configuration config) {
-        super();
-        setBatchSize(config.getInputBatchSize());
+        super(config);
         hostName = config.getInputName();
     }
 
@@ -34,23 +31,38 @@ public class UDPInputItem extends AbstractInputItem {
      * Let the item prepare for reading
      */
     public void setup() throws RuntimeException {
-        // InputName is host:port
-        String [] temp = hostName.split(":");
-        String hostname = temp[0];
-        try {
-            address = InetAddress.getByName(hostname);
-        } catch (UnknownHostException e) {
-            throw new RuntimeException("Unknown host: " + hostname, e);
+        // InputName is "host:port" or just "port"
+        // Port number to connect to
+        String hostname = null;
+        int port;
+        if (hostName.contains(":")) {
+            String [] temp = hostName.split(":");
+            hostname = temp[0];
+            try {
+                address = InetAddress.getByName(hostname);
+            } catch (UnknownHostException e) {
+                throw new RuntimeException("Unknown host: " + hostname, e);
+            }
+            port = Integer.parseInt(temp[1]);
+        } else {
+            port = Integer.parseInt(hostName);
         }
         try {
-            port = Integer.valueOf(temp[1]);
-            socket = new DatagramSocket();
-            SocketAddress socketAddress = new InetSocketAddress(address, port);
-            socket.bind(socketAddress);
+            if (address != null) {
+                // Listen on a specified address
+                socket = new DatagramSocket(new InetSocketAddress(address, port));
+            } else {
+                // Listen to broadcast
+                socket = new DatagramSocket(new InetSocketAddress(port));
+            }
         } catch (SocketException e) {
             throw new RuntimeException("Socket exception", e);
         }
-        logger.info("Serving UDP server on port " + port);
+        if (hostname != null) {
+            logger.info("Serving UDP server on " + hostname + ":" + port);
+        } else {
+            logger.info("Serving UDP server on port " + port);
+        }
     }
 
     /**

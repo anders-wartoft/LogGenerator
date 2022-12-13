@@ -10,22 +10,18 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public class TCPInputItem extends AbstractInputItem {
-    static Logger logger = Logger.getLogger(TCPInputItem.class.getName());
+    static final Logger logger = Logger.getLogger(TCPInputItem.class.getName());
     /** The address:port to connect to as given as a command line argument*/
     private final String hostName;
     /** The socket to use */
     private ServerSocket serverSocket;
-
-    /** Port number to connect to */
-    private int port;
 
     /**
      * Create a new UDPInputItem
      * @param config The Configuration object
      */
     public TCPInputItem(Configuration config) {
-        super();
-        setBatchSize(config.getInputBatchSize());
+        super(config);
         hostName = config.getInputName();
     }
 
@@ -33,27 +29,44 @@ public class TCPInputItem extends AbstractInputItem {
      * Let the item prepare for reading
      */
     public void setup() throws RuntimeException {
-        // InputName is the address:port number
-        String [] temp = hostName.split(":");
-        String hostname = temp[0];
-        InetAddress address;
-        try {
-            address = InetAddress.getByName(hostname);
-        } catch (UnknownHostException e) {
-            throw new RuntimeException("Unknown host: " + hostname, e);
+        InetAddress address = null;
+        // InputName is the "address:port", or just "port"
+        // Port number to connect to
+        int port;
+        String hostname = null;
+        if (hostName.contains(":")) {
+            String [] temp = hostName.split(":");
+            hostname = temp[0];
+            try {
+                address = InetAddress.getByName(hostname);
+            } catch (UnknownHostException e) {
+                throw new RuntimeException("Unknown host: " + hostname, e);
+            }
+            port = Integer.parseInt(temp[1]);
+        } else {
+            port = Integer.parseInt(hostName);
         }
         try {
-            port = Integer.parseInt(temp[1]);
-            serverSocket = new ServerSocket(port);
-            SocketAddress socketAddress = new InetSocketAddress(address, port);
-            serverSocket.bind(socketAddress);
+            if (hostname != null) {
+                // Listen on a specified address
+                serverSocket = new ServerSocket();
+                SocketAddress socketAddress = new InetSocketAddress(hostname, port);
+                serverSocket.bind(socketAddress);
+
+            } else {
+                // Listen to broadcast
+                serverSocket = new ServerSocket(port);
+            }
         } catch (SocketException e) {
             throw new RuntimeException("Socket exception", e);
         } catch (IOException e) {
             throw new RuntimeException("IOException trying to bind to " + address + ":" + port, e);
         }
-
-        logger.info("Serving TCP server on " + address + ":" + port);
+        if (hostname != null) {
+            logger.info("Serving TCP server on " + hostname + ":" + port);
+        } else {
+            logger.info("Serving TCP server on port: " + port);
+        }
     }
 
     /**

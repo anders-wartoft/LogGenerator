@@ -10,7 +10,7 @@ import java.util.List;
 import java.util.logging.Logger;
 
 public class DirectoryInputItem extends AbstractInputItem {
-    static Logger logger = Logger.getLogger(DirectoryInputItem.class.getName());
+    static final Logger logger = Logger.getLogger(DirectoryInputItem.class.getName());
 
     /** The name of the directory this item will read from */
     private final String directoryName;
@@ -32,6 +32,7 @@ public class DirectoryInputItem extends AbstractInputItem {
      * @param config The Configuration object
      */
     public DirectoryInputItem(Configuration config) {
+        super(config);
         this.directoryName = config.getInputName();
         logger.fine("Creating DirectoryInputItem: " + directoryName);
         this.config = config;

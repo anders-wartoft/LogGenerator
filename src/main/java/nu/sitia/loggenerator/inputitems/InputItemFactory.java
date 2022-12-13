@@ -18,7 +18,7 @@ public class InputItemFactory {
             case "udp", "UDP" -> new UDPInputItem(config);
             case "tcp", "TCP" -> new TCPInputItem(config);
             case "kafka", "KAFKA" -> new KafkaInputItem(config);
-            case "static", "STACIC" -> new StaticInputItem(config);
+            case "static", "STATIC" -> new StaticInputItem(config);
             case "counter", "COUNTER" -> new CounterInputItem(config);
             default -> throw new RuntimeException("Illegal input type: " + config.getInputType());
         };

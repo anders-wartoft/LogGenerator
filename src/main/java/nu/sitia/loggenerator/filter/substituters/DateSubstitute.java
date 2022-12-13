@@ -15,11 +15,6 @@ public class DateSubstitute extends AbstractSubstitute {
     /** Cached pattern for getting date format string */
     private static final Pattern datePattern = Pattern.compile(dateRegex);
 
-
-    public Date getDate() {
-        return date;
-    }
-
     public void setDate(Date date) {
         this.date = date;
     }

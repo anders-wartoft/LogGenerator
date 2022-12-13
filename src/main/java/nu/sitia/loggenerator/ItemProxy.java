@@ -16,7 +16,7 @@ import java.util.logging.Logger;
  * The class is generic and can work with any input/output combination.
  */
 public class ItemProxy {
-    static Logger logger = Logger.getLogger(ItemProxy.class.getName());
+    static final Logger logger = Logger.getLogger(ItemProxy.class.getName());
 
     /** The input item */
     private final InputItem input;
@@ -38,6 +38,9 @@ public class ItemProxy {
     /** The number of sent events (used with limit) */
     private long sentEvents;
 
+    /** Keep track of sent events, start of transactions etc */
+    private final LogStatistics statistics;
+
     /**
      * Default constructor
      * @param input Input to use
@@ -51,11 +54,23 @@ public class ItemProxy {
         this.eps = config.getEps();
         this.limit = config.getLimit();
         this.sentEvents = 0;
+        statistics = new LogStatistics(config);
 
         // Ctrl-C
         Signal.handle(new Signal("INT"),  // SIGINT
                 signal -> {
                     System.out.println("Sigint");
+                    if (config.isStatistics()) {
+                        statistics.calculateStatistics(Configuration.END_TRANSACTION);
+                    }
+                    if (output.printTransactionMessages()) {
+                        output.write(filterOutput(Configuration.END_TRANSACTION));
+                    }
+                    input.teardown();
+                    output.teardown();
+                    if (config.getDetector() != null) {
+                        System.out.println(config.getDetector().toString());
+                    }
                     System.exit(-1);
                 });
 
@@ -69,13 +84,14 @@ public class ItemProxy {
      * cached items.
      */
     public void pump() {
-        LogStatistics statistics = new LogStatistics();
         logger.fine("ItemProxy starting up...");
         input.setup();
         output.setup();
 
         if (config.isStatistics()) {
             statistics.setTransactionStart(new Date().getTime());
+        }
+        if (output.printTransactionMessages()) {
             output.write(filterOutput(Configuration.BEGIN_TRANSACTION));
         }
 
@@ -84,9 +100,6 @@ public class ItemProxy {
         while (input.hasNext() && (limit == 0 || sentEvents < limit)) {
             // Assume we have no filters
             List<String> filtered = input.next();
-            if (config.isStatistics()) {
-                statistics.printStatistics(filtered);
-            }
             List<String> toSend = filterOutput(filtered);
             // in case of a batch of logs that will become more than the limit of logs
             while (limit != 0 && sentEvents + toSend.size() > limit) {
@@ -94,11 +107,17 @@ public class ItemProxy {
             }
             output.write(toSend);
             sentEvents += toSend.size();
+
+            if (config.isStatistics()) {
+                statistics.calculateStatistics(filtered);
+            }
             // Should we throttle the output to lower the eps?
             throttle(statistics);
         }
         if (config.isStatistics()) {
-            statistics.printStatistics(Configuration.END_TRANSACTION);
+            statistics.calculateStatistics(Configuration.END_TRANSACTION);
+        }
+        if (output.printTransactionMessages()) {
             output.write(filterOutput(Configuration.END_TRANSACTION));
         }
         input.teardown();

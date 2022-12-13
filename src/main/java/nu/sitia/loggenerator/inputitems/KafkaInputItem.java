@@ -13,7 +13,7 @@ import java.util.logging.Logger;
 
 
 public class KafkaInputItem extends AbstractInputItem {
-    static Logger logger = Logger.getLogger(KafkaInputItem.class.getName());
+    static final Logger logger = Logger.getLogger(KafkaInputItem.class.getName());
     /** The hostname:port to connect to */
     private final String bootstrapServer;
     /** The client id to use */
@@ -29,12 +29,11 @@ public class KafkaInputItem extends AbstractInputItem {
     private final String topicName;
 
     /**
-     * Create a new UDPInputItem
+     * Create a new KafkaInputItem
      * @param config The Configuration object
      */
     public KafkaInputItem(Configuration config) {
-        super();
-        setBatchSize(config.getInputBatchSize());
+        super(config);
         bootstrapServer = config.getBootstrapServer();
         clientId = config.getClientName();
         topicName = config.getTopicName();
@@ -84,14 +83,15 @@ public class KafkaInputItem extends AbstractInputItem {
         for (ConsumerRecord<Integer, String> record: records) {
             result.add(record.value());
         }
-        logger.log(Level.FINER, result.toString());
+        logger.log(Level.FINEST, result.toString());
         return result;
     }
 
     /**
-     * Let the item teardown after reading
+     * Let the item teardown after reading.
+     * Will be called after Ctrl-C
      */
     public void teardown() {
-        // Unreachable code
+        // Ignore. consumer.close will loop here
     }
 }
