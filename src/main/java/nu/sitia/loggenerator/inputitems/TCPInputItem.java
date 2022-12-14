@@ -93,8 +93,6 @@ public class TCPInputItem extends AbstractInputItem {
      * @return The read input
      */
     public List<String> next() {
-        // Don't batch the TCP received data...
-        // int lines = this.batchSize;
         List<String> result = new ArrayList<>();
         try {
             Socket socket = serverSocket.accept();
