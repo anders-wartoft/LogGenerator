@@ -1,6 +1,6 @@
 package nu.sitia.loggenerator.inputitems;
 
-import nu.sitia.loggenerator.util.Configuration;
+import nu.sitia.loggenerator.util.CommandLineParser;
 
 public abstract class AbstractInputItem implements InputItem {
     /** How many lines will be returned in one batch? */
@@ -8,10 +8,15 @@ public abstract class AbstractInputItem implements InputItem {
 
     /**
      * Set the input batch size
-     * @param config The configuration object to use
+     * @param args The command line configuration object to use
      */
-    public AbstractInputItem(Configuration config) {
-        batchSize = config.getInputBatchSize();
+    public AbstractInputItem(String [] args) {
+        String batchString = CommandLineParser.getCommandLineArgument(args, "ib", "input-batch-size", "How many rows to read before sending to processing");
+        if (null != batchString) {
+            batchSize = Integer.parseInt(batchString);
+        } else {
+            batchSize = 1; // Default value
+        }
     }
 
 }

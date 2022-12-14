@@ -1,33 +1,42 @@
 package nu.sitia.loggenerator.inputitems;
 
-import nu.sitia.loggenerator.util.Configuration;
+import nu.sitia.loggenerator.Configuration;
+import nu.sitia.loggenerator.util.CommandLineParser;
+
 
 import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Scanner;
 
 public class FileInputItem extends AbstractInputItem {
     /** The name of the file this item will read from */
-    private final String fileName;
+    protected final String fileName;
 
     /** The scanner to read from. Initialized in setup() */
-    private Scanner scanner = null;
-
-    /** The config object */
-    private final Configuration config;
+    protected Scanner scanner = null;
 
     /** If false, start with sending guard message if statistics is enabled */
-    private boolean initialized = false;
+    protected boolean initialized = false;
+
+    /** Should we add statistics messages to the file contents? */
+    protected boolean isStatistics;
 
     /**
      * Create a new FileInputItem
-     * @param config The Configuration object
+     * @param args The command line arguments
      */
-    public FileInputItem(String name, Configuration config) {
-        super(config);
-        this.fileName = name;
-        this.config = config;
+    public FileInputItem(String fileName, String [] args) {
+        super(args);
+        this.fileName = fileName;
+        if (fileName == null) {
+            CommandLineParser.getSeenParameters().forEach((k,v) -> System.out.println(k + " - " + v));
+            throw new RuntimeException("Required parameter 'input-name' not found.");
+        }
+        String statisticsParameter = CommandLineParser.getCommandLineArgument(args, "s", "statistics", "Add statistics messages and printouts");
+        this.isStatistics = statisticsParameter != null &&
+                        statisticsParameter.equalsIgnoreCase("true");
     }
 
     /**
@@ -35,11 +44,14 @@ public class FileInputItem extends AbstractInputItem {
      */
     public void setup() throws RuntimeException {
         FileInputStream input;
+        File file = new File(fileName);
+        if (!file.exists()) {
+            throw new RuntimeException("File not found: " + file.getAbsolutePath());
+        }
         try {
             input = new FileInputStream(fileName);
             scanner = new Scanner(input);
         } catch (FileNotFoundException e) {
-            File file = new File(fileName);
             throw new RuntimeException("File not found: " + file.getAbsolutePath(), e);
         }
     }
@@ -61,7 +73,7 @@ public class FileInputItem extends AbstractInputItem {
         List<String> result = new ArrayList<>();
         if (!initialized) {
             initialized = true;
-            if (config.isStatistics()) {
+            if (isStatistics) {
                 result.add(Configuration.BEGIN_FILE_TEXT + fileName);
             }
         }
@@ -69,7 +81,7 @@ public class FileInputItem extends AbstractInputItem {
         while (scanner.hasNextLine() && lines-- > 0) {
             result.add(scanner.nextLine());
         }
-        if (!scanner.hasNextLine() && config.isStatistics()) {
+        if (!scanner.hasNextLine() && isStatistics) {
             // End of file
             result.add(Configuration.END_FILE_TEXT + fileName);
         }
@@ -86,10 +98,29 @@ public class FileInputItem extends AbstractInputItem {
     }
 
     /**
+     * Make adding two items to a list depending on the id only
+     * @param o Other object
+     * @return true Iff the id of the two items are identical, and not nul.
+     */
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        FileInputItem that = (FileInputItem) o;
+        return fileName.equals(that.fileName);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(fileName);
+    }
+
+    /**
      * Debug printouts (logger)
      * @return The filename for this item
      */
     public String toString() {
-        return this.fileName;
+        return "FileInputItem" + System.lineSeparator() +
+                this.fileName;
     }
 }

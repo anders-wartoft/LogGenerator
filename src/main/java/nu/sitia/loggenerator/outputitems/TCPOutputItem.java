@@ -1,7 +1,7 @@
 package nu.sitia.loggenerator.outputitems;
 
 
-import nu.sitia.loggenerator.util.Configuration;
+import nu.sitia.loggenerator.util.CommandLineParser;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -12,19 +12,31 @@ import java.util.logging.Logger;
 
 public class TCPOutputItem extends AbstractOutputItem implements SendListener {
     static final Logger logger = Logger.getLogger(TCPOutputItem.class.getName());
-    /** The address:port to use */
+    /** The address to use */
     private final String hostName;
+    /** The port to connect to */
+    private final int port;
     /** The socket to use */
     private Socket socket;
 
     /**
      * Constructor. Add the callback method from this class.
-     * @param config The Configuration object
+     * @param args The command line arguments
      */
-    public TCPOutputItem(Configuration config) {
-        super(config);
+    public TCPOutputItem(String [] args) {
+        super(args);
         super.addListener(this);
-        hostName = config.getOutputName();
+        hostName = CommandLineParser.getCommandLineArgument(args, "host", "host-name", "Host name to bind to");
+        if (null == hostName) {
+            CommandLineParser.getSeenParameters().forEach((k,v) -> System.out.println(k + " - " + v));
+            throw new RuntimeException("Parameter -host (--host-name) is required for TCP output item");
+        }
+        String portString = CommandLineParser.getCommandLineArgument(args, "port", "port", "Port to listen on");
+        if (null == portString) {
+            CommandLineParser.getSeenParameters().forEach((k,v) -> System.out.println(k + " - " + v));
+            throw new RuntimeException("Parameter -port (--port) is required for TCP output item");
+        }
+        port = Integer.parseInt(portString);
         addTransactionMessages = true;
     }
 
@@ -61,11 +73,8 @@ public class TCPOutputItem extends AbstractOutputItem implements SendListener {
     public void setup() throws RuntimeException {
         super.setup();
         // OutputName is host:port
-        String [] temp = hostName.split(":");
-        String hostname = temp[0];
         try {
-            int port = Integer.parseInt(temp[1]);
-            socket = new Socket(hostname, port);
+            socket = new Socket(hostName, port);
         } catch (IOException e) {
             throw new RuntimeException("Socket exception", e);
         }
@@ -79,5 +88,16 @@ public class TCPOutputItem extends AbstractOutputItem implements SendListener {
         } catch (IOException e) {
             throw new RuntimeException("Socket close exception", e);
         }
+    }
+
+    /**
+     * Print the configuration
+     * @return A printable string of the current configuration
+     */
+    @Override
+    public String toString() {
+        return "TCPOutputItem" + System.lineSeparator() +
+                hostName + System.lineSeparator() +
+                port;
     }
 }

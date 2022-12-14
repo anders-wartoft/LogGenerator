@@ -3,11 +3,15 @@ package nu.sitia.loggenerator;
 import nu.sitia.loggenerator.filter.ProcessFilter;
 import nu.sitia.loggenerator.inputitems.InputItem;
 import nu.sitia.loggenerator.outputitems.OutputItem;
-import nu.sitia.loggenerator.util.Configuration;
+import nu.sitia.loggenerator.templates.Template;
+import nu.sitia.loggenerator.templates.TemplateFactory;
+import nu.sitia.loggenerator.templates.TimeTemplate;
+import nu.sitia.loggenerator.util.CommandLineParser;
 import nu.sitia.loggenerator.util.LogStatistics;
 import sun.misc.Signal;
 
 import java.util.Date;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.logging.Logger;
 
@@ -26,9 +30,6 @@ public class ItemProxy {
     /** Filters to apply to each element processed */
     private final List<ProcessFilter> filterList;
 
-    /** Config object */
-    private final Configuration config;
-
     /** Preferred eps */
     private final long eps;
 
@@ -41,26 +42,68 @@ public class ItemProxy {
     /** Keep track of sent events, start of transactions etc */
     private final LogStatistics statistics;
 
+    /** When exiting, traverse this list and call the shutdown handler */
+    private final List<ShutdownHandler> shutdownHandlers = new LinkedList<>();
+
+    /** If -t time:xxx, this is the start time + xxx */
+    private long endTime = 0;
+
     /**
      * Default constructor
      * @param input Input to use
      * @param output Output to use
      */
-    public ItemProxy(InputItem input, OutputItem output, List<ProcessFilter> filterList, Configuration config) {
+    public ItemProxy(InputItem input, OutputItem output, List<ProcessFilter> filterList, String [] args) {
         this.input = input;
         this.output = output;
         this.filterList = filterList;
-        this.config = config;
-        this.eps = config.getEps();
-        this.limit = config.getLimit();
+        String isStatisticsString = CommandLineParser.getCommandLineArgument(args,"s", "statistics", "Add statistics messages and printouts");
+        if (isStatisticsString != null && isStatisticsString.equalsIgnoreCase("true")) {
+            statistics = new LogStatistics(args);
+        } else {
+            statistics = null;
+        }
+
+        String epsString = CommandLineParser.getCommandLineArgument(args,"e", "eps", "Max eps. Throttle if above.");
+        if (null != epsString) {
+            this.eps = Long.parseLong(epsString);
+        } else {
+            this.eps = 0;
+        }
+
+        String limitString = CommandLineParser.getCommandLineArgument(args,"l", "limit", "Only send this number of messages");
+        if (null != limitString) {
+            this.limit = Long.parseLong(limitString);
+        } else {
+            this.limit = 0;
+        }
+
+        String templateString = CommandLineParser.getCommandLineArgument(args, "t", "template", "Should the input be regarded as a template and variables resolved?");
+
+        if (templateString != null) {
+            Template template = TemplateFactory.getTemplate(templateString);
+            if (template instanceof TimeTemplate tt) {
+                endTime = tt.getTime();
+            }
+        }
+
+        // order might be important
+        if (input instanceof ShutdownHandler sh) {
+            shutdownHandlers.add(sh);
+        }
+        shutdownHandlers.addAll(getShutdownHandlers(filterList));
+        if (output instanceof ShutdownHandler sh) {
+            shutdownHandlers.add(sh);
+        }
+
         this.sentEvents = 0;
-        statistics = new LogStatistics(config);
+
 
         // Ctrl-C
         Signal.handle(new Signal("INT"),  // SIGINT
                 signal -> {
                     System.out.println("Sigint");
-                    if (config.isStatistics()) {
+                    if (statistics != null) {
                         statistics.calculateStatistics(Configuration.END_TRANSACTION);
                     }
                     if (output.printTransactionMessages()) {
@@ -68,9 +111,7 @@ public class ItemProxy {
                     }
                     input.teardown();
                     output.teardown();
-                    if (config.getDetector() != null) {
-                        System.out.println(config.getDetector().toString());
-                    }
+                    shutdownHandlers.forEach(ShutdownHandler::shutdown);
                     System.exit(-1);
                 });
 
@@ -88,7 +129,7 @@ public class ItemProxy {
         input.setup();
         output.setup();
 
-        if (config.isStatistics()) {
+        if (statistics != null) {
             statistics.setTransactionStart(new Date().getTime());
         }
         if (output.printTransactionMessages()) {
@@ -96,8 +137,8 @@ public class ItemProxy {
         }
 
         logger.finer("ItemProxy pumping messages...");
-        // Grab inputs
-        while (input.hasNext() && (limit == 0 || sentEvents < limit)) {
+        // Grab inputs as long as we have input and the limit is not reached and the time limit has not been reached
+        while (input.hasNext() && (limit == 0 || sentEvents < limit) && (endTime == 0 || new Date().getTime() < endTime)) {
             // Assume we have no filters
             List<String> filtered = input.next();
             List<String> toSend = filterOutput(filtered);
@@ -108,13 +149,13 @@ public class ItemProxy {
             output.write(toSend);
             sentEvents += toSend.size();
 
-            if (config.isStatistics()) {
+            if (statistics != null) {
                 statistics.calculateStatistics(filtered);
             }
             // Should we throttle the output to lower the eps?
             throttle(statistics);
         }
-        if (config.isStatistics()) {
+        if (statistics != null) {
             statistics.calculateStatistics(Configuration.END_TRANSACTION);
         }
         if (output.printTransactionMessages()) {
@@ -122,9 +163,7 @@ public class ItemProxy {
         }
         input.teardown();
         output.teardown();
-        if (config.getDetector() != null) {
-            System.out.println(config.getDetector().toString());
-        }
+        shutdownHandlers.forEach(ShutdownHandler::shutdown);
     }
 
     /**
@@ -147,7 +186,7 @@ public class ItemProxy {
      * @param statistics The Statistics to use to determine if we should throttle
      */
     private void throttle(LogStatistics statistics) {
-        if (eps != 0 && config.isStatistics()) {
+        if (eps != 0 && statistics != null) {
             long transactionStart = statistics.getTransactionStart();
             long sentMessages = statistics.getTransactionMessages();
             long now = new Date().getTime();
@@ -162,6 +201,22 @@ public class ItemProxy {
                 }
             } // end of throttling
         }
+    }
+
+    /**
+     * Traverse the list of processFilters and see if any would like to be called
+     * on exit.
+     * @param processFilters All filters
+     * @return A list of shutdown handlers
+     */
+    private List<ShutdownHandler> getShutdownHandlers(List<ProcessFilter> processFilters) {
+        List<ShutdownHandler> shutdownHandlerList = new LinkedList<>();
+        processFilters.forEach(s ->  {
+            if (s instanceof ShutdownHandler sh) {
+                shutdownHandlerList.add(sh);
+            }
+        });
+        return shutdownHandlerList;
     }
 
 }

@@ -1,6 +1,7 @@
 package nu.sitia.loggenerator.outputitems;
 
-import nu.sitia.loggenerator.util.Configuration;
+import nu.sitia.loggenerator.util.CommandLineParser;
+
 
 import java.util.*;
 
@@ -32,8 +33,17 @@ public abstract class AbstractOutputItem implements OutputItem {
         this.sl = sl;
     }
 
-    public AbstractOutputItem(Configuration config) {
-        batchSize = config.getOutputBatchSize();
+    /**
+     * Save the output batch size
+     * @param args The command line arguments
+     */
+    public AbstractOutputItem(String [] args) {
+        String batchString = CommandLineParser.getCommandLineArgument(args, "ob", "output-batch-size", "How many rows to send in each sending");
+        if (null != batchString) {
+            batchSize = Integer.parseInt(batchString);
+        } else {
+            batchSize = 0; // Default value
+        }
     }
 
     /**

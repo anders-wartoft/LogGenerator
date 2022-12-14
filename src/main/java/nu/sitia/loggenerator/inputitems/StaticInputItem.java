@@ -1,6 +1,6 @@
 package nu.sitia.loggenerator.inputitems;
 
-import nu.sitia.loggenerator.util.Configuration;
+import nu.sitia.loggenerator.util.CommandLineParser;
 
 import java.util.*;
 
@@ -14,11 +14,16 @@ public class StaticInputItem extends AbstractInputItem {
 
     /**
      * Create a new StaticInputItem
-     * @param config The Configuration object
+     * @param args The command line arguments
      */
-    public StaticInputItem(Configuration config) {
-        super(config);
-        this.strings = List.of(config.getInputName());
+    public StaticInputItem(String [] args) {
+        super(args);
+        String string = CommandLineParser.getCommandLineArgument(args, "in", "input-name", "Input static name");
+        if (null == string) {
+            CommandLineParser.getSeenParameters().forEach((k,v) -> System.out.println(k + " - " + v));
+            throw new RuntimeException("-in argument is missing for -i static");
+        }
+        strings = List.of(string);
     }
 
     /**
@@ -55,6 +60,6 @@ public class StaticInputItem extends AbstractInputItem {
      * @return The filename for this item
      */
     public String toString() {
-        return this.strings.toString();
+        return "StaticInputItem" + System.lineSeparator() + this.strings.toString();
     }
 }

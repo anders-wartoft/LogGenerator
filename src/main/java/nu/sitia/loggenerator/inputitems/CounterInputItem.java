@@ -1,6 +1,6 @@
 package nu.sitia.loggenerator.inputitems;
 
-import nu.sitia.loggenerator.util.Configuration;
+import nu.sitia.loggenerator.util.CommandLineParser;
 
 import java.util.List;
 
@@ -17,11 +17,16 @@ public class CounterInputItem extends AbstractInputItem {
 
     /**
      * Create a new StaticInputItem
-     * @param config The Configuration object
+     * @param args The Configuration object
      */
-    public CounterInputItem(Configuration config) {
-        super(config);
-        this.string = config.getInputName();
+    public CounterInputItem(String [] args) {
+        super(args);
+        this.string = CommandLineParser.getCommandLineArgument(args, "in", "input-name", "Input file name");
+        if (string == null) {
+            CommandLineParser.getSeenParameters().forEach((k,v) -> System.out.println(k + " - " + v));
+            throw new RuntimeException("Required parameter 'input-name' not found.");
+        }
+
     }
 
     /**
@@ -55,9 +60,10 @@ public class CounterInputItem extends AbstractInputItem {
 
     /**
      * Debug printouts (logger)
-     * @return The filename for this item
+     * @return The configuration for this item
      */
     public String toString() {
-        return this.string + this.number;
+        return "CounterInputItem" + System.lineSeparator()
+         + this.string + this.number;
     }
 }

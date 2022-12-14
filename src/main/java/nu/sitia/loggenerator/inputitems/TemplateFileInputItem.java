@@ -1,7 +1,11 @@
 package nu.sitia.loggenerator.inputitems;
 
+import nu.sitia.loggenerator.Configuration;
 import nu.sitia.loggenerator.filter.substituters.Substitution;
-import nu.sitia.loggenerator.util.Configuration;
+import nu.sitia.loggenerator.templates.Template;
+import nu.sitia.loggenerator.templates.TemplateFactory;
+import nu.sitia.loggenerator.templates.TimeTemplate;
+import nu.sitia.loggenerator.util.CommandLineParser;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -20,43 +24,26 @@ import java.util.*;
  * The contents will be sent one line at a time, but all variables will
  * be expanded (like {date:...}, {oneOf:...} etc).
  */
-public class TemplateFileInputItem extends AbstractInputItem {
-    /** The name of the file this item will read from */
-    private final String fileName;
-
-    /** The scanner to read from. Initialized in setup() */
-    private Scanner scanner = null;
-
-    /** The config object */
-    private final Configuration config;
-
+public class TemplateFileInputItem extends FileInputItem {
     /** Describes how this item should function */
-    private final Configuration.Template template;
-
-    /** If false, start with sending guard message if statistics is enabled */
-    private boolean initialized = false;
+    private final Template template;
 
     /** The lines from the file */
     private final List<String> rows = new ArrayList<>();
 
-    /** End time (used for template time:{seconds} ) */
-    private final long endTime;
-
     /**
-     * Create a new FileInputItem
-     * @param config The Configuration object
+     * Create a new TemplateFileInputItem
+     * @param args The command line arguments
      */
-    public TemplateFileInputItem(Configuration config) {
-        super(config);
-        this.fileName = config.getInputName();
-        this.config = config;
-        this.template = config.getTemplate();
-        if (template == Configuration.Template.TIME) {
-            // Set last time we are allowed to process input
-            this.endTime = new Date().getTime() + config.getDurationMilliSeconds();
-        } else {
-            this.endTime = 0;
+    public TemplateFileInputItem(String [] args) {
+        super(CommandLineParser.getCommandLineArgument(args, "in", "input-name", "Input file name"), args);
+        String templateString = CommandLineParser.getCommandLineArgument(args, "t", "template", "Should the input be regarded as a template and variables resolved?");
+        if (templateString == null) {
+            CommandLineParser.getSeenParameters().forEach((k,v) -> System.out.println(k + " - " + v));
+            throw new RuntimeException("Missing template parameter for TemplateFileItem");
         }
+        template = TemplateFactory.getTemplate(templateString);
+
     }
 
     /**
@@ -94,14 +81,14 @@ public class TemplateFileInputItem extends AbstractInputItem {
         List<String> result = new ArrayList<>();
         if (!initialized) {
             initialized = true;
-            if (config.isStatistics()) {
+            if (isStatistics) {
                 result.add(Configuration.BEGIN_FILE_TEXT + fileName);
             }
         }
-        if (this.endTime > 0) {
+        if (template.isTime()) {
             // We are limited in time (for example with flag -t time:1000)
             long now = new Date().getTime();
-            if (now > this.endTime) {
+            if (now > ((TimeTemplate)template).getTime()) {
                 // We are done now. Make sure we won't continue but run the normal path
                 rows.clear();
             }
@@ -114,7 +101,7 @@ public class TemplateFileInputItem extends AbstractInputItem {
             // Pick one line. lineNr will be in the range [0-rows.size()-1]
             int lineNr = random.nextInt(rows.size());
             String line = rows.get(lineNr);
-            if (template != Configuration.Template.NONE) {
+            if (!template.isNone()) {
                 // Do translation
                 result.add(substitution.substitute(line, new HashMap<>(), new Date()));
             } else {
@@ -123,13 +110,13 @@ public class TemplateFileInputItem extends AbstractInputItem {
 
             // Should we remove the line? In that case the file content will be
             // sent only once
-            if (template == Configuration.Template.FILE ||
-                    template == Configuration.Template.NONE) {
+            if (template.isFile() ||
+                    template.isNone()) {
                 rows.remove(lineNr);
             }
         }
 
-        if (rows.size() == 0 && config.isStatistics()) {
+        if (rows.size() == 0 && isStatistics) {
             // End of file
             result.add(Configuration.END_FILE_TEXT + fileName);
         }
@@ -150,6 +137,6 @@ public class TemplateFileInputItem extends AbstractInputItem {
      * @return The filename for this item
      */
     public String toString() {
-        return this.fileName;
+        return"TemplateFileInputItem" + System.lineSeparator() + this.fileName;
     }
 }

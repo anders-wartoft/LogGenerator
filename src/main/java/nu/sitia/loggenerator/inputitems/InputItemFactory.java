@@ -1,6 +1,7 @@
 package nu.sitia.loggenerator.inputitems;
 
-import nu.sitia.loggenerator.util.Configuration;
+import nu.sitia.loggenerator.util.CommandLineParser;
+
 
 import java.io.File;
 
@@ -8,36 +9,49 @@ public class InputItemFactory {
 
     /**
      * Create an InputItem depending on the configuration
-     * @param config The configuration to use to create an InputItem
+     * @param args The command line arguments to use to create an InputItem
      * @return An InputItem to use
      */
-    public static InputItem create(Configuration config) {
-        return switch (config.getInputType()) {
-            case "template", "TEMPLATE" -> new TemplateFileInputItem(config);
-            case "file", "FILE" -> getFileInputItem(config.getInputName(), config);
-            case "udp", "UDP" -> new UDPInputItem(config);
-            case "tcp", "TCP" -> new TCPInputItem(config);
-            case "kafka", "KAFKA" -> new KafkaInputItem(config);
-            case "static", "STATIC" -> new StaticInputItem(config);
-            case "counter", "COUNTER" -> new CounterInputItem(config);
-            default -> throw new RuntimeException("Illegal input type: " + config.getInputType());
+    public static InputItem create(String [] args) {
+        String input = CommandLineParser.getCommandLineArgument(args, "i", "input", "Input module name (udp, tcp, kafka or file");
+        String inputName = CommandLineParser.getCommandLineArgument(args, "in", "input-name", "Input file name");
+        if (null == input) {
+            CommandLineParser.getSeenParameters().forEach((k,v) -> System.out.println(k + " - " + v));
+            throw new RuntimeException("Parameter -i (--input) is required");
+        }
+
+        return switch (input) {
+            case "template", "TEMPLATE" -> new TemplateFileInputItem(args);
+            // special case. the FileInputItem needs to be able to send begin- and end messages with the filename
+            case "file", "FILE" -> getFileInputItem(inputName, args);
+            case "udp", "UDP" -> new UDPInputItem(args);
+            case "tcp", "TCP" -> new TCPInputItem(args);
+            case "kafka", "KAFKA" -> new KafkaInputItem(args);
+            case "static", "STATIC" -> new StaticInputItem(args);
+            case "counter", "COUNTER" -> new CounterInputItem(args);
+            default -> throw new RuntimeException("Illegal input type: " + input);
         };
     }
 
     /**
      * Helper method to return a FileInputItem or a DirectoryInputItem
      * @param name The name of the item
-     * @param config The configuration object
+     * @param args The command line arguments object
      * @return A File or Directory input item
      */
-    private static InputItem getFileInputItem(String name, Configuration config) {
+    private static InputItem getFileInputItem(String name, String [] args) {
+        if (name == null) {
+            CommandLineParser.getSeenParameters().forEach((k,v) -> System.out.println(k + " - " + v));
+            throw new RuntimeException("Parameter -in (--input-name) is required for -i file");
+        }
+
         File file = new File(name);
         if (!file.exists()) {
             throw new RuntimeException("File not found: " + file.getAbsolutePath());
         }
         if (file.isDirectory()) {
-            return new DirectoryInputItem(config);
+            return new DirectoryInputItem(args);
         }
-        return new FileInputItem(name, config);
+        return new FileInputItem(name, args);
     }
 }

@@ -1,5 +1,7 @@
 package nu.sitia.loggenerator.util;
 
+import nu.sitia.loggenerator.Configuration;
+
 import java.util.Date;
 import java.util.List;
 
@@ -47,11 +49,13 @@ public class LogStatistics {
 
     /**
      * Constructor
-     * @param config Used to get the printout every ms value
+     * @param args Used to get the printout every ms value
      */
-    public LogStatistics(Configuration config) {
-        if (config.getPrintouts() > 0) {
-            this.extraPrintoutEveryMs = config.getPrintouts();
+    public LogStatistics(String [] args) {
+        String printoutsString = CommandLineParser.getCommandLineArgument(args, "pp", "printouts", "MS between extra printout for statistics");
+
+        if (printoutsString != null) {
+            this.extraPrintoutEveryMs = Long.parseLong(printoutsString);
         } else {
             this.extraPrintoutEveryMs = 30000; // If not configured on the command line
         }

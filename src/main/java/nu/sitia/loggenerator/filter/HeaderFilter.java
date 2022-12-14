@@ -1,7 +1,6 @@
 package nu.sitia.loggenerator.filter;
 
 import nu.sitia.loggenerator.filter.substituters.Substitution;
-import nu.sitia.loggenerator.util.Configuration;
 
 import java.util.*;
 
@@ -14,10 +13,10 @@ public class HeaderFilter implements ProcessFilter {
 
     /**
      * Create a HeaderFilter and set all parameters
-     * @param config The configuration object to get parameters from
+     * @param header The header to prepend every event with
      */
-    public HeaderFilter(Configuration config) {
-        header = config.getHeader();
+    public HeaderFilter(String header) {
+        this.header = header;
         if (null == header) {
             throw new RuntimeException("Header is null");
         }
@@ -42,5 +41,14 @@ public class HeaderFilter implements ProcessFilter {
                 filtered.add(filter(s)));
 
         return filtered;
+    }
+
+    /**
+     * Print the configuration
+     * @return A printable string of the current configuration
+     */
+    @Override
+    public String toString() {
+        return "HeaderFilter" + System.lineSeparator() + header + System.lineSeparator();
     }
 }

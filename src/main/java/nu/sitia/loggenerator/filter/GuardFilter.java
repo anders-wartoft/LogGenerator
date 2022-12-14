@@ -1,6 +1,7 @@
 package nu.sitia.loggenerator.filter;
 
-import nu.sitia.loggenerator.util.Configuration;
+
+import nu.sitia.loggenerator.Configuration;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -11,12 +12,11 @@ public class GuardFilter implements ProcessFilter {
      * Create a guardFilter and set all parameters
      * @param ignoredConfig The configuration object to get parameters from
      */
-    public GuardFilter(Configuration ignoredConfig) {
+    public GuardFilter(String [] ignoredConfig) {
     }
 
     /**
-     * Don't add the line if it begins with --------
-     * We think it's a guard in that case.
+     * Don't add the line if it is a statistics guard
      * @param toFilter The data to filter
      * @return The data without transmission and file guards.
      */
@@ -55,5 +55,14 @@ public class GuardFilter implements ProcessFilter {
             ||  toCheck.startsWith(Configuration.END_TRANSACTION_TEXT)
             ||  toCheck.startsWith(Configuration.BEGIN_FILE_TEXT)
             ||  toCheck.startsWith(Configuration.END_FILE_TEXT));
+    }
+
+    /**
+     * Print the configuration
+     * @return A printable string of the current configuration
+     */
+    @Override
+    public String toString() {
+        return "GuardFilter" + System.lineSeparator();
     }
 }

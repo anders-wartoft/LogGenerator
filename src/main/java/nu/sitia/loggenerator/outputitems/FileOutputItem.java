@@ -1,26 +1,31 @@
 package nu.sitia.loggenerator.outputitems;
 
 
-import nu.sitia.loggenerator.util.Configuration;
+import nu.sitia.loggenerator.ShutdownHandler;
+import nu.sitia.loggenerator.util.CommandLineParser;
 
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.List;
 
 
-public class FileOutputItem extends AbstractOutputItem implements SendListener {
+public class FileOutputItem extends AbstractOutputItem implements SendListener, ShutdownHandler {
     /** The name of the file this item will write to */
     private final String fileName;
 
     /**
      * Constructor. Add the callback method from this class.
-     * @param config The Configuration object
+     * @param args The command line arguments
      */
-    public FileOutputItem(Configuration config) {
-        super(config);
+    public FileOutputItem(String [] args) {
+        super(args);
         super.addListener(this);
-        this.fileName = config.getOutputName();
-        setBatchSize(config.getInputBatchSize());
+
+        fileName = CommandLineParser.getCommandLineArgument(args, "on", "output-name", "Output details");
+        if (null == fileName) {
+            CommandLineParser.getSeenParameters().forEach((k,v) -> System.out.println(k + " - " + v));
+            throw new RuntimeException("Missing -on --output-name argument for -o file");
+        }
         addTransactionMessages = true;
     }
 
@@ -45,11 +50,32 @@ public class FileOutputItem extends AbstractOutputItem implements SendListener {
         boolean append = true;
         try (FileWriter writer = new FileWriter(fileName, append)) {
             for (String s : toSend) {
-                writer.write(s);
+                String [] lines = s.split("\n");
+                for (String line: lines) {
+                    writer.write(line);
+                    writer.write(System.lineSeparator());
+                }
             }
         } catch (IOException e) {
             throw new RuntimeException("Exception writing to: " + fileName, e);
         }
     }
 
+    /**
+     * Print the configuration
+     * @return A printable string of the current configuration
+     */
+    @Override
+    public String toString() {
+        return "FileOutputItem " +
+                fileName;
+    }
+
+    /**
+     * Shutdown hook
+     */
+    @Override
+    public void shutdown() {
+        super.teardown();
+    }
 }

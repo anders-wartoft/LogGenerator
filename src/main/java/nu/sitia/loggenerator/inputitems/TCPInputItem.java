@@ -1,6 +1,6 @@
 package nu.sitia.loggenerator.inputitems;
 
-import nu.sitia.loggenerator.util.Configuration;
+import nu.sitia.loggenerator.util.CommandLineParser;
 
 import java.io.*;
 import java.net.*;
@@ -13,44 +13,37 @@ public class TCPInputItem extends AbstractInputItem {
     static final Logger logger = Logger.getLogger(TCPInputItem.class.getName());
     /** The address:port to connect to as given as a command line argument*/
     private final String hostName;
+
+    /** The port to listen on */
+    private final int port;
+
     /** The socket to use */
     private ServerSocket serverSocket;
 
     /**
      * Create a new UDPInputItem
-     * @param config The Configuration object
+     * @param args The command line arguments
      */
-    public TCPInputItem(Configuration config) {
-        super(config);
-        hostName = config.getInputName();
+    public TCPInputItem(String [] args) {
+        super(args);
+        hostName = CommandLineParser.getCommandLineArgument(args, "host", "host-name", "Host name to bind to");
+        String portString = CommandLineParser.getCommandLineArgument(args, "port", "port", "Port to listen on");
+        if (null == portString) {
+            CommandLineParser.getSeenParameters().forEach((k,v) -> System.out.println(k + " - " + v));
+            throw new RuntimeException("Parameter -port (-port) is required for TCP input item");
+        }
+        port = Integer.parseInt(portString);
     }
 
     /**
      * Let the item prepare for reading
      */
     public void setup() throws RuntimeException {
-        InetAddress address = null;
-        // InputName is the "address:port", or just "port"
-        // Port number to connect to
-        int port;
-        String hostname = null;
-        if (hostName.contains(":")) {
-            String [] temp = hostName.split(":");
-            hostname = temp[0];
-            try {
-                address = InetAddress.getByName(hostname);
-            } catch (UnknownHostException e) {
-                throw new RuntimeException("Unknown host: " + hostname, e);
-            }
-            port = Integer.parseInt(temp[1]);
-        } else {
-            port = Integer.parseInt(hostName);
-        }
         try {
-            if (hostname != null) {
+            if (hostName != null) {
                 // Listen on a specified address
                 serverSocket = new ServerSocket();
-                SocketAddress socketAddress = new InetSocketAddress(hostname, port);
+                SocketAddress socketAddress = new InetSocketAddress(hostName, port);
                 serverSocket.bind(socketAddress);
 
             } else {
@@ -60,10 +53,10 @@ public class TCPInputItem extends AbstractInputItem {
         } catch (SocketException e) {
             throw new RuntimeException("Socket exception", e);
         } catch (IOException e) {
-            throw new RuntimeException("IOException trying to bind to " + address + ":" + port, e);
+            throw new RuntimeException("IOException trying to bind to " + hostName + ":" + port, e);
         }
-        if (hostname != null) {
-            logger.info("Serving TCP server on " + hostname + ":" + port);
+        if (hostName != null) {
+            logger.info("Serving TCP server on " + hostName + ":" + port);
         } else {
             logger.info("Serving TCP server on port: " + port);
         }
@@ -116,5 +109,16 @@ public class TCPInputItem extends AbstractInputItem {
      */
     public void teardown() {
         // Unreachable code
+    }
+
+    /**
+     * Print the configuration
+     * @return A printable string of the current configuration
+     */
+    @Override
+    public String toString() {
+        return "TCPInputItem" + System.lineSeparator() +
+                hostName + System.lineSeparator() +
+                port;
     }
 }

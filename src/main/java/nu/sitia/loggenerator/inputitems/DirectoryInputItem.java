@@ -1,6 +1,6 @@
 package nu.sitia.loggenerator.inputitems;
 
-import nu.sitia.loggenerator.util.Configuration;
+import nu.sitia.loggenerator.util.CommandLineParser;
 
 import java.io.IOException;
 import java.nio.file.*;
@@ -15,9 +15,6 @@ public class DirectoryInputItem extends AbstractInputItem {
     /** The name of the directory this item will read from */
     private final String directoryName;
 
-    /** The configuration object */
-    private final Configuration config;
-
     /** The files in the directory to process */
     private final List<FileInputItem> fileList = new ArrayList<>();
 
@@ -27,19 +24,30 @@ public class DirectoryInputItem extends AbstractInputItem {
     /** The current file we are using */
     private FileInputItem fileItem = null;
 
+    /** The args to use when creating sub items */
+    private final String [] args;
+
     /**
      * Create a new FileInputItem
-     * @param config The Configuration object
+     * @param args The command line arguments
      */
-    public DirectoryInputItem(Configuration config) {
-        super(config);
-        this.directoryName = config.getInputName();
+    public DirectoryInputItem(String [] args) {
+        super(args);
+        this.args = args;
+        this.directoryName = CommandLineParser.getCommandLineArgument(args, "in", "input-name", "Input file name");
+        if (directoryName == null) {
+            CommandLineParser.getSeenParameters().forEach((k,v) -> System.out.println(k + " - " + v));
+            throw new RuntimeException("Required parameter 'input-name' not found.");
+        }
+
         logger.fine("Creating DirectoryInputItem: " + directoryName);
-        this.config = config;
-        if (null == config.getGlob()) {
-            this.glob = "glob:**";
+
+        String globString = CommandLineParser.getCommandLineArgument(args, "g", "glob", "Filename glob for directories");
+
+        if (null == globString) {
+            glob = "glob:**";
         } else {
-            this.glob = "glob:" + config.getGlob();
+            glob = "glob:" +globString;
         }
     }
 
@@ -56,7 +64,7 @@ public class DirectoryInputItem extends AbstractInputItem {
                                                  BasicFileAttributes attrs) {
                     if (pathMatcher.matches(path)) {
                         logger.fine("Adding " + path.toString());
-                        FileInputItem fi = new FileInputItem(path.toString(), config);
+                        FileInputItem fi = new FileInputItem(path.toString(), args);
                         fileList.add(fi);
                     }
                     return FileVisitResult.CONTINUE;
@@ -105,5 +113,19 @@ public class DirectoryInputItem extends AbstractInputItem {
      * Let the item teardown after reading
      */
     public void teardown() {
+    }
+
+    /**
+     * Print the configuration
+     * @return A printable string of the current configuration
+     */
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("DirectoryInputItem").append(System.lineSeparator());
+        sb.append(directoryName).append(System.lineSeparator());
+        sb.append(glob).append(System.lineSeparator());
+        fileList.forEach(s -> sb.append(s).append(System.lineSeparator()));
+        return sb.toString();
     }
 }

@@ -3,7 +3,6 @@ package nu.sitia.loggenerator.filter;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
-import nu.sitia.loggenerator.util.Configuration;
 
 import java.util.List;
 
@@ -14,8 +13,6 @@ import java.util.List;
 public class RegexTest
     extends TestCase
 {
-
-    private final Configuration config = new Configuration();
 
     /**
      * Create the test case
@@ -40,9 +37,10 @@ public class RegexTest
      */
     public void testRegex() {
         String template = "2050-01-01T10:00:00.001001Z Some event here";
-        config.setRegex("\\d{4}-\\d\\d-\\d\\dT\\d\\d:\\d\\d:\\d\\d.\\d{6}Z");
-        config.setValue("{date:yyyy-MM-dd/sv:SE}");
-        RegexFilter regexFilter = new RegexFilter(config);
+        String regex = "\\d{4}-\\d\\d-\\d\\dT\\d\\d:\\d\\d:\\d\\d.\\d{6}Z";
+        String value = "{date:yyyy-MM-dd/sv:SE}";
+
+        RegexFilter regexFilter = new RegexFilter(regex, value);
 
         List<String> result = regexFilter.filter(List.of(template));
 

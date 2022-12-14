@@ -30,23 +30,25 @@ Example: `-i file -in ./src/test/data/`
 #### Read files in a directory with globs
 Read all files in a directory that matches a glob. See https://javapapers.com/java/glob-with-java-nio/ for details on how to write globs.
 
-Parameters: `-i file -in {directory name -g {glob}`). 
+Parameters: `-i file -in {directory name -g "{glob}"`). 
 
-Example: `-i file -in ./src/test/data/**.txt`
+Example: `-i file -in ./src/test/data/ -g "**.txt"`
+
+Note that all * must be within quotes, since otherwise, the OS will expand that variable.
 
 #### Receive UDP
 Set up a UDP server. 
 
-Parameters: `-i udp -in {address[:port number]}`
+Parameters: `-i udp [-host {host}][ -port number`
 
-Example: `-i udp -in localhost:5999` or `-i udp -in 5999`
+Example: `-i udp -host localhost -port 5999` or `-i udp -port 5999`
 
 #### Receive TCP
 Set up a TCP server. 
 
-Parameters: `-i tcp -in {address[:port number]}`
+Parameters: `-i tcp [-host {host}] -port number`
 
-Example: `-i tcp -in 192.168.1.2:5999` or `-i tcp -in 5999`
+Example: `-i tcp -host 192.168.1.2 -port 5999` or `-i tcp -port 5999`
 
 #### Fetch from Kafka topics
 Connect to a Kafka server and read from a topic
@@ -66,7 +68,8 @@ Example: `-i static -in "Test string to send" -l 1000` (only send 1000 events)
 
 #### Static string ending with a counter starting from 1
 This is used to send a static string that is appended with an increasing number, starting from 1. This is a very fast way to send events ending with a counter.
-To send 1.000.000 events from "Test:1" to "Test:1000000", use `java -jar LogGenerator-with-dependencies.jar -i counter -in "Test:" -limit 1000000 -o cmd`
+To send 1.000.000 events from "Test:1" to "Test:1000000", use `java -jar LogGenerator-with-dependencies.jar -i counter -in "Test:" -
+--limit 1000000 -o cmd`
 
 Parameters: `-i counter -in {the string to send}`
 
@@ -94,21 +97,21 @@ Write the received events to the console.
 
 Parameters: `-o cmd`
 
-Example: `-o cmd`
+Example: `-o cmd`>
 
 #### Write to UDP
 Send events with UDP.
 
-Parameters: `-o udp -on {host:port}`
+Parameters: `-o udp -host host -port port`
 
-Example `-o udp -on localhost:5999}`
+Example `-o udp -host localhost -port 5999`
 
 #### Write to TCP
 Send events with TCP.
 
-Parameters: `-o tcp -on {host:port}`
+Parameters: `-o tcp -host host -port port`
 
-Example `-o tcp -on localhost:5999}`
+Example `-o tcp -host localhost -port 5999`
 
 #### Write to Kafka
 Connect to a Kafka server and write the events to a topic. N.B., these are not unique arguments for kafka input and output so there is no way to read from a Kafka topic and write to another topic. The tool is not meant to be used for that kind of usage.
@@ -128,11 +131,11 @@ To send the text "test" 100.000 times over UDP and discard the result, but to se
 
 Server:
 
-`java -jar LogGenerator-with-dependencies.jar -i udp -in 9999  -o cmd  -s true  -gd "(\\d+)$"`
+`java -jar LogGenerator-with-dependencies.jar -i udp -port 9999  -o cmd  -s true  -gd "(\\d+)$"`
 
 In another command window, start the client (same jar file):
 
-`java -jar LogGenerator-with-dependencies.jar -i counter  -in "test" -o udp -on localhost:9999  -s true -limit 1000`
+`java -jar LogGenerator-with-dependencies.jar -i counter  -in "test" -o udp -host localhost -port 9999  -s true --limit 1000`
 
 ### Filter modules:
 - Add a header
@@ -261,7 +264,7 @@ Example: `{oneOf:{ipv4:192.168.0.0/16},{ipv4:172.16.0.0/12},{ipv4:10.0.0.0/8}}` 
 
 ### Read a file and send the output to a UDP listener
 
-`java -jar LogGenerator-with-dependencies.jar -i file -in file.txt -o udp -on localhost:514`
+`java -jar LogGenerator-with-dependencies.jar -i file -in file.txt -o udp -host localhost -port 514`
 
 ### Read a file, add a syslog header and send the output to the console
 This will add a syslog header to each line in the file before printing the line.
@@ -289,7 +292,7 @@ So far, we have only used variables in headers, but we can also use variables in
 
 - The regex parameter is set on the command line
 - The header parameter is set on the command line
-- The template is set to something other than 'none'
+- The template parameter is set to something other than 'none'
 
 The templates use regexes so if we can avoid to load and run them on each entry we can save a lot of processing power. 
 For applications that need lots of eps, try generating the events to file first and then use LogGenerator or other application to load from disk.
@@ -300,6 +303,7 @@ A template file is just a file with one or more lines that contain text and/or v
 - none: meaning the file will just be processed as usual but in a random order (if not regex or header is used at the same time)
 - file: read one random line from the file and send to the filter output. The line will not be read again. When the last line has been sent, the program halts.
 - continuous: read one random line from the file and send to the filter output. The line might be sent again.
+- time:x run for x number of milliseconds. read one random line from the file and send to the filter output. Example: `-t time:5000` to run for 5 seconds
 
 Example. We have a template file with two lines:
 
@@ -311,6 +315,8 @@ The result from running:
 `java -jar LogGenerator-with-dependencies.jar -i template -t continuous -in template.txt -o cmd  -s true -l 10000`
 
 will be 10.000 lines beginning with `row1` or `row2` and ending with a letter a-d or number 10-13.
+
+If a fixed time is preferred, use `-t time:durationInMilliseconds`, example `-t time:10000` to process for 10 seconds.
 
 With a syslog template, a great number of unique logs can be generated.
 
@@ -324,7 +330,7 @@ The following system variables can be used:
 - ip: `{<ipv4:0.0.0.0/0}`
 - rfc1918: `{oneOf:{ipv4:192.168.0.0/16},{ipv4:172.16.0.0/12},{ipv4:10.0.0.0/8}}`
 
-## Chaining LogGenerator
+## Chaining LogGenerator 
 Now that we have an understanding of the basics, we can progress to the more advanced use cases for LogGenerator.
 To locate bottlenecks or bad connections in a log chain, one or more components can be substituted with LogGenerator to create a known set of data to send and receive.
 
@@ -365,11 +371,11 @@ Next expected number: 46
 Example with one client and one server:
 
 In a new terminal, start the server:
-`java -jar LogGenerator-with-dependencies.jar -i tcp -in 9999 -o cmd  -gd "<(\\d+)>"`
+`java -jar LogGenerator-with-dependencies.jar -i tcp -port 9999 -o cmd  -gd "<(\\d+)>"`
 
 Start the client:
 
-`java -jar LogGenerator-with-dependencies.jar -i file -in src/test/data/test.txt -he "<{counter:test:42}>" -o tcp -on localhost:9999`
+`java -jar LogGenerator-with-dependencies.jar -i file -in src/test/data/test.txt -he "<{counter:test:42}>" -o tcp -host localhost -port 9999`
 
 You should see the received data. To see the gaps, press Ctrl-C:
 
@@ -408,7 +414,7 @@ A regex could be `"(\d+)$"` since $ denotes end-of-string.
 
 Example:
 
-`java -jar LogGenerator-with-dependencies.jar -i counter -in "Test:" -limit 100000 -o null -s true -gd "(\d+)$"`
+`java -jar LogGenerator-with-dependencies.jar -i counter -in "Test:" --limit 100000 -o null -s true -gd "(\d+)$"`
 
 ### This sounds nice and all, but how do I start? Can I get the built jar?
 I won't be uploading a jar file, but you can easily get the jar by:
@@ -428,7 +434,7 @@ Logging can be enabled by adding instructions to the logging framework. The amou
 
 Start the program as usual, but add `-Djava.util.logging.config.file=logging.properties` to java. 
 
-Example: `java -Djava.util.logging.config.file=logging.properties -jar target/LogGenerator-with-dependencies.jar -o cmd -on src/test/data/test-result.txt -i udp -in localhost:9999 -s true -g "**.txt" -e 100000`
+Example: `java -Djava.util.logging.config.file=logging.properties -jar target/LogGenerator-with-dependencies.jar -o cmd -on src/test/data/test-result.txt -i udp -host localhost -port 9999 -s true -g "**.txt" -e 100000`
 
 ### How do I send and receive from Kafka?
 Example of sending a few lines to Kafka:
@@ -439,7 +445,7 @@ Server:
 
 Client:
 
-`java -jar target/LogGenerator-with-dependencies.jar -o kafka -cn test2 -tn test -bs 192.168.1.116:9092 -i counter -in "Test:" -limit 100  -s true -ob 10`
+`java -jar target/LogGenerator-with-dependencies.jar -o kafka -cn test2 -tn test -bs 192.168.1.116:9092 -i counter -in "Test:" --limit 100  -s true -ob 10`
 
 ### Whats the --------BEGIN_TRANSACTION-------- for?
 Those ar messages inserted into the event stream to be able to detect start of transfers and to save a timestamp for the statistics module to work.
@@ -447,3 +453,5 @@ They are generated by some module but only if `-s true` is set (statistics).
 
 ### This is great but I need feature xxx
 This is open source, so "Use the Source, Luke". 
+
+## What License are you using?

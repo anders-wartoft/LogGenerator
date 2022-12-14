@@ -1,6 +1,6 @@
 package nu.sitia.loggenerator.inputitems;
 
-import nu.sitia.loggenerator.util.Configuration;
+import nu.sitia.loggenerator.util.CommandLineParser;
 import org.apache.kafka.clients.consumer.*;
 
 import java.time.Duration;
@@ -30,19 +30,27 @@ public class KafkaInputItem extends AbstractInputItem {
 
     /**
      * Create a new KafkaInputItem
-     * @param config The Configuration object
+     * @param args The command line arguments
      */
-    public KafkaInputItem(Configuration config) {
-        super(config);
-        bootstrapServer = config.getBootstrapServer();
-        clientId = config.getClientName();
-        topicName = config.getTopicName();
+    public KafkaInputItem(String [] args) {
+        super(args);
+        this.clientId = CommandLineParser.getCommandLineArgument(args, "cn", "client-name", "The Client ID to use in Kafka input and output items");
+        this.topicName = CommandLineParser.getCommandLineArgument(args, "tn", "topic-name", "The Topic Name to use in Kafka input and output items");
+        this.bootstrapServer = CommandLineParser.getCommandLineArgument(args, "bs", "bootstrap-server", "The address (host:port) to Kafka input and output items");
+
         if (null == clientId) {
+            CommandLineParser.getSeenParameters().forEach((k,v) -> System.out.println(k + " - " + v));
             throw new RuntimeException("client-name is required in Kafka");
         }
 
         if (null == topicName) {
+            CommandLineParser.getSeenParameters().forEach((k,v) -> System.out.println(k + " - " + v));
             throw new RuntimeException("topic-name is required in Kafka");
+        }
+
+        if (null == bootstrapServer) {
+            CommandLineParser.getSeenParameters().forEach((k,v) -> System.out.println(k + " - " + v));
+            throw new RuntimeException("bootstrap-server is required in Kafka");
         }
     }
 
@@ -93,5 +101,17 @@ public class KafkaInputItem extends AbstractInputItem {
      */
     public void teardown() {
         // Ignore. consumer.close will loop here
+    }
+
+    /**
+     * Print the configuration
+     * @return A printable string of the current configuration
+     */
+    @Override
+    public String toString() {
+        return "KafkaInputItem" + System.lineSeparator() +
+                bootstrapServer + System.lineSeparator() +
+                clientId + System.lineSeparator() +
+                topicName;
     }
 }

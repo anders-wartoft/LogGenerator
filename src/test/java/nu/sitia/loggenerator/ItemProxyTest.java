@@ -5,7 +5,6 @@ import junit.framework.TestCase;
 import junit.framework.TestSuite;
 import nu.sitia.loggenerator.io.MemoryOutputItem;
 import nu.sitia.loggenerator.io.WrappedFileInputItem;
-import nu.sitia.loggenerator.util.Configuration;
 
 import java.util.*;
 
@@ -38,11 +37,14 @@ public class ItemProxyTest
      */
     public void testItemProxy()
     {
-        Configuration config = new Configuration();
-        config.setInputName("src/test/data/test.txt");
-        WrappedFileInputItem fii = new WrappedFileInputItem(config);
-        MemoryOutputItem moi = new MemoryOutputItem(config);
-        ItemProxy proxy = new ItemProxy(fii, moi, new ArrayList<>(), config);
+        String [] args = {
+                "-i", "file",
+                "-in", "src/test/data/test.txt"
+        };
+
+        WrappedFileInputItem fii = new WrappedFileInputItem(args);
+        MemoryOutputItem moi = new MemoryOutputItem(args);
+        ItemProxy proxy = new ItemProxy(fii, moi, new ArrayList<>(), args);
         proxy.pump();
         List<String> result = moi.getData();
         List<String> fileContents = fii.getData();
@@ -64,15 +66,18 @@ public class ItemProxyTest
      */
     public void testItemProxyBatches()
     {
-        int batchSize = 3;
-        Configuration config = new Configuration();
-        config.setInputName("src/test/data/test.txt");
+        String batchSize = "3";
+        String [] args = {
+                "-i", "file",
+                "-in", "src/test/data/test.txt",
+                "-ob", batchSize
+        };
+
         // This is a FileInputItem that also caches all data, so we can get it with fii.getData() later
-        WrappedFileInputItem fii = new WrappedFileInputItem(config);
-        config.setInputBatchSize(batchSize);
-        MemoryOutputItem moi = new MemoryOutputItem(config);
-        moi.setBatchSize(batchSize);
-        ItemProxy proxy = new ItemProxy(fii, moi, new ArrayList<>(), config);
+        WrappedFileInputItem fii = new WrappedFileInputItem(args);
+        MemoryOutputItem moi = new MemoryOutputItem(args);
+
+        ItemProxy proxy = new ItemProxy(fii, moi, new ArrayList<>(), args);
         proxy.pump();
         List<String> result = moi.getData();
         List<String> fileContents = fii.getData();

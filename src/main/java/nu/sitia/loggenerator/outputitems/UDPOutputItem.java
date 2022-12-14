@@ -1,7 +1,7 @@
 package nu.sitia.loggenerator.outputitems;
 
 
-import nu.sitia.loggenerator.util.Configuration;
+import nu.sitia.loggenerator.util.CommandLineParser;
 
 import java.io.IOException;
 import java.net.*;
@@ -18,27 +18,39 @@ public class UDPOutputItem extends AbstractOutputItem implements SendListener {
     /** The socket to use */
     private final DatagramSocket socket;
 
+    /** Used in toString() */
+    private final String hostName;
+
     /**
      * Constructor. Add the callback method from this class.
-     * @param config The Configuration object
+     * @param args The command line arguments
      */
-    public UDPOutputItem(Configuration config) {
-        super(config);
+    public UDPOutputItem(String [] args) {
+        super(args);
+        String hostName = CommandLineParser.getCommandLineArgument(args, "host", "host-name", "Host name to bind to");
+        if (null == hostName) {
+            CommandLineParser.getSeenParameters().forEach((k,v) -> System.out.println(k + " - " + v));
+            throw new RuntimeException("Parameter -host (--host-name) is required for UDP output item");
+        }
+        String portString = CommandLineParser.getCommandLineArgument(args, "port", "port", "Port to listen on");
+        if (null == portString) {
+            CommandLineParser.getSeenParameters().forEach((k,v) -> System.out.println(k + " - " + v));
+            throw new RuntimeException("Parameter -port (--port) is required for UDP output item");
+        }
+        port = Integer.parseInt(portString);
+
         super.addListener(this);
-        // OutputName is host:port
-        String [] temp = config.getOutputName().split(":");
-        String hostname = temp[0];
         try {
-            address = InetAddress.getByName(hostname);
+            address = InetAddress.getByName(hostName);
         } catch (UnknownHostException e) {
-            throw new RuntimeException("Unknown host: " + hostname, e);
+            throw new RuntimeException("Unknown host: " + hostName, e);
         }
         try {
             socket = new DatagramSocket();
         } catch (SocketException e) {
             throw new RuntimeException("Socket exception", e);
         }
-        port = Integer.parseInt(temp[1]);
+        this.hostName = hostName;
         addTransactionMessages = true;
     }
 
@@ -70,5 +82,16 @@ public class UDPOutputItem extends AbstractOutputItem implements SendListener {
                 throw new RuntimeException("Socket send exception", e);
             }
         }
+    }
+
+    /**
+     * Print the configuration
+     * @return A printable string of the current configuration
+     */
+    @Override
+    public String toString() {
+        return "UDPOutputItem" + System.lineSeparator() +
+                hostName + System.lineSeparator() +
+                port;
     }
 }

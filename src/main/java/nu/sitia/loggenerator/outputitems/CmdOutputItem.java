@@ -1,8 +1,5 @@
 package nu.sitia.loggenerator.outputitems;
 
-
-import nu.sitia.loggenerator.util.Configuration;
-
 import java.util.Arrays;
 import java.util.List;
 
@@ -10,10 +7,10 @@ public class CmdOutputItem extends AbstractOutputItem implements SendListener {
 
     /**
      * Constructor. Add the callback method from this class.
-     * @param config The Configuration object
+     * @param args The command line arguments
      */
-    public CmdOutputItem(Configuration config) {
-        super(config);
+    public CmdOutputItem(String [] args) {
+        super(args);
         super.addListener(this);
     }
 
@@ -48,4 +45,12 @@ public class CmdOutputItem extends AbstractOutputItem implements SendListener {
         System.out.println(toSend);
     }
 
+    /**
+     * Print the configuration
+     * @return A printable string of the current configuration
+     */
+    @Override
+    public String toString() {
+        return "CmdOutputItem";
+    }
 }

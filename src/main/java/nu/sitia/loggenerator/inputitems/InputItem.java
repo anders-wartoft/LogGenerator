@@ -26,4 +26,10 @@ public interface InputItem {
      * @return The next message
      */
     List<String> next();
+
+    /**
+     * Return the configuration in printable format
+     * @return The configuration, ending with newline
+     */
+    String toString();
 }

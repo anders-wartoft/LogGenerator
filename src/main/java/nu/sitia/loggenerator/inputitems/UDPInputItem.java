@@ -1,6 +1,6 @@
 package nu.sitia.loggenerator.inputitems;
 
-import nu.sitia.loggenerator.util.Configuration;
+import nu.sitia.loggenerator.util.CommandLineParser;
 
 import java.io.IOException;
 import java.net.*;
@@ -11,46 +11,36 @@ import java.util.logging.Logger;
 
 public class UDPInputItem extends AbstractInputItem {
     static final Logger logger = Logger.getLogger(UDPInputItem.class.getName());
-    /** The name:port to connect to */
+    /** The name to bind to */
     private final String hostName;
-    /** The InetAddress to connect to */
-    private InetAddress address;
+    /** The port to listen on */
+    private final int port;
     /** The socket to use */
     private DatagramSocket socket;
 
     /**
      * Create a new UDPInputItem
-     * @param config The Configuration object
+     * @param args The command line arguments
      */
-    public UDPInputItem(Configuration config) {
-        super(config);
-        hostName = config.getInputName();
+    public UDPInputItem(String [] args) {
+        super(args);
+        hostName = CommandLineParser.getCommandLineArgument(args, "host", "host-name", "Host name to bind to");
+        String portString = CommandLineParser.getCommandLineArgument(args, "port", "port", "Port to listen on");
+        if (null == portString) {
+            CommandLineParser.getSeenParameters().forEach((k,v) -> System.out.println(k + " - " + v));
+            throw new RuntimeException("Parameter -port (-port) is required for UDP input item");
+        }
+        port = Integer.parseInt(portString);
     }
 
     /**
      * Let the item prepare for reading
      */
     public void setup() throws RuntimeException {
-        // InputName is "host:port" or just "port"
-        // Port number to connect to
-        String hostname = null;
-        int port;
-        if (hostName.contains(":")) {
-            String [] temp = hostName.split(":");
-            hostname = temp[0];
-            try {
-                address = InetAddress.getByName(hostname);
-            } catch (UnknownHostException e) {
-                throw new RuntimeException("Unknown host: " + hostname, e);
-            }
-            port = Integer.parseInt(temp[1]);
-        } else {
-            port = Integer.parseInt(hostName);
-        }
         try {
-            if (address != null) {
+            if (hostName != null) {
                 // Listen on a specified address
-                socket = new DatagramSocket(new InetSocketAddress(address, port));
+                socket = new DatagramSocket(new InetSocketAddress(hostName, port));
             } else {
                 // Listen to broadcast
                 socket = new DatagramSocket(new InetSocketAddress(port));
@@ -58,8 +48,8 @@ public class UDPInputItem extends AbstractInputItem {
         } catch (SocketException e) {
             throw new RuntimeException("Socket exception", e);
         }
-        if (hostname != null) {
-            logger.info("Serving UDP server on " + hostname + ":" + port);
+        if (hostName != null) {
+            logger.info("Serving UDP server on " + hostName + ":" + port);
         } else {
             logger.info("Serving UDP server on port " + port);
         }
@@ -106,5 +96,16 @@ public class UDPInputItem extends AbstractInputItem {
      */
     public void teardown() {
         // Unreachable code
+    }
+
+    /**
+     * Print the configuration
+     * @return A printable string of the current configuration
+     */
+    @Override
+    public String toString() {
+        return "UDPInputItem" + System.lineSeparator() +
+                hostName + System.lineSeparator() +
+                port;
     }
 }

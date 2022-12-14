@@ -10,4 +10,10 @@ public interface ProcessFilter {
      * @return Filtered (altered) data
      */
      List<String> filter (List<String> toFilter);
+
+    /**
+     * Return the configuration in printable format
+     * @return The configuration, ending with newline
+     */
+    String toString();
 }

@@ -1,6 +1,5 @@
 package nu.sitia.loggenerator.filter;
 
-import nu.sitia.loggenerator.util.Configuration;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -15,17 +14,22 @@ public class RegexFilter implements ProcessFilter {
     /** Cached regex pattern */
     private final Pattern pattern;
 
+    /** for toString() */
+    private final String regex;
+
     /**
      * Create a RegexFilter and set all parameters
-     * @param config The configuration object to get parameters from
+     * @param regex The value to search for
+     * @param value The value to use instead
      */
-    public RegexFilter(Configuration config) {
+    public RegexFilter(String regex, String value) {
+        this.value = value;
+        this.regex = regex;
         // What to look for
-        String regex = config.getRegex();
         if (null == regex) {
             throw new RuntimeException("regex is null");
         }
-        value = config.getValue();
+        // What to replace it with
         if (null == value) {
             throw new RuntimeException("value is null");
         }
@@ -53,5 +57,14 @@ public class RegexFilter implements ProcessFilter {
                 filtered.add(filter(s)));
 
         return filtered;
+    }
+
+    /**
+     * The current configuration
+     * @return A printout of the current configuration
+     */
+    @Override
+    public String toString() {
+        return "RegexFilter" + System.lineSeparator() + regex + " - " + value + System.lineSeparator();
     }
 }

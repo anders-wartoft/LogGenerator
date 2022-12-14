@@ -1,29 +1,32 @@
 package nu.sitia.loggenerator.filter;
 
-import nu.sitia.loggenerator.util.Configuration;
+import nu.sitia.loggenerator.ShutdownHandler;
 import nu.sitia.loggenerator.util.gapdetector.GapDetector;
 
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class GapDetectionFilter implements ProcessFilter {
+public class GapDetectionFilter implements ProcessFilter, ShutdownHandler {
     /** The detector */
     private final GapDetector detector = new GapDetector();
 
     /** The pattern to get the next number from the log */
     private final Pattern pattern;
+
+    /** Used in toString() */
+    private final String regex;
+
     /**
      * Create a guardFilter and set all parameters
-     * @param config The configuration object to get parameters from
+     * @param regex The regex to use to identify the id number
      */
-    public GapDetectionFilter(Configuration config) {
-        String regex = config.getGapRegex();
-        if (null == regex) throw new RuntimeException("No gap regex detected");
+    public GapDetectionFilter(String regex) {
+        if (null == regex) {
+            throw new RuntimeException("No gap regex detected");
+        }
         pattern = Pattern.compile(regex);
-        // When we are shutting down the transmission we'd like to be able to
-        // print the gaps, so add the detector to the config
-        config.setDetector(detector);
+        this.regex = regex;
     }
 
     /**
@@ -51,5 +54,24 @@ public class GapDetectionFilter implements ProcessFilter {
                 detector.check(number);
             }
         }
+    }
+
+    /**
+     * Print the configuration
+     * @return A printable string of the current configuration
+     */
+    @Override
+    public String toString() {
+        return "GapDetectionFilter" + System.lineSeparator() +
+                regex + System.lineSeparator();
+    }
+
+
+    /**
+     * Shutdown hook. print the result
+     */
+    @Override
+    public void shutdown() {
+        System.out.println(detector);
     }
 }
