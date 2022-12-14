@@ -41,16 +41,12 @@ public class DirectoryInputItem extends AbstractInputItem {
     /** The current file we are using */
     private FileInputItem fileItem = null;
 
-    /** The args to use when creating sub items */
-    private final String [] args;
-
     /**
      * Create a new FileInputItem
      * @param args The command line arguments
      */
     public DirectoryInputItem(String [] args) {
         super(args);
-        this.args = args;
         this.directoryName = CommandLineParser.getCommandLineArgument(args, "fn", "file-name", "Input file name");
         if (directoryName == null) {
             CommandLineParser.getSeenParameters().forEach((k,v) -> System.out.println(k + " - " + v));
@@ -66,12 +62,7 @@ public class DirectoryInputItem extends AbstractInputItem {
         } else {
             glob = "glob:" +globString;
         }
-    }
 
-    /**
-     * Let the item prepare for reading
-     */
-    public void setup() throws RuntimeException {
         logger.fine("setup " + glob);
         final PathMatcher pathMatcher = FileSystems.getDefault().getPathMatcher(glob);
         try {
@@ -90,6 +81,12 @@ public class DirectoryInputItem extends AbstractInputItem {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    /**
+     * Let the item prepare for reading
+     */
+    public void setup() throws RuntimeException {
     }
 
     /**
@@ -142,7 +139,7 @@ public class DirectoryInputItem extends AbstractInputItem {
         sb.append("DirectoryInputItem").append(System.lineSeparator());
         sb.append(directoryName).append(System.lineSeparator());
         sb.append(glob).append(System.lineSeparator());
-        fileList.forEach(s -> sb.append(s).append(System.lineSeparator()));
+        fileList.forEach(s -> sb.append(s.toString()).append(System.lineSeparator()));
         return sb.toString();
     }
 }

@@ -38,10 +38,10 @@ public class FileOutputItem extends AbstractOutputItem implements SendListener, 
         super(args);
         super.addListener(this);
 
-        fileName = CommandLineParser.getCommandLineArgument(args, "on", "output-name", "Output details");
+        fileName = CommandLineParser.getCommandLineArgument(args, "fn", "file-name", "Output details");
         if (null == fileName) {
             CommandLineParser.getSeenParameters().forEach((k,v) -> System.out.println(k + " - " + v));
-            throw new RuntimeException("Missing -on --output-name argument for -o file");
+            throw new RuntimeException("Missing '-on' or '--output-name' argument for -o file");
         }
         addTransactionMessages = true;
     }

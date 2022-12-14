@@ -31,7 +31,7 @@ public class InputItemFactory {
      */
     public static InputItem create(String [] args) {
         String input = CommandLineParser.getCommandLineArgument(args, "i", "input", "Input module name (udp, tcp, kafka or file");
-        String inputName = CommandLineParser.getCommandLineArgument(args, "in", "input-name", "Input file name");
+        String inputName = CommandLineParser.getCommandLineArgument(args, "fn", "file-name", "Input file name");
         if (null == input) {
             CommandLineParser.getSeenParameters().forEach((k,v) -> System.out.println(k + " - " + v));
             throw new RuntimeException("Parameter -i (--input) is required");
@@ -59,7 +59,7 @@ public class InputItemFactory {
     private static InputItem getFileInputItem(String name, String [] args) {
         if (name == null) {
             CommandLineParser.getSeenParameters().forEach((k,v) -> System.out.println(k + " - " + v));
-            throw new RuntimeException("Parameter -in (--input-name) is required for -i file");
+            throw new RuntimeException("Parameter -fn (--file-name) is required for -i file");
         }
 
         File file = new File(name);
