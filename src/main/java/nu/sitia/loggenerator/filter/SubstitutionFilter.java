@@ -57,9 +57,6 @@ public class SubstitutionFilter implements ProcessFilter {
      */
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder();
-        sb.append("SubstitutionFilter").append(System.lineSeparator());
-        variableMap.forEach((s,t) -> sb.append(s).append(" - ").append(t).append(System.lineSeparator()));
-        return sb.toString();
+        return "SubstitutionFilter";
     }
 }

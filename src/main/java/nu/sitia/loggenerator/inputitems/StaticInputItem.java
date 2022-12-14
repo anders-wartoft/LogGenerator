@@ -35,10 +35,10 @@ public class StaticInputItem extends AbstractInputItem {
      */
     public StaticInputItem(String [] args) {
         super(args);
-        String string = CommandLineParser.getCommandLineArgument(args, "in", "input-name", "Input static name");
+        String string = CommandLineParser.getCommandLineArgument(args, "string", "string", "Input static string");
         if (null == string) {
             CommandLineParser.getSeenParameters().forEach((k,v) -> System.out.println(k + " - " + v));
-            throw new RuntimeException("-in argument is missing for -i static");
+            throw new RuntimeException("Missing argument '-string' or '--string' missing for -i static");
         }
         strings = List.of(string);
     }

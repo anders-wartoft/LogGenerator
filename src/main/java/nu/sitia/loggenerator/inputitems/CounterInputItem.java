@@ -38,10 +38,10 @@ public class CounterInputItem extends AbstractInputItem {
      */
     public CounterInputItem(String [] args) {
         super(args);
-        this.string = CommandLineParser.getCommandLineArgument(args, "in", "input-name", "Input file name");
+        this.string = CommandLineParser.getCommandLineArgument(args, "string", "string", "String to send");
         if (string == null) {
             CommandLineParser.getSeenParameters().forEach((k,v) -> System.out.println(k + " - " + v));
-            throw new RuntimeException("Required parameter 'input-name' not found.");
+            throw new RuntimeException("Required parameter '-string'  or '--string' not found.");
         }
 
     }

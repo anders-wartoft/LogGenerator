@@ -16,23 +16,23 @@ There are input module for the following tasks:
 #### Read files
 Read a local file
 
-Parameters: `-i file -in {file name}`
+Parameters: `-i file -fn {file name}`
 
-Example: `-i file -in ./src/test/data/test.txt`
+Example: `-i file -fn ./src/test/data/test.txt`
 
 #### Read files in a directory
 Read all files in a directory
 
-Parameters: `-i file -in {directory name}`
+Parameters: `-i file -fn {directory name}`
 
-Example: `-i file -in ./src/test/data/`
+Example: `-i file -fn ./src/test/data/`
 
 #### Read files in a directory with globs
 Read all files in a directory that matches a glob. See https://javapapers.com/java/glob-with-java-nio/ for details on how to write globs.
 
-Parameters: `-i file -in {directory name -g "{glob}"`). 
+Parameters: `-i file -fn {directory name -g "{glob}"`). 
 
-Example: `-i file -in ./src/test/data/ -g "**.txt"`
+Example: `-i file -fn ./src/test/data/ -g "**.txt"`
 
 Note that all * must be within quotes, since otherwise, the OS will expand that variable.
 
@@ -60,20 +60,20 @@ Example: `-i kafka -cn test -tn testtopic -bs localhost:9092`
 #### Static string
 Send the same string over and over again. 
 
-Parameters: `-i static -in {the string to send}`
+Parameters: `-i static -string {the string to send}`
 
-Example: `-i static -in "Test string to send"`
+Example: `-i static -string "Test string to send"`
 
-Example: `-i static -in "Test string to send" -l 1000` (only send 1000 events)
+Example: `-i static -string "Test string to send" -l 1000` (only send 1000 events)
 
 #### Static string ending with a counter starting from 1
 This is used to send a static string that is appended with an increasing number, starting from 1. This is a very fast way to send events ending with a counter.
-To send 1.000.000 events from "Test:1" to "Test:1000000", use `java -jar LogGenerator-with-dependencies.jar -i counter -in "Test:" -
+To send 1.000.000 events from "Test:1" to "Test:1000000", use `java -jar LogGenerator-with-dependencies.jar -i counter -string "Test:" -
 --limit 1000000 -o cmd`
 
-Parameters: `-i counter -in {the string to send}`
+Parameters: `-i counter -string {the string to send}`
 
-Example: `-i counter -in "Test string number:"`
+Example: `-i counter -string "Test string number:"`
 
 
 ### Output modules
@@ -135,7 +135,7 @@ Server:
 
 In another command window, start the client (same jar file):
 
-`java -jar LogGenerator-with-dependencies.jar -i counter  -in "test" -o udp -host localhost -port 9999  -s true --limit 1000`
+`java -jar LogGenerator-with-dependencies.jar -i counter -string "test" -o udp -host localhost -port 9999  -s true --limit 1000`
 
 ### Filter modules:
 - Add a header
@@ -164,7 +164,7 @@ If you have a file with a lot of logs, like:
 
 Then the following invocation will change the date to today:
 
-`java -jar LogGenerator-with-dependencies.jar -i file -in src/test/data/log-with-time.log -o cmd -s true -l 10 -r "([a-zA-Z]{3} [a-zA-Z]{3} \d\d \d\d:\d\d:\d\d\.\d{3})" -v "{date:EEE MMM HH:mm:ss.sss}"`
+`java -jar LogGenerator-with-dependencies.jar -i file -fn src/test/data/log-with-time.log -o cmd -s true -l 10 -r "([a-zA-Z]{3} [a-zA-Z]{3} \d\d \d\d:\d\d:\d\d\.\d{3})" -v "{date:EEE MMM HH:mm:ss.sss}"`
 
 #### Replace variables
 Variable substitution will be present for template, regex and header processing. If a file is loaded as "file" or template "none" then the (processor intensive) substitutions will not be loaded.
@@ -260,16 +260,16 @@ Example: `{oneOf:{ipv4:192.168.0.0/16},{ipv4:172.16.0.0/12},{ipv4:10.0.0.0/8}}` 
 ## Usage
 ### Read a file and print the output to the console
 
-`java -jar LogGenerator-with-dependencies.jar -i file -in file.txt -o cmd`
+`java -jar LogGenerator-with-dependencies.jar -i file -fn file.txt -o cmd`
 
 ### Read a file and send the output to a UDP listener
 
-`java -jar LogGenerator-with-dependencies.jar -i file -in file.txt -o udp -host localhost -port 514`
+`java -jar LogGenerator-with-dependencies.jar -i file -fn file.txt -o udp -host localhost -port 514`
 
 ### Read a file, add a syslog header and send the output to the console
 This will add a syslog header to each line in the file before printing the line.
 
-`java -jar LogGenerator-with-dependencies.jar -i file -in test.txt -o cmd --he "<{pri:}>{date:MMM dd HH:mm:ss} {oneOf:mymachine,yourmachine,localhost,{ipv4:192.168.0.0/16}} {string:a-z0-9/9}[{random:1-65535}]: ""`
+`java -jar LogGenerator-with-dependencies.jar -i file -fn test.txt -o cmd --he "<{pri:}>{date:MMM dd HH:mm:ss} {oneOf:mymachine,yourmachine,localhost,{ipv4:192.168.0.0/16}} {string:a-z0-9/9}[{random:1-65535}]: ""`
 
 Example: 
 - `<25>Dec 10 15:27:38 192.168.169.209 liiblhukp[38946]: Test row 1`
@@ -281,7 +281,7 @@ Example: If a log locks like this:
 
 `Sat Dec 03 00:35:57.108 Usb Host Notification Apple80211Set: seqNum 5459 Total 1 chg 0 en0`
 
-`java -jar LogGenerator-with-dependencies.jar -i file -in log-with-time.log -r "[a-zA-Z]{3} [a-zA-Z]{3} \d{1,2} \d\d:\d\d:\d\d\.\d{3}" -v "{date:EEE MMM dd HH:mm:ss}" -o cmd`
+`java -jar LogGenerator-with-dependencies.jar -i file -fn log-with-time.log -r "[a-zA-Z]{3} [a-zA-Z]{3} \d{1,2} \d\d:\d\d:\d\d\.\d{3}" -v "{date:EEE MMM dd HH:mm:ss}" -o cmd`
 
 might print 
 
@@ -312,7 +312,7 @@ Example. We have a template file with two lines:
 
 The result from running: 
 
-`java -jar LogGenerator-with-dependencies.jar -i template -t continuous -in template.txt -o cmd  -s true -l 10000`
+`java -jar LogGenerator-with-dependencies.jar -i template -t continuous -fn template.txt -o cmd  -s true -l 10000`
 
 will be 10.000 lines beginning with `row1` or `row2` and ending with a letter a-d or number 10-13.
 
@@ -346,7 +346,7 @@ To generate a header with that kind of value, use the {counter: variable.
 Example: Send data from a file, add a header with a counter and some text around the counter, so we can identify that on the server side.
 First, send to cmd, so we can see that the counter is working:
 
-`java -jar LogGenerator-with-dependencies.jar -i file -in src/test/data/log-with-time.log -he "<{counter:test:1}>" -o cmd`
+`java -jar LogGenerator-with-dependencies.jar -i file -fn src/test/data/log-with-time.log -he "<{counter:test:1}>" -o cmd`
 
 We should se some events starting with <1>, <2> etc. Since we'd like to be able to see if the Gap Detection is working, 
 set the initial value to, e.g., 42.
@@ -355,7 +355,7 @@ Example with only one instance of LogGenerator:
 
 Server and client:
 
-`java -jar LogGenerator-with-dependencies.jar -i file -in src/test/data/test.txt -he "<{counter:test:42}>" -o cmd -gd "<(\\d+)>"`
+`java -jar LogGenerator-with-dependencies.jar -i file -fn src/test/data/test.txt -he "<{counter:test:42}>" -o cmd -gd "<(\\d+)>"`
 
 You should see the received data and the detected gaps:
 
@@ -375,7 +375,7 @@ In a new terminal, start the server:
 
 Start the client:
 
-`java -jar LogGenerator-with-dependencies.jar -i file -in src/test/data/test.txt -he "<{counter:test:42}>" -o tcp -host localhost -port 9999`
+`java -jar LogGenerator-with-dependencies.jar -i file -fn src/test/data/test.txt -he "<{counter:test:42}>" -o tcp -host localhost -port 9999`
 
 You should see the received data. To see the gaps, press Ctrl-C:
 
@@ -414,7 +414,7 @@ A regex could be `"(\d+)$"` since $ denotes end-of-string.
 
 Example:
 
-`java -jar LogGenerator-with-dependencies.jar -i counter -in "Test:" --limit 100000 -o null -s true -gd "(\d+)$"`
+`java -jar LogGenerator-with-dependencies.jar -i counter -string "Test:" --limit 100000 -o null -s true -gd "(\d+)$"`
 
 ### This sounds nice and all, but how do I start? Can I get the built jar?
 I won't be uploading a jar file, but you can easily get the jar by:
@@ -445,7 +445,7 @@ Server:
 
 Client:
 
-`java -jar target/LogGenerator-with-dependencies.jar -o kafka -cn test2 -tn test -bs 192.168.1.116:9092 -i counter -in "Test:" --limit 100  -s true -ob 10`
+`java -jar target/LogGenerator-with-dependencies.jar -o kafka -cn test2 -tn test -bs 192.168.1.116:9092 -i counter -string "Test:" --limit 100  -s true -ob 10`
 
 ### Whats the --------BEGIN_TRANSACTION-------- for?
 Those ar messages inserted into the event stream to be able to detect start of transfers and to save a timestamp for the statistics module to work.

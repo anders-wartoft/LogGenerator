@@ -51,10 +51,10 @@ public class DirectoryInputItem extends AbstractInputItem {
     public DirectoryInputItem(String [] args) {
         super(args);
         this.args = args;
-        this.directoryName = CommandLineParser.getCommandLineArgument(args, "in", "input-name", "Input file name");
+        this.directoryName = CommandLineParser.getCommandLineArgument(args, "fn", "file-name", "Input file name");
         if (directoryName == null) {
             CommandLineParser.getSeenParameters().forEach((k,v) -> System.out.println(k + " - " + v));
-            throw new RuntimeException("Required parameter 'input-name' not found.");
+            throw new RuntimeException("Required parameter '-fn' or '--file-name' not found.");
         }
 
         logger.fine("Creating DirectoryInputItem: " + directoryName);

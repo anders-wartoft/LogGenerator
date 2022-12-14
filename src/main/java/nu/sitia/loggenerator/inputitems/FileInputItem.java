@@ -49,7 +49,7 @@ public class FileInputItem extends AbstractInputItem {
         this.fileName = fileName;
         if (fileName == null) {
             CommandLineParser.getSeenParameters().forEach((k,v) -> System.out.println(k + " - " + v));
-            throw new RuntimeException("Required parameter 'input-name' not found.");
+            throw new RuntimeException("Required parameter '-fn' or '--file-name' not found.");
         }
         String statisticsParameter = CommandLineParser.getCommandLineArgument(args, "s", "statistics", "Add statistics messages and printouts");
         this.isStatistics = statisticsParameter != null &&
