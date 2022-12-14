@@ -27,6 +27,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public class UDPInputItem extends AbstractInputItem {
+    private static final int MAX_DATAGRAM_SIZE = 65507;
     static final Logger logger = Logger.getLogger(UDPInputItem.class.getName());
     /** The name to bind to */
     private final String hostName;
@@ -89,7 +90,7 @@ public class UDPInputItem extends AbstractInputItem {
         List<String> result = new ArrayList<>();
         int lines = this.batchSize;
         while (lines-- > 0) {
-            byte [] buffer = new byte[1024*1024];
+            byte [] buffer = new byte[MAX_DATAGRAM_SIZE  + 1];
             DatagramPacket response = new DatagramPacket(buffer, buffer.length);
             try {
                 socket.receive(response);
