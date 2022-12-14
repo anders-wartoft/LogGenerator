@@ -462,5 +462,5 @@ Example: to send random data from a template file to a udp listener on port 9999
 `java -Djava.util.logging.config.file=logging.properties -jar target/LogGenerator-with-dependencies.jar -i template -fn src/test/data/template.txt -o udp -host localhost -port 9999 -t time:5000 `
 
 ## What License are you using?
-See the license header in each java file. As long as you don't violate the licenses of the components, you can do whatever you want with the code, just give me credit if you use the code.
+See the license header in each java file. As long as you don't violate the licenses of the components (kafka and slf4j), you can do whatever you want with the code, just give me credit if you use the code.
 
