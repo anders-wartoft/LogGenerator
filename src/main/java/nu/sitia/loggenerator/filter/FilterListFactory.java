@@ -61,7 +61,7 @@ public class FilterListFactory {
 
         if (regex != null ||
                 header!= null ||
-                template1.isNone()) {
+                !template1.isNone()) {
             // Add variable expansion, like {date: etc
             filterList.add(new SubstitutionFilter());
         }
