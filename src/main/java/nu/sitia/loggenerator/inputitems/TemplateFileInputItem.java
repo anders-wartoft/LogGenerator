@@ -53,7 +53,7 @@ public class TemplateFileInputItem extends FileInputItem {
      * @param args The command line arguments
      */
     public TemplateFileInputItem(String [] args) {
-        super(CommandLineParser.getCommandLineArgument(args, "in", "input-name", "Input file name"), args);
+        super(CommandLineParser.getCommandLineArgument(args, "fn", "file-name", "Input file name"), args);
         String templateString = CommandLineParser.getCommandLineArgument(args, "t", "template", "Should the input be regarded as a template and variables resolved?");
         if (templateString == null) {
             CommandLineParser.getSeenParameters().forEach((k,v) -> System.out.println(k + " - " + v));
