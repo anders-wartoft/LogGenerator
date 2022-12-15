@@ -66,10 +66,10 @@ public class LogStatistics {
 
     /**
      * Constructor
-     * @param args Used to get the printout every ms value
+     * @param config Used to get the printout every ms value
      */
-    public LogStatistics(String [] args) {
-        String printoutsString = CommandLineParser.getCommandLineArgument(args, "pp", "printouts", "MS between extra printout for statistics");
+    public LogStatistics(Configuration config) {
+        String printoutsString = config.getValue("-pp");
 
         if (printoutsString != null) {
             this.extraPrintoutEveryMs = Long.parseLong(printoutsString);

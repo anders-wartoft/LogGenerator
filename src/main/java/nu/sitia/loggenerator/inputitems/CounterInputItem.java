@@ -17,7 +17,7 @@
 
 package nu.sitia.loggenerator.inputitems;
 
-import nu.sitia.loggenerator.util.CommandLineParser;
+import nu.sitia.loggenerator.Configuration;
 
 import java.util.List;
 
@@ -34,14 +34,13 @@ public class CounterInputItem extends AbstractInputItem {
 
     /**
      * Create a new StaticInputItem
-     * @param args The Configuration object
+     * @param config The Configuration object
      */
-    public CounterInputItem(String [] args) {
-        super(args);
-        this.string = CommandLineParser.getCommandLineArgument(args, "string", "string", "String to send");
+    public CounterInputItem(Configuration config) {
+        super(config);
+        this.string = config.getValue("-string");
         if (string == null) {
-            CommandLineParser.getSeenParameters().forEach((k,v) -> System.out.println(k + " - " + v));
-            throw new RuntimeException("Required parameter '-string'  or '--string' not found.");
+            throw new RuntimeException(config.getNotFoundInformation("-string"));
         }
 
     }

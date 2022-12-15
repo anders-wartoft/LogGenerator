@@ -22,7 +22,6 @@ import nu.sitia.loggenerator.filter.substituters.Substitution;
 import nu.sitia.loggenerator.templates.Template;
 import nu.sitia.loggenerator.templates.TemplateFactory;
 import nu.sitia.loggenerator.templates.TimeTemplate;
-import nu.sitia.loggenerator.util.CommandLineParser;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -50,14 +49,13 @@ public class TemplateFileInputItem extends FileInputItem {
 
     /**
      * Create a new TemplateFileInputItem
-     * @param args The command line arguments
+     * @param config The command line arguments
      */
-    public TemplateFileInputItem(String [] args) {
-        super(CommandLineParser.getCommandLineArgument(args, "fn", "file-name", "Input file name"), args);
-        String templateString = CommandLineParser.getCommandLineArgument(args, "t", "template", "Should the input be regarded as a template and variables resolved?");
+    public TemplateFileInputItem(Configuration config) {
+        super(config.getValue("-fn"), config);
+        String templateString = config.getValue("-t");
         if (templateString == null) {
-            CommandLineParser.getSeenParameters().forEach((k,v) -> System.out.println(k + " - " + v));
-            throw new RuntimeException("Missing template parameter for TemplateFileItem");
+            throw new RuntimeException(config.getNotFoundInformation("-t"));
         }
         template = TemplateFactory.getTemplate(templateString);
 

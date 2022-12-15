@@ -17,7 +17,7 @@
 
 package nu.sitia.loggenerator.inputitems;
 
-import nu.sitia.loggenerator.util.CommandLineParser;
+import nu.sitia.loggenerator.Configuration;
 import org.apache.kafka.clients.consumer.*;
 
 import java.time.Duration;
@@ -47,27 +47,24 @@ public class KafkaInputItem extends AbstractInputItem {
 
     /**
      * Create a new KafkaInputItem
-     * @param args The command line arguments
+     * @param config The command line arguments
      */
-    public KafkaInputItem(String [] args) {
-        super(args);
-        this.clientId = CommandLineParser.getCommandLineArgument(args, "cn", "client-name", "The Client ID to use in Kafka input and output items");
-        this.topicName = CommandLineParser.getCommandLineArgument(args, "tn", "topic-name", "The Topic Name to use in Kafka input and output items");
-        this.bootstrapServer = CommandLineParser.getCommandLineArgument(args, "bs", "bootstrap-server", "The address (host:port) to Kafka input and output items");
+    public KafkaInputItem(Configuration config) {
+        super(config);
+        this.clientId = config.getValue("-icn");
+        this.topicName = config.getValue("-itn");
+        this.bootstrapServer = config.getValue("-ibs");
 
         if (null == clientId) {
-            CommandLineParser.getSeenParameters().forEach((k,v) -> System.out.println(k + " - " + v));
-            throw new RuntimeException("client-name is required in Kafka");
+            throw new RuntimeException(config.getNotFoundInformation("-icn"));
         }
 
         if (null == topicName) {
-            CommandLineParser.getSeenParameters().forEach((k,v) -> System.out.println(k + " - " + v));
-            throw new RuntimeException("topic-name is required in Kafka");
+            throw new RuntimeException(config.getNotFoundInformation("-itn"));
         }
 
         if (null == bootstrapServer) {
-            CommandLineParser.getSeenParameters().forEach((k,v) -> System.out.println(k + " - " + v));
-            throw new RuntimeException("bootstrap-server is required in Kafka");
+            throw new RuntimeException(config.getNotFoundInformation("-ibs"));
         }
     }
 

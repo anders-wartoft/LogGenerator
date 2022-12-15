@@ -39,12 +39,13 @@ public class ItemProxyTest
     {
         String [] args = {
                 "-i", "file",
-                "-in", "src/test/data/test.txt"
+                "-ifn", "src/test/data/test.txt"
         };
+        Configuration config = new Configuration(args);
 
-        WrappedFileInputItem fii = new WrappedFileInputItem(args);
-        MemoryOutputItem moi = new MemoryOutputItem(args);
-        ItemProxy proxy = new ItemProxy(fii, moi, new ArrayList<>(), args);
+        WrappedFileInputItem fii = new WrappedFileInputItem(config);
+        MemoryOutputItem moi = new MemoryOutputItem(config);
+        ItemProxy proxy = new ItemProxy(fii, moi, new ArrayList<>(), config);
         proxy.pump();
         List<String> result = moi.getData();
         List<String> fileContents = fii.getData();
@@ -69,15 +70,17 @@ public class ItemProxyTest
         String batchSize = "3";
         String [] args = {
                 "-i", "file",
-                "-in", "src/test/data/test.txt",
+                "-ifn", "src/test/data/test.txt",
                 "-ob", batchSize
         };
 
-        // This is a FileInputItem that also caches all data, so we can get it with fii.getData() later
-        WrappedFileInputItem fii = new WrappedFileInputItem(args);
-        MemoryOutputItem moi = new MemoryOutputItem(args);
+        Configuration config = new Configuration(args);
 
-        ItemProxy proxy = new ItemProxy(fii, moi, new ArrayList<>(), args);
+        // This is a FileInputItem that also caches all data, so we can get it with fii.getData() later
+        WrappedFileInputItem fii = new WrappedFileInputItem(config);
+        MemoryOutputItem moi = new MemoryOutputItem(config);
+
+        ItemProxy proxy = new ItemProxy(fii, moi, new ArrayList<>(), config);
         proxy.pump();
         List<String> result = moi.getData();
         List<String> fileContents = fii.getData();

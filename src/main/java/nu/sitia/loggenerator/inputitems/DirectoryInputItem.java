@@ -17,7 +17,7 @@
 
 package nu.sitia.loggenerator.inputitems;
 
-import nu.sitia.loggenerator.util.CommandLineParser;
+import nu.sitia.loggenerator.Configuration;
 
 import java.io.IOException;
 import java.nio.file.*;
@@ -43,19 +43,18 @@ public class DirectoryInputItem extends AbstractInputItem {
 
     /**
      * Create a new FileInputItem
-     * @param args The command line arguments
+     * @param config The command line arguments
      */
-    public DirectoryInputItem(String [] args) {
-        super(args);
-        this.directoryName = CommandLineParser.getCommandLineArgument(args, "fn", "file-name", "Input file name");
+    public DirectoryInputItem(Configuration config) {
+        super(config);
+        this.directoryName = config.getValue("-ifn");
         if (directoryName == null) {
-            CommandLineParser.getSeenParameters().forEach((k,v) -> System.out.println(k + " - " + v));
-            throw new RuntimeException("Required parameter '-fn' or '--file-name' not found.");
+            throw new RuntimeException(config.getNotFoundInformation("-ifn"));
         }
 
         logger.fine("Creating DirectoryInputItem: " + directoryName);
 
-        String globString = CommandLineParser.getCommandLineArgument(args, "g", "glob", "Filename glob for directories");
+        String globString = config.getValue("-g");
 
         if (null == globString) {
             glob = "glob:**";
@@ -72,7 +71,7 @@ public class DirectoryInputItem extends AbstractInputItem {
                                                  BasicFileAttributes attrs) {
                     if (pathMatcher.matches(path)) {
                         logger.fine("Adding " + path.toString());
-                        FileInputItem fi = new FileInputItem(path.toString(), args);
+                        FileInputItem fi = new FileInputItem(path.toString(), config);
                         fileList.add(fi);
                     }
                     return FileVisitResult.CONTINUE;

@@ -18,7 +18,7 @@
 package nu.sitia.loggenerator.outputitems;
 
 
-import nu.sitia.loggenerator.util.CommandLineParser;
+import nu.sitia.loggenerator.Configuration;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 
@@ -48,28 +48,25 @@ public class KafkaOutputItem extends AbstractOutputItem implements SendListener 
 
     /**
      * Constructor. Add the callback method from this class.
-     * @param args The command line arguments
+     * @param config The command line arguments
      */
-    public KafkaOutputItem(String [] args) {
-        super(args);
+    public KafkaOutputItem(Configuration config) {
+        super(config);
         super.addListener(this);
-        this.clientId = CommandLineParser.getCommandLineArgument(args, "cn", "client-name", "The Client ID to use in Kafka input and output items");
-        this.topicName = CommandLineParser.getCommandLineArgument(args, "tn", "topic-name", "The Topic Name to use in Kafka input and output items");
-        this.bootstrapServer = CommandLineParser.getCommandLineArgument(args, "bs", "bootstrap-server", "The address (host:port) to Kafka input and output items");
+        this.clientId = config.getValue("-ocn");
+        this.topicName = config.getValue("otn");
+        this.bootstrapServer = config.getValue("-obs");
 
         if (null == clientId) {
-            CommandLineParser.getSeenParameters().forEach((k,v) -> System.out.println(k + " - " + v));
-            throw new RuntimeException("client-name is required in Kafka");
+            throw new RuntimeException(config.getNotFoundInformation("-ocn"));
         }
 
         if (null == topicName) {
-            CommandLineParser.getSeenParameters().forEach((k,v) -> System.out.println(k + " - " + v));
-            throw new RuntimeException("topic-name is required in Kafka");
+            throw new RuntimeException(config.getNotFoundInformation("-otn"));
         }
 
         if (null == bootstrapServer) {
-            CommandLineParser.getSeenParameters().forEach((k,v) -> System.out.println(k + " - " + v));
-            throw new RuntimeException("bootstrap-server is required in Kafka");
+            throw new RuntimeException(config.getNotFoundInformation("-obs"));
         }
     }
 

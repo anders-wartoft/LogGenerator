@@ -18,8 +18,8 @@
 package nu.sitia.loggenerator.outputitems;
 
 
+import nu.sitia.loggenerator.Configuration;
 import nu.sitia.loggenerator.ShutdownHandler;
-import nu.sitia.loggenerator.util.CommandLineParser;
 
 import java.io.FileWriter;
 import java.io.IOException;
@@ -32,16 +32,15 @@ public class FileOutputItem extends AbstractOutputItem implements SendListener, 
 
     /**
      * Constructor. Add the callback method from this class.
-     * @param args The command line arguments
+     * @param config The command line arguments
      */
-    public FileOutputItem(String [] args) {
-        super(args);
+    public FileOutputItem(Configuration config) {
+        super(config);
         super.addListener(this);
 
-        fileName = CommandLineParser.getCommandLineArgument(args, "fn", "file-name", "Output details");
+        fileName = config.getValue("-ofn");
         if (null == fileName) {
-            CommandLineParser.getSeenParameters().forEach((k,v) -> System.out.println(k + " - " + v));
-            throw new RuntimeException("Missing '-on' or '--output-name' argument for -o file");
+            throw new RuntimeException(config.getNotFoundInformation("-ofn"));
         }
         addTransactionMessages = true;
     }

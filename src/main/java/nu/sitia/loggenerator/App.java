@@ -37,15 +37,21 @@ public class App
 
     public static void main( String[] args )
     {
+        // The config knows how to get parameters from the user
+        Configuration config = new Configuration(args);
+
+        // Print the parameters
+        logger.config(config.toString());
+
         // Create a list of filters
-        List<ProcessFilter> filterList = new FilterListFactory().create(args);
+        List<ProcessFilter> filterList = new FilterListFactory().create(config);
 
         // Now create the input and output items
-        InputItem inputItem = InputItemFactory.create(args);
-        OutputItem outputItem = OutputItemFactory.create(args);
+        InputItem inputItem = InputItemFactory.create(config);
+        OutputItem outputItem = OutputItemFactory.create(config);
 
         // And the proxy that mediates the flow
-        ItemProxy proxy = new ItemProxy(inputItem, outputItem, filterList, args);
+        ItemProxy proxy = new ItemProxy(inputItem, outputItem, filterList, config);
 
         // Print the configuration for every object
         logger.config(inputItem.toString());

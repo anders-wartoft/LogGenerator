@@ -16,23 +16,23 @@ There are input module for the following tasks:
 #### Read files
 Read a local file
 
-Parameters: `-i file -fn {file name}`
+Parameters: `-i file -ifn {file name}`
 
-Example: `-i file -fn ./src/test/data/test.txt`
+Example: `-i file -ifn ./src/test/data/test.txt`
 
 #### Read files in a directory
 Read all files in a directory
 
-Parameters: `-i file -fn {directory name}`
+Parameters: `-i file -ifn {directory name}`
 
-Example: `-i file -fn ./src/test/data/`
+Example: `-i file -ifn ./src/test/data/`
 
 #### Read files in a directory with globs
 Read all files in a directory that matches a glob. See https://javapapers.com/java/glob-with-java-nio/ for details on how to write globs.
 
-Parameters: `-i file -fn {directory name -g "{glob}"`). 
+Parameters: `-i file -ifn {directory name -g "{glob}"`). 
 
-Example: `-i file -fn ./src/test/data/ -g "**.txt"`
+Example: `-i file -ifn ./src/test/data/ -g "**.txt"`
 
 Note that all * must be within quotes, since otherwise, the OS will expand that variable.
 
@@ -88,9 +88,9 @@ These are the output modules available:
 #### Write to file
 Write the received events to a local file.
 
-Parameters: `-o file -on {file name}`
+Parameters: `-o file -ofn {file name}`
 
-Example: `-o file -on ./received.txt`
+Example: `-o file -ofn ./received.txt`
 
 #### Write to console
 Write the received events to the console. 
@@ -102,23 +102,23 @@ Example: `-o cmd`>
 #### Write to UDP
 Send events with UDP.
 
-Parameters: `-o udp -host host -port port`
+Parameters: `-o udp -oh hostname -op port`
 
-Example `-o udp -host localhost -port 5999`
+Example `-o udp -oh localhost -op 5999`
 
 #### Write to TCP
 Send events with TCP.
 
-Parameters: `-o tcp -host host -port port`
+Parameters: `-o tcp -oh hostnae -op port`
 
-Example `-o tcp -host localhost -port 5999`
+Example `-o tcp -oh localhost -op 5999`
 
 #### Write to Kafka
 Connect to a Kafka server and write the events to a topic. N.B., these are not unique arguments for kafka input and output so there is no way to read from a Kafka topic and write to another topic. The tool is not meant to be used for that kind of usage.
 
-Parameters: `-o kafka -cm {client name} -tn {topic name} -bs {boostrap server}`
+Parameters: `-o kafka -ocm {client name} -otn {topic name} -obs {boostrap server}`
 
-Example: `-o kafka -cn test -tn testtopic -bs localhost:9092`
+Example: `-o kafka -ocn test -otn testtopic -obs localhost:9092`
 
 #### Write to null
 This will throw away the result. It is useful, e.g., when testing for performance.
@@ -131,11 +131,11 @@ To send the text "test" 100.000 times over UDP and discard the result, but to se
 
 Server:
 
-`java -jar LogGenerator-with-dependencies.jar -i udp -port 9999  -o cmd  -s true  -gd "(\\d+)$"`
+`java -jar LogGenerator-with-dependencies.jar -i udp -ip 9999  -o cmd  -s true  -gd "(\\d+)$"`
 
 In another command window, start the client (same jar file):
 
-`java -jar LogGenerator-with-dependencies.jar -i counter -string "test" -o udp -host localhost -port 9999  -s true --limit 1000`
+`java -jar LogGenerator-with-dependencies.jar -i counter -string "test" -o udp -oh localhost -op 9999  -s true --limit 1000`
 
 ### Filter modules:
 - Add a header
@@ -164,7 +164,7 @@ If you have a file with a lot of logs, like:
 
 Then the following invocation will change the date to today:
 
-`java -jar LogGenerator-with-dependencies.jar -i file -fn src/test/data/log-with-time.log -o cmd -s true -l 10 -r "([a-zA-Z]{3} [a-zA-Z]{3} \d\d \d\d:\d\d:\d\d\.\d{3})" -v "{date:EEE MMM HH:mm:ss.sss}"`
+`java -jar LogGenerator-with-dependencies.jar -i file -ifn src/test/data/log-with-time.log -o cmd -s true -l 10 -r "([a-zA-Z]{3} [a-zA-Z]{3} \d\d \d\d:\d\d:\d\d\.\d{3})" -v "{date:EEE MMM HH:mm:ss.sss}"`
 
 #### Replace variables
 Variable substitution will be present for template, regex and header processing. If a file is loaded as "file" or template "none" then the (processor intensive) substitutions will not be loaded.
@@ -260,16 +260,16 @@ Example: `{oneOf:{ipv4:192.168.0.0/16},{ipv4:172.16.0.0/12},{ipv4:10.0.0.0/8}}` 
 ## Usage
 ### Read a file and print the output to the console
 
-`java -jar LogGenerator-with-dependencies.jar -i file -fn file.txt -o cmd`
+`java -jar LogGenerator-with-dependencies.jar -i file -ifn file.txt -o cmd`
 
 ### Read a file and send the output to a UDP listener
 
-`java -jar LogGenerator-with-dependencies.jar -i file -fn file.txt -o udp -host localhost -port 514`
+`java -jar LogGenerator-with-dependencies.jar -i file -ifn file.txt -o udp -oh localhost -op 514`
 
 ### Read a file, add a syslog header and send the output to the console
 This will add a syslog header to each line in the file before printing the line.
 
-`java -jar LogGenerator-with-dependencies.jar -i file -fn test.txt -o cmd --he "<{pri:}>{date:MMM dd HH:mm:ss} {oneOf:mymachine,yourmachine,localhost,{ipv4:192.168.0.0/16}} {string:a-z0-9/9}[{random:1-65535}]: ""`
+`java -jar LogGenerator-with-dependencies.jar -i file -ifn test.txt -o cmd --he "<{pri:}>{date:MMM dd HH:mm:ss} {oneOf:mymachine,yourmachine,localhost,{ipv4:192.168.0.0/16}} {string:a-z0-9/9}[{random:1-65535}]: ""`
 
 Example: 
 - `<25>Dec 10 15:27:38 192.168.169.209 liiblhukp[38946]: Test row 1`
@@ -281,7 +281,7 @@ Example: If a log locks like this:
 
 `Sat Dec 03 00:35:57.108 Usb Host Notification Apple80211Set: seqNum 5459 Total 1 chg 0 en0`
 
-`java -jar LogGenerator-with-dependencies.jar -i file -fn log-with-time.log -r "[a-zA-Z]{3} [a-zA-Z]{3} \d{1,2} \d\d:\d\d:\d\d\.\d{3}" -v "{date:EEE MMM dd HH:mm:ss}" -o cmd`
+`java -jar LogGenerator-with-dependencies.jar -i file -ifn log-with-time.log -r "[a-zA-Z]{3} [a-zA-Z]{3} \d{1,2} \d\d:\d\d:\d\d\.\d{3}" -v "{date:EEE MMM dd HH:mm:ss}" -o cmd`
 
 might print 
 
@@ -312,7 +312,7 @@ Example. We have a template file with two lines:
 
 The result from running: 
 
-`java -jar LogGenerator-with-dependencies.jar -i template -t continuous -fn template.txt -o cmd  -s true -l 10000`
+`java -jar LogGenerator-with-dependencies.jar -i template -t continuous -ifn template.txt -o cmd  -s true -l 10000`
 
 will be 10.000 lines beginning with `row1` or `row2` and ending with a letter a-d or number 10-13.
 
@@ -330,11 +330,44 @@ The following system variables can be used:
 - ip: `{<ipv4:0.0.0.0/0}`
 - rfc1918: `{oneOf:{ipv4:192.168.0.0/16},{ipv4:172.16.0.0/12},{ipv4:10.0.0.0/8}}`
 
+## Configuration files
+Instead of passing all parameters on the command line, one parameter (-p configurationfile) can be used instead.
+A combination of parameters from the command line and property file is possible.
+
+The property file can have all short- or long names for configuration. Comment lines start with the hash character '#'.
+
+Example:
+```properties
+# Start an udp proxy, listening on port 9999, rewriting dates to the current date. 
+# Dates are parsed  according to a specified format and finally sending the result
+# to a syslog server.
+
+# Listen to all interfaces, port 9999
+input=udp
+input-port=9999
+
+# Rewrite dates that are formatted like: Sat Dec 03 00:34:34.362
+regex=([a-zA-Z]{3} [a-zA-Z]{3} \d\d \d\d:\d\d:\d\d\.\d{3})
+# with today's date in this format
+value={date:EEE MMM dd HH:mm:ss.sss}
+
+# And send to a syslog server
+output=udp
+output-host=localhost
+output-port=514
+```
+
+Use the above property file:
+
+`java -jar LogGenerator-with-dependencies.jar -p <name-of-property-file>`
+
 ## Chaining LogGenerator 
 Now that we have an understanding of the basics, we can progress to the more advanced use cases for LogGenerator.
 To locate bottlenecks or bad connections in a log chain, one or more components can be substituted with LogGenerator to create a known set of data to send and receive.
 
 LogGenerator can be used to generate logs and receive logs, count them, calculate events per second and even detect lost events.
+
+You can use several LogGenerators inserted at different places in your event stream.
 
 ### Lost events - Gap detection
 If the events transferred contains an increasing value, then the receiver can detect if any of the values are missing.
@@ -346,7 +379,7 @@ To generate a header with that kind of value, use the {counter: variable.
 Example: Send data from a file, add a header with a counter and some text around the counter, so we can identify that on the server side.
 First, send to cmd, so we can see that the counter is working:
 
-`java -jar LogGenerator-with-dependencies.jar -i file -fn src/test/data/log-with-time.log -he "<{counter:test:1}>" -o cmd`
+`java -jar LogGenerator-with-dependencies.jar -i file -ifn src/test/data/log-with-time.log -he "<{counter:test:1}>" -o cmd`
 
 We should se some events starting with <1>, <2> etc. Since we'd like to be able to see if the Gap Detection is working, 
 set the initial value to, e.g., 42.
@@ -355,7 +388,7 @@ Example with only one instance of LogGenerator:
 
 Server and client:
 
-`java -jar LogGenerator-with-dependencies.jar -i file -fn src/test/data/test.txt -he "<{counter:test:42}>" -o cmd -gd "<(\\d+)>"`
+`java -jar LogGenerator-with-dependencies.jar -i file -ifn src/test/data/test.txt -he "<{counter:test:42}>" -o cmd -gd "<(\\d+)>"`
 
 You should see the received data and the detected gaps:
 
@@ -375,7 +408,7 @@ In a new terminal, start the server:
 
 Start the client:
 
-`java -jar LogGenerator-with-dependencies.jar -i file -fn src/test/data/test.txt -he "<{counter:test:42}>" -o tcp -host localhost -port 9999`
+`java -jar LogGenerator-with-dependencies.jar -i file -ifn src/test/data/test.txt -he "<{counter:test:42}>" -o tcp -host localhost -port 9999`
 
 You should see the received data. To see the gaps, press Ctrl-C:
 
@@ -407,7 +440,7 @@ Also, you can batch input and output in mini batches that will sometimes improve
 ## Q&A
 ### Why does my cmd printout have square brackets around every line?
 When using the -o cmd each batch of events will be printed on one line, separated by , and with [] around the batch. 
-This behaviour is to illustrate the batch mechanism and will not be present if you write to file with `-o file -on {filename}`.
+This behaviour is to illustrate the batch mechanism and will not be present if you write to file with `-o file -ofn {filename}`.
 
 ### What is a good regex to use with the -i counter module?
 A regex could be `"(\d+)$"` since $ denotes end-of-string.
@@ -434,18 +467,18 @@ Logging can be enabled by adding instructions to the logging framework. The amou
 
 Start the program as usual, but add `-Djava.util.logging.config.file=logging.properties` to java. 
 
-Example: `java -Djava.util.logging.config.file=logging.properties -jar target/LogGenerator-with-dependencies.jar -o cmd -on src/test/data/test-result.txt -i udp -host localhost -port 9999 -s true -g "**.txt" -e 100000`
+Example: `java -Djava.util.logging.config.file=logging.properties -jar target/LogGenerator-with-dependencies.jar -o cmd -ofn src/test/data/test-result.txt -i udp -ih localhost -ip 9999 -s true -g "**.txt" -e 100000`
 
 ### How do I send and receive from Kafka?
 Example of sending a few lines to Kafka:
 
 Server:
 
-`java -Djava.util.logging.config.file=logging.properties -jar LogGenerator-with-dependencies.jar -o cmd -i kafka -cn testclient -tn test -bs 192.168.1.116:9092  -gd "Test:(\d+)$" -s true  -rg true`
+`java -Djava.util.logging.config.file=logging.properties -jar LogGenerator-with-dependencies.jar -o cmd -i kafka -icn testclient -itn test -ibs 192.168.1.116:9092  -gd "Test:(\d+)$" -s true  -rg true`
 
 Client:
 
-`java -jar target/LogGenerator-with-dependencies.jar -o kafka -cn test2 -tn test -bs 192.168.1.116:9092 -i counter -string "Test:" --limit 100  -s true -ob 10`
+`java -jar target/LogGenerator-with-dependencies.jar -o kafka -ocn test2 -otn test -obs 192.168.1.116:9092 -i counter -string "Test:" --limit 100  -s true -ob 10`
 
 ### Whats the --------BEGIN_TRANSACTION-------- for?
 Those ar messages inserted into the event stream to be able to detect start of transfers and to save a timestamp for the statistics module to work.
@@ -459,7 +492,14 @@ On the sending side, use the template file input `-i template -t file` or simila
 
 Example: to send random data from a template file to a udp listener on port 9999 for 5 seconds, use:
 
-`java -Djava.util.logging.config.file=logging.properties -jar target/LogGenerator-with-dependencies.jar -i template -fn src/test/data/template.txt -o udp -host localhost -port 9999 -t time:5000 `
+`java -Djava.util.logging.config.file=logging.properties -jar target/LogGenerator-with-dependencies.jar -i template -ifn src/test/data/template.txt -o udp -oh localhost -op 9999 -t time:5000 `
+
+### The -e eps throttling doesn't work
+Add `-s true` so that timestamps are updated.
+
+Example: 
+
+`java -Djava.util.logging.config.file=logging.properties -jar target/LogGenerator-with-dependencies.jar -i template -ifn src/test/data/template.txt -o udp -oh localhost -op 9999 -t continuous --limit 100  -e 2 -s true`
 
 ## What License are you using?
 See the license header in each java file. As long as you don't violate the licenses of the components (kafka and slf4j), you can do whatever you want with the code, just give me credit if you use the code.

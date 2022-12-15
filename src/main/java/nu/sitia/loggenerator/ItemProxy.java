@@ -23,7 +23,6 @@ import nu.sitia.loggenerator.outputitems.OutputItem;
 import nu.sitia.loggenerator.templates.Template;
 import nu.sitia.loggenerator.templates.TemplateFactory;
 import nu.sitia.loggenerator.templates.TimeTemplate;
-import nu.sitia.loggenerator.util.CommandLineParser;
 import nu.sitia.loggenerator.util.LogStatistics;
 import sun.misc.Signal;
 
@@ -69,33 +68,34 @@ public class ItemProxy {
      * Default constructor
      * @param input Input to use
      * @param output Output to use
+     * @param config The configuration
      */
-    public ItemProxy(InputItem input, OutputItem output, List<ProcessFilter> filterList, String [] args) {
+    public ItemProxy(InputItem input, OutputItem output, List<ProcessFilter> filterList, Configuration config) {
         this.input = input;
         this.output = output;
         this.filterList = filterList;
-        String isStatisticsString = CommandLineParser.getCommandLineArgument(args,"s", "statistics", "Add statistics messages and printouts");
+        String isStatisticsString = config.getValue("-s");
         if (isStatisticsString != null && isStatisticsString.equalsIgnoreCase("true")) {
-            statistics = new LogStatistics(args);
+            statistics = new LogStatistics(config);
         } else {
             statistics = null;
         }
 
-        String epsString = CommandLineParser.getCommandLineArgument(args,"e", "eps", "Max eps. Throttle if above.");
+        String epsString = config.getValue("-e");
         if (null != epsString) {
             this.eps = Long.parseLong(epsString);
         } else {
             this.eps = 0;
         }
 
-        String limitString = CommandLineParser.getCommandLineArgument(args,"l", "limit", "Only send this number of messages");
+        String limitString = config.getValue("-l");
         if (null != limitString) {
             this.limit = Long.parseLong(limitString);
         } else {
             this.limit = 0;
         }
 
-        String templateString = CommandLineParser.getCommandLineArgument(args, "t", "template", "Should the input be regarded as a template and variables resolved?");
+        String templateString = config.getValue("-t");
 
         if (templateString != null) {
             Template template = TemplateFactory.getTemplate(templateString);

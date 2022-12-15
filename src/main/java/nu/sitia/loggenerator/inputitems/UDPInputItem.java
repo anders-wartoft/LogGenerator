@@ -17,7 +17,7 @@
 
 package nu.sitia.loggenerator.inputitems;
 
-import nu.sitia.loggenerator.util.CommandLineParser;
+import nu.sitia.loggenerator.Configuration;
 
 import java.io.IOException;
 import java.net.*;
@@ -38,15 +38,14 @@ public class UDPInputItem extends AbstractInputItem {
 
     /**
      * Create a new UDPInputItem
-     * @param args The command line arguments
+     * @param config The command line arguments
      */
-    public UDPInputItem(String [] args) {
-        super(args);
-        hostName = CommandLineParser.getCommandLineArgument(args, "host", "host-name", "Host name to bind to");
-        String portString = CommandLineParser.getCommandLineArgument(args, "port", "port", "Port to listen on");
+    public UDPInputItem(Configuration config) {
+        super(config);
+        hostName = config.getValue("-ih");
+        String portString = config.getValue("-ip");
         if (null == portString) {
-            CommandLineParser.getSeenParameters().forEach((k,v) -> System.out.println(k + " - " + v));
-            throw new RuntimeException("Parameter -port (-port) is required for UDP input item");
+            throw new RuntimeException(config.getNotFoundInformation("-ip"));
         }
         port = Integer.parseInt(portString);
     }
@@ -64,7 +63,7 @@ public class UDPInputItem extends AbstractInputItem {
                 socket = new DatagramSocket(new InetSocketAddress(port));
             }
         } catch (SocketException e) {
-            throw new RuntimeException("Socket exception", e);
+            throw new RuntimeException("Socket exception for " + hostName + ": " + port, e);
         }
         if (hostName != null) {
             logger.info("Serving UDP server on " + hostName + ":" + port);

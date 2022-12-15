@@ -17,10 +17,10 @@
 
 package nu.sitia.loggenerator.filter;
 
+import nu.sitia.loggenerator.Configuration;
 import nu.sitia.loggenerator.templates.NoneTemplate;
 import nu.sitia.loggenerator.templates.Template;
 import nu.sitia.loggenerator.templates.TemplateFactory;
-import nu.sitia.loggenerator.util.CommandLineParser;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -29,21 +29,21 @@ public class FilterListFactory {
 
     /**
      * Get all filters suitable for this set of conditions
-     * @param args The command line arguments to parse
+     * @param config The command line arguments to parse
      * @return A list of filters to apply to the events
      */
-    public List<ProcessFilter> create(String[] args) {
-        String gapRegex = CommandLineParser.getCommandLineArgument(args, "gd", "gap-detection", "Regex for gap detection");
-        String removeGuards = CommandLineParser.getCommandLineArgument(args, "rg", "remove-guards", "Drop messages that is used for statistics before we send them?");
-        String header = CommandLineParser.getCommandLineArgument(args, "he", "header", "String to add to the beginning of each entry. May contain variables.");
-        String template = CommandLineParser.getCommandLineArgument(args, "t", "template", "Should the input be regarded as a template and variables resolved?");
-        String regex = CommandLineParser.getCommandLineArgument(args, "r", "regex", "Regex to search for and replace with a value.");
-        String value = CommandLineParser.getCommandLineArgument(args,"v", "value", "Value to replace the regex with.");
+    public List<ProcessFilter> create(Configuration config) {
+        String gapRegex = config.getValue("-gd");
+        String removeGuards = config.getValue("-rg");
+        String header = config.getValue("-he");
+        String template = config.getValue("-t");
+        String regex = config.getValue("-r");
+        String value = config.getValue("-v");
 
         List<ProcessFilter> filterList = new LinkedList<>();
 
         if (removeGuards != null && removeGuards.equalsIgnoreCase("true")) {
-            filterList.add(new GuardFilter(args));
+            filterList.add(new GuardFilter(config));
         }
 
         if (regex != null) {

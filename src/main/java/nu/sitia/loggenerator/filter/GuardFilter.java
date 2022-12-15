@@ -29,7 +29,7 @@ public class GuardFilter implements ProcessFilter {
      * Create a guardFilter and set all parameters
      * @param ignoredConfig The configuration object to get parameters from
      */
-    public GuardFilter(String [] ignoredConfig) {
+    public GuardFilter(Configuration ignoredConfig) {
     }
 
     /**

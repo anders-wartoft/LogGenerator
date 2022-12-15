@@ -17,30 +17,29 @@
 
 package nu.sitia.loggenerator.outputitems;
 
-import nu.sitia.loggenerator.util.CommandLineParser;
+import nu.sitia.loggenerator.Configuration;
 
 
 public class OutputItemFactory {
 
     /**
      * Create an OutputItem depending on the configuration
-     * @param args The command line arguments to use to create an OutputItem
+     * @param config The command line arguments to use to create an OutputItem
      * @return An OutputItem to use
      */
-    public static OutputItem create(String [] args) {
-        String outputType = CommandLineParser.getCommandLineArgument(args, "o", "output", "Output module name (cmd, udp, tcp, kafka, file or none)");
+    public static OutputItem create(Configuration config) {
+        String outputType = config.getValue("-o");
         if (null == outputType) {
-            CommandLineParser.getSeenParameters().forEach((k,v) -> System.out.println(k + " - " + v));
-            throw new RuntimeException("Parameter -o (--output) is required");
+            throw new RuntimeException(config.getNotFoundInformation("-o"));
         }
 
         return switch (outputType) {
-            case "cmd", "CMD" -> new CmdOutputItem(args);
-            case "udp", "UDP" -> new UDPOutputItem(args);
-            case "tcp", "TCP" -> new TCPOutputItem(args);
-            case "file", "FILE" -> new FileOutputItem(args);
-            case "kafka", "KAFKA" -> new KafkaOutputItem(args);
-            case "null", "NULL" -> new NullOutputItem(args);
+            case "cmd", "CMD" -> new CmdOutputItem(config);
+            case "udp", "UDP" -> new UDPOutputItem(config);
+            case "tcp", "TCP" -> new TCPOutputItem(config);
+            case "file", "FILE" -> new FileOutputItem(config);
+            case "kafka", "KAFKA" -> new KafkaOutputItem(config);
+            case "null", "NULL" -> new NullOutputItem(config);
             default -> throw new RuntimeException("Illegal output type: " + outputType);
         };
     }

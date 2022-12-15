@@ -18,7 +18,7 @@
 package nu.sitia.loggenerator.outputitems;
 
 
-import nu.sitia.loggenerator.util.CommandLineParser;
+import nu.sitia.loggenerator.Configuration;
 
 import java.io.IOException;
 import java.net.*;
@@ -40,19 +40,17 @@ public class UDPOutputItem extends AbstractOutputItem implements SendListener {
 
     /**
      * Constructor. Add the callback method from this class.
-     * @param args The command line arguments
+     * @param config The command line arguments
      */
-    public UDPOutputItem(String [] args) {
-        super(args);
-        String hostName = CommandLineParser.getCommandLineArgument(args, "host", "host-name", "Host name to bind to");
+    public UDPOutputItem(Configuration config) {
+        super(config);
+        String hostName = config.getValue("-oh");
         if (null == hostName) {
-            CommandLineParser.getSeenParameters().forEach((k,v) -> System.out.println(k + " - " + v));
-            throw new RuntimeException("Parameter -host (--host-name) is required for UDP output item");
+            throw new RuntimeException(config.getNotFoundInformation("-oh"));
         }
-        String portString = CommandLineParser.getCommandLineArgument(args, "port", "port", "Port to listen on");
+        String portString = config.getValue("-op");
         if (null == portString) {
-            CommandLineParser.getSeenParameters().forEach((k,v) -> System.out.println(k + " - " + v));
-            throw new RuntimeException("Parameter -port (--port) is required for UDP output item");
+            throw new RuntimeException(config.getNotFoundInformation("-op"));
         }
         port = Integer.parseInt(portString);
 

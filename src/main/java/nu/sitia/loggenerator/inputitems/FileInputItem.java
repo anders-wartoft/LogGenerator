@@ -18,7 +18,6 @@
 package nu.sitia.loggenerator.inputitems;
 
 import nu.sitia.loggenerator.Configuration;
-import nu.sitia.loggenerator.util.CommandLineParser;
 
 
 import java.io.*;
@@ -42,16 +41,15 @@ public class FileInputItem extends AbstractInputItem {
 
     /**
      * Create a new FileInputItem
-     * @param args The command line arguments
+     * @param config The command line arguments
      */
-    public FileInputItem(String fileName, String [] args) {
-        super(args);
+    public FileInputItem(String fileName, Configuration config) {
+        super(config);
         this.fileName = fileName;
         if (fileName == null) {
-            CommandLineParser.getSeenParameters().forEach((k,v) -> System.out.println(k + " - " + v));
-            throw new RuntimeException("Required parameter '-fn' or '--file-name' not found.");
+            throw new RuntimeException(config.getNotFoundInformation("-ifn"));
         }
-        String statisticsParameter = CommandLineParser.getCommandLineArgument(args, "s", "statistics", "Add statistics messages and printouts");
+        String statisticsParameter = config.getValue("-s");
         this.isStatistics = statisticsParameter != null &&
                         statisticsParameter.equalsIgnoreCase("true");
     }

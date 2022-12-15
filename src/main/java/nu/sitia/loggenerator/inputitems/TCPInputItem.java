@@ -17,7 +17,7 @@
 
 package nu.sitia.loggenerator.inputitems;
 
-import nu.sitia.loggenerator.util.CommandLineParser;
+import nu.sitia.loggenerator.Configuration;
 
 import java.io.*;
 import java.net.*;
@@ -39,15 +39,14 @@ public class TCPInputItem extends AbstractInputItem {
 
     /**
      * Create a new UDPInputItem
-     * @param args The command line arguments
+     * @param config The command line arguments
      */
-    public TCPInputItem(String [] args) {
-        super(args);
-        hostName = CommandLineParser.getCommandLineArgument(args, "host", "host-name", "Host name to bind to");
-        String portString = CommandLineParser.getCommandLineArgument(args, "port", "port", "Port to listen on");
+    public TCPInputItem(Configuration config) {
+        super(config);
+        hostName = config.getValue("-ih");
+        String portString = config.getValue("-ip");
         if (null == portString) {
-            CommandLineParser.getSeenParameters().forEach((k,v) -> System.out.println(k + " - " + v));
-            throw new RuntimeException("Parameter -port (-port) is required for TCP input item");
+            throw new RuntimeException(config.getValue("-ip"));
         }
         port = Integer.parseInt(portString);
     }

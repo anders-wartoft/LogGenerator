@@ -19,16 +19,18 @@ package nu.sitia.loggenerator.outputitems;
 
 
 
+import nu.sitia.loggenerator.Configuration;
+
 import java.util.List;
 
 public class NullOutputItem extends AbstractOutputItem implements SendListener {
 
     /**
      * Constructor. Add the callback method from this class.
-     * @param args The command line arguments
+     * @param config The command line arguments
      */
-    public NullOutputItem(String [] args) {
-        super(args);
+    public NullOutputItem(Configuration config) {
+        super(config);
         super.addListener(this);
     }
 
