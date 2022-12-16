@@ -41,6 +41,7 @@ public class InputItemFactory {
             // special case. the FileInputItem needs to be able to send begin- and end messages with the filename
             case "file", "FILE" -> getFileInputItem(inputName, config);
             case "udp", "UDP" -> new UDPInputItem(config);
+            case "tcp-ssl", "TCP-SSL" -> new SSLTCPInputItem(config);
             case "tcp", "TCP" -> new TCPInputItem(config);
             case "kafka", "KAFKA" -> new KafkaInputItem(config);
             case "static", "STATIC" -> new StaticInputItem(config);

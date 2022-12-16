@@ -37,6 +37,7 @@ public class OutputItemFactory {
             case "cmd", "CMD" -> new CmdOutputItem(config);
             case "udp", "UDP" -> new UDPOutputItem(config);
             case "tcp", "TCP" -> new TCPOutputItem(config);
+            case "tcp-ssl", "TCP-SSL" -> new SSLTCPOutputItem(config);
             case "file", "FILE" -> new FileOutputItem(config);
             case "kafka", "KAFKA" -> new KafkaOutputItem(config);
             case "null", "NULL" -> new NullOutputItem(config);

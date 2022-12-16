@@ -30,9 +30,9 @@ import java.util.logging.Logger;
 public class TCPOutputItem extends AbstractOutputItem implements SendListener {
     static final Logger logger = Logger.getLogger(TCPOutputItem.class.getName());
     /** The address to use */
-    private final String hostName;
+    protected final String hostName;
     /** The port to connect to */
-    private final int port;
+    protected final int port;
     /** The socket to use */
     private Socket socket;
 
@@ -52,7 +52,7 @@ public class TCPOutputItem extends AbstractOutputItem implements SendListener {
             throw new RuntimeException(config.getNotFoundInformation("-op"));
         }
         port = Integer.parseInt(portString);
-        addTransactionMessages = true;
+        addTransactionMessages = config.isStatistics();
     }
 
     /**
@@ -87,7 +87,6 @@ public class TCPOutputItem extends AbstractOutputItem implements SendListener {
     @Override
     public void setup() throws RuntimeException {
         super.setup();
-        // OutputName is host:port
         try {
             socket = new Socket(hostName, port);
         } catch (IOException e) {
@@ -99,7 +98,9 @@ public class TCPOutputItem extends AbstractOutputItem implements SendListener {
     public void teardown() {
         super.teardown();
         try {
-            socket.close();
+            if (socket != null) {
+                socket.close();
+            }
         } catch (IOException e) {
             throw new RuntimeException("Socket close exception", e);
         }

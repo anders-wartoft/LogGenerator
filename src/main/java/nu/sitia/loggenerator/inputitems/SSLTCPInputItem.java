@@ -19,36 +19,28 @@ package nu.sitia.loggenerator.inputitems;
 
 import nu.sitia.loggenerator.Configuration;
 
+import javax.net.ServerSocketFactory;
+import javax.net.ssl.*;
 import java.io.*;
 import java.net.*;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
-public class TCPInputItem extends AbstractInputItem {
-    static final Logger logger = Logger.getLogger(TCPInputItem.class.getName());
-    /** The address to bind to. If not specified, bind to all nics */
-    protected final String hostName;
-
-    /** The port to listen on */
-    protected final int port;
+public class SSLTCPInputItem extends TCPInputItem {
+    static final Logger logger = Logger.getLogger(SSLTCPInputItem.class.getName());
 
     /** The socket to use */
-    private ServerSocket serverSocket;
+    private SSLServerSocket serverSocket;
 
+    /** How long to wait between TCP receive tries */
+    private final int delay = 100; // ms
     /**
-     * Create a new TCPInputItem
+     * Create a new SSLTCPInputItem
      * @param config The command line arguments
      */
-    public TCPInputItem(Configuration config) {
+    public SSLTCPInputItem(Configuration config) {
         super(config);
-        hostName = config.getValue("-ih");
-        String portString = config.getValue("-ip");
-        if (null == portString) {
-            throw new RuntimeException(config.getValue("-ip"));
-        }
-        port = Integer.parseInt(portString);
     }
 
     /**
@@ -56,25 +48,28 @@ public class TCPInputItem extends AbstractInputItem {
      */
     public void setup() throws RuntimeException {
         try {
-            if (hostName != null) {
-                // Listen on a specified address
-                serverSocket = new ServerSocket();
-                SocketAddress socketAddress = new InetSocketAddress(hostName, port);
-                serverSocket.bind(socketAddress);
+            ServerSocketFactory sslSf = SSLServerSocketFactory.getDefault();
+
+            if (hostName == null) {
+                // listen on all interfaces
+                serverSocket = (SSLServerSocket) sslSf.createServerSocket(port);
 
             } else {
-                // Listen to broadcast
-                serverSocket = new ServerSocket(port);
+                // bind to an address
+                serverSocket = (SSLServerSocket) sslSf.createServerSocket();
+                SocketAddress socketAddress = new InetSocketAddress(hostName, port);
+                serverSocket.bind(socketAddress);
             }
+
         } catch (SocketException e) {
             throw new RuntimeException("Socket exception", e);
         } catch (IOException e) {
             throw new RuntimeException("IOException trying to bind to " + hostName + ":" + port, e);
         }
         if (hostName != null) {
-            logger.info("Serving TCP server on " + hostName + ":" + port);
+            logger.info("Serving TCP SSL server on " + hostName + ":" + port);
         } else {
-            logger.info("Serving TCP server on port: " + port);
+            logger.info("Serving TCP SSL server on port: " + port);
         }
     }
 
@@ -94,36 +89,45 @@ public class TCPInputItem extends AbstractInputItem {
     public List<String> next() {
         List<String> result = new ArrayList<>();
         try {
-            Socket socket = serverSocket.accept();
-            logger.log(Level.FINE, "Received connection from " + socket.getRemoteSocketAddress());
-            InputStream input = socket.getInputStream();
+            SSLSocket sslSocket = (SSLSocket) serverSocket.accept();
+            sslSocket.startHandshake();
+            InputStream input = sslSocket.getInputStream();
             BufferedReader reader = new BufferedReader(new InputStreamReader(input));
-            // Wait until ready
-            while (!reader.ready()) {
-                Thread.sleep(1);
+            String line;
+            while((line = reader.readLine()) != null){
+                System.out.println("Input : "+line);
+                if(line.trim().isEmpty()){
+                    break;
+                }
             }
-            // now, read every line
-            result = reader.lines().toList();
-            reader.close();
+            OutputStream output = sslSocket.getOutputStream();
+            output.write("HTTP/1.0 200 OK\r\nContent-type: text/html\r\nContent-Length: 16\r\n\r\n<html>Hej</html>".getBytes());
+            sslSocket.close();
         }
         catch (IOException e) {
             try {
-                Thread.sleep(500);
+                Thread.sleep(delay);
             } catch (InterruptedException ex) {
-                throw new RuntimeException("Socket receive interrupted");
+                throw new RuntimeException("SslSocket receive interrupted");
             }
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
         }
         return result;
     }
+
 
     /**
      * Let the item teardown after reading
      */
     public void teardown() {
-        // Unreachable code
+        if (serverSocket != null && !serverSocket.isClosed()) {
+            try {
+                serverSocket.close();
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
     }
+
 
     /**
      * Print the configuration
@@ -131,8 +135,9 @@ public class TCPInputItem extends AbstractInputItem {
      */
     @Override
     public String toString() {
-        return "TCPInputItem" + System.lineSeparator() +
-                hostName + System.lineSeparator() +
-                port;
+        return "SSLTCPInputItem" + System.lineSeparator() +
+                hostName + System.lineSeparator() + port;
     }
+
 }
+

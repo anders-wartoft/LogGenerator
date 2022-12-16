@@ -19,55 +19,26 @@ package nu.sitia.loggenerator.outputitems;
 
 
 import nu.sitia.loggenerator.Configuration;
-
-import java.io.IOException;
-import java.net.*;
-import java.nio.charset.StandardCharsets;
+import javax.net.ssl.*;
+import java.io.*;
+import java.net.Socket;
 import java.util.List;
 import java.util.logging.Logger;
 
-public class UDPOutputItem extends AbstractOutputItem implements SendListener {
-    static final Logger logger = Logger.getLogger(UDPOutputItem.class.getName());
-    /** The InetAddress to connect to */
-    private final InetAddress address;
-    /** Port number to connect to */
-    private final int port;
-    /** The socket to use */
-    private final DatagramSocket socket;
+public class SSLTCPOutputItem extends TCPOutputItem {
+    static final Logger logger = Logger.getLogger(SSLTCPOutputItem.class.getName());
 
-    /** Used in toString() */
-    private final String hostName;
+    /** The socket to use */
+    private Socket sslSocket;
 
     /**
      * Constructor. Add the callback method from this class.
      * @param config The command line arguments
      */
-    public UDPOutputItem(Configuration config) {
+    public SSLTCPOutputItem(Configuration config) {
         super(config);
-        String hostName = config.getValue("-oh");
-        if (null == hostName) {
-            throw new RuntimeException(config.getNotFoundInformation("-oh"));
-        }
-        String portString = config.getValue("-op");
-        if (null == portString) {
-            throw new RuntimeException(config.getNotFoundInformation("-op"));
-        }
-        port = Integer.parseInt(portString);
-
-        super.addListener(this);
-        try {
-            address = InetAddress.getByName(hostName);
-        } catch (UnknownHostException e) {
-            throw new RuntimeException("Unknown host: " + hostName, e);
-        }
-        try {
-            socket = new DatagramSocket();
-        } catch (SocketException e) {
-            throw new RuntimeException("Socket exception", e);
-        }
-        this.hostName = hostName;
-        addTransactionMessages = config.isStatistics();
     }
+
 
     /**
      * Write to console
@@ -79,6 +50,20 @@ public class UDPOutputItem extends AbstractOutputItem implements SendListener {
         super.write(elements);
     }
 
+    @Override
+    public void setup() throws RuntimeException {
+        // do NOT call super.setup() here. If so, another socket will be created to
+        // hostName:port, but not with SSL. That will ruin this connection...
+        try {
+            SSLSocketFactory sslSf = (SSLSocketFactory) SSLSocketFactory.getDefault();
+            sslSocket = (SSLSocket) sslSf
+                    .createSocket(hostName, port);
+        } catch (Exception e) {
+            throw new RuntimeException("Exception trying to create client ssl socket to: " + hostName + ":" + port, e);
+        }
+    }
+
+
     /**
      * Callback. What to do when the cache is full.
      * Writes to hostname:port
@@ -86,18 +71,27 @@ public class UDPOutputItem extends AbstractOutputItem implements SendListener {
      */
     @Override
     public void send(List<String> toSend) {
-        for (String data : toSend) {
-            byte[] buffer = data.getBytes(StandardCharsets.UTF_8);
-            DatagramPacket request = new DatagramPacket(buffer, buffer.length, address, port);
-            try {
-                logger.fine("Sending: " + toSend);
-                socket.send(request);
-                logger.finer("Sent message without exception");
-            } catch (IOException e) {
-                throw new RuntimeException("Socket send exception", e);
-            }
+        try {
+            OutputStream output = sslSocket.getOutputStream();
+            logger.fine("Sending: " + toSend);
+            PrintWriter writer = new PrintWriter(output, true);
+            toSend.forEach(writer::println);
+            logger.finer("Sent message without exception");
+        } catch (IOException e) {
+            throw new RuntimeException("Socket send exception", e);
         }
     }
+
+    @Override
+    public void teardown() {
+        super.teardown();
+        try {
+            sslSocket.close();
+        } catch (IOException e) {
+            throw new RuntimeException("Socket close exception", e);
+        }
+    }
+
 
     /**
      * Print the configuration
@@ -105,8 +99,9 @@ public class UDPOutputItem extends AbstractOutputItem implements SendListener {
      */
     @Override
     public String toString() {
-        return "UDPOutputItem" + System.lineSeparator() +
+        return "SSLTCPOutputItem" + System.lineSeparator() +
                 hostName + System.lineSeparator() +
                 port;
     }
+
 }

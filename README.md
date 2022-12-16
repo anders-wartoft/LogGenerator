@@ -8,7 +8,8 @@ There are input module for the following tasks:
 - Read files in a directory
 - Read files in a directory with globs
 - Receive UDP
-- Receive TCP 
+- Receive TCP
+- Receive TCP SSL
 - Fetch from Kafka topics
 - Static string
 - Static string ending with a counter starting from 1
@@ -50,6 +51,11 @@ Parameters: `-i tcp [-host {host}] -port number`
 
 Example: `-i tcp -host 192.168.1.2 -port 5999` or `-i tcp -port 5999`
 
+### Receive TCP SSL
+Set up a TCP server with encrypted communication.
+
+Parameters and example, see below in the Q&A section.
+
 #### Fetch from Kafka topics
 Connect to a Kafka server and read from a topic
 
@@ -82,6 +88,7 @@ These are the output modules available:
 - Write to console
 - Write to UDP
 - Write to TCP
+- Write to TCP with SSL
 - Write to Kafka
 - Write to null (throw away the result, used for performance testing)
 
@@ -112,6 +119,11 @@ Send events with TCP.
 Parameters: `-o tcp -oh hostnae -op port`
 
 Example `-o tcp -oh localhost -op 5999`
+
+### Write to TCP SSL
+Send events with encrypted TCP.
+
+Parameters and example, see below in the Q&A section.
 
 #### Write to Kafka
 Connect to a Kafka server and write the events to a topic. N.B., these are not unique arguments for kafka input and output so there is no way to read from a Kafka topic and write to another topic. The tool is not meant to be used for that kind of usage.
@@ -331,7 +343,7 @@ The following system variables can be used:
 - rfc1918: `{oneOf:{ipv4:192.168.0.0/16},{ipv4:172.16.0.0/12},{ipv4:10.0.0.0/8}}`
 
 ## Configuration files
-Instead of passing all parameters on the command line, one parameter (-p configurationfile) can be used instead.
+Instead of passing all parameters on the command line, one parameter (-p configuration-file) can be used instead.
 A combination of parameters from the command line and property file is possible.
 
 The property file can have all short- or long names for configuration. Comment lines start with the hash character '#'.
@@ -500,6 +512,70 @@ Add `-s true` so that timestamps are updated.
 Example: 
 
 `java -Djava.util.logging.config.file=logging.properties -jar target/LogGenerator-with-dependencies.jar -i template -ifn src/test/data/template.txt -o udp -oh localhost -op 9999 -t continuous --limit 100  -e 2 -s true`
+
+### What about SSL. How do I get started with SSL sockets?
+
+Follow the instructions from https://unix.stackexchange.com/questions/347116/how-to-create-keystore-and-truststore-using-self-signed-certificate
+
+To generate certificate and keystores for localhost, you can use these commands. `keytool` comes with Java.
+```bash
+keytool -genkey -keyalg RSA -keypass changeit -storepass changeit -keystore server.keystore
+keytool -export -storepass changeit -file server.cer -keystore server.keystore
+keytool -import -v -trustcacerts -file server.cer -keystore server.truststore -keypass changeit -storepass changeit
+openssl x509 -inform der -in server.cer -out server.pem
+```
+N.B. Common Name (CN) must be equal to the server name.
+
+To examine the certificate:`keytool -printcert -v -file server.cer`
+
+If you get stuck, this is a nice reference to debugging ssl: help: https://stackoverflow.com/questions/17742003/how-to-debug-ssl-handshake-using-curl#22814663
+
+You can also use the supplied keystore and truststore in src/test/data/certs. Both have the password: `changeit`. Also, check out the configuration file src/test/data/certs/ssl-server.properties for a working setup.
+
+To test the ssl connection, first copy the key- and truststore to the root of LogGenerator:
+
+LogGenerator % `cp src/test/data/certs/server.* . `
+
+Start a server (add the keystore and password as java runtime parameter):
+
+`java -Djavax.net.ssl.keyStore=server.keystore -Djavax.net.ssl.keyStorePassword=changeit -Djava.util.logging.config.file=logging.properties -jar target/LogGenerator-with-dependencies.jar -p src/test/data/certs/ssl-server.properties`
+
+The keystore and truststore must be in the same directory that you start the jar from, otherwise you will have to add an ABSOLUTE path to the keystores. Java will not recognize relative paths for keystores.
+
+From another console window, start the client (add the truststore and password):
+
+`java -Djavax.net.ssl.trustStore=server.truststore -Djavax.net.ssl.trustStorePassword=changeit -Djava.util.logging.config.file=logging.properties -jar target/LogGenerator-with-dependencies.jar -p src/test/data/certs/ssl-client.properties`
+
+Debugging
+
+You can debug the input or output items independently. openssl and curl has nice features for ssl debugging.
+
+From another console window, use either of these clients to connect to the server:
+```bash
+openssl s_client -connect localhost:9999 -tls1_2 -status -msg -debug
+curl -iv https://localhost:9999
+```
+or any browser with https://localhost:9999 (you will have to accept the certificate if the issuer path is not in the browser's truststore).
+
+To start a debugging SSL server with openssl, first generate a .p12 file from the keystore:
+```bash
+keytool -importkeystore -srckeystore server.keystore -destkeystore keystore.p12 -deststoretype PKCS12 -srcstorepass changei
+openssl pkcs12 -in keystore.p12 -out server.key -nodes -nocerts
+```
+
+Now you should be able to start an openssl server with:
+
+`openssl s_server -CAfile server.cer -accept 9999 -key server.key`
+
+Start by browsing to https://localhost:9999 to see if the openssl server is responding. The browser should wait for a response, but the server should write the HTTP header (GET / HTTP/1.1 ...) on the console.
+
+For more debugging information, you can start the openssl server with:
+
+`openssl s_server -CAfile server.cer -accept 9999 -key server.key -debug`
+`
+To start java with additional logging for ssl debugging, use:
+
+`-Djavax.net.debug=ssl:handshake:verbose:keymanager:trustmanager -Djava.security.debug=access:stack`
 
 ## What License are you using?
 See the license header in each java file. As long as you don't violate the licenses of the components (kafka and slf4j), you can do whatever you want with the code, just give me credit if you use the code.

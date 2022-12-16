@@ -91,6 +91,13 @@ public class Configuration {
                 keys.add(new Item("-e", "--eps", "Max eps to send (events per second). Throttle if above."));
                 keys.add(new Item("-pp", "--printouts", "Milliseconds between extra printout for statistics."));
                 keys.add(new Item("-p", "--property-file", "Load configuration from a property file. The argument is the name of the file to load."));
+                keys.add(new Item("-ks", "--keystore", "Path to a Java keystore"));
+                keys.add(new Item("-ksp", "--keystore-password", "Password for the Java keystore"));
+                keys.add(new Item("-ts", "--truststore", "Path to a Java truststore"));
+                keys.add(new Item("-tsp", "--truststore-password", "Password for the Java truststore"));
+                keys.add(new Item("-prots", "--ssl-protocols", "A comma delimited list of acceptable protocols. Default is: \"TLSv1.3\""));
+                keys.add(new Item("-sp", "--ssl-protocol", "Protocol the SSL socket uses initially"));
+                keys.add(new Item("-cs", "--cipher-suites", "A comma delimited list of cipher suites to use. Default is \"TLS_AES_128_GCM_SHA256\""));
 
         }
 
@@ -219,6 +226,14 @@ public class Configuration {
                 } catch (IOException e) {
                         throw new RuntimeException("Exception trying to load file: " + file.getAbsolutePath(), e);
                 }
+        }
+
+        /**
+         * Should statistics messages and outputs be used?
+         * @return true Iff statistics is enabled
+         */
+        public boolean isStatistics() {
+                return "true".equalsIgnoreCase(getValue("-s"));
         }
 
         /**

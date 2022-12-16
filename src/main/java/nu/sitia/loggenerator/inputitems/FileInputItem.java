@@ -107,7 +107,9 @@ public class FileInputItem extends AbstractInputItem {
      * Let the item teardown after reading
      */
     public void teardown() {
-        scanner.close();
+        if (scanner != null) {
+            scanner.close();
+        }
         // make sure we have to run setup() again before read()
         scanner = null;
     }
