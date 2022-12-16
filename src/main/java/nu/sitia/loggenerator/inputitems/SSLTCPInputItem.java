@@ -95,13 +95,11 @@ public class SSLTCPInputItem extends TCPInputItem {
             BufferedReader reader = new BufferedReader(new InputStreamReader(input));
             String line;
             while((line = reader.readLine()) != null){
-                System.out.println("Input : "+line);
+                result.add(line);
                 if(line.trim().isEmpty()){
                     break;
                 }
             }
-            OutputStream output = sslSocket.getOutputStream();
-            output.write("HTTP/1.0 200 OK\r\nContent-type: text/html\r\nContent-Length: 16\r\n\r\n<html>Hej</html>".getBytes());
             sslSocket.close();
         }
         catch (IOException e) {
