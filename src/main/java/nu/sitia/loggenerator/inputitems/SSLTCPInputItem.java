@@ -50,16 +50,17 @@ public class SSLTCPInputItem extends TCPInputItem {
         try {
             ServerSocketFactory sslSf = SSLServerSocketFactory.getDefault();
 
-            if (hostName == null) {
-                // listen on all interfaces
-                serverSocket = (SSLServerSocket) sslSf.createServerSocket(port);
-
-            } else {
-                // bind to an address
+            if (hostName != null) {
+                // Listen on a specified address
                 serverSocket = (SSLServerSocket) sslSf.createServerSocket();
                 SocketAddress socketAddress = new InetSocketAddress(hostName, port);
                 serverSocket.bind(socketAddress);
+
+            } else {
+                // Listen to broadcast in a separate thread
+                serverSocket = (SSLServerSocket) sslSf.createServerSocket(port);
             }
+            new TCPInputHandler(serverSocket, result).start();
 
         } catch (SocketException e) {
             throw new RuntimeException("Socket exception", e);
@@ -87,29 +88,15 @@ public class SSLTCPInputItem extends TCPInputItem {
      * @return The read input
      */
     public List<String> next() {
-        List<String> result = new ArrayList<>();
-        try {
-            SSLSocket sslSocket = (SSLSocket) serverSocket.accept();
-            sslSocket.startHandshake();
-            InputStream input = sslSocket.getInputStream();
-            BufferedReader reader = new BufferedReader(new InputStreamReader(input));
-            String line;
-            while((line = reader.readLine()) != null){
-                result.add(line);
-                if(line.trim().isEmpty()){
-                    break;
-                }
-            }
-            sslSocket.close();
-        }
-        catch (IOException e) {
-            try {
-                Thread.sleep(delay);
-            } catch (InterruptedException ex) {
-                throw new RuntimeException("SslSocket receive interrupted");
+        List<String> toReturn = new ArrayList<>();
+        synchronized (result) {
+            while (result.peek() != null) {
+                String event = result.element();
+                toReturn.add(event);
+                result.remove();
             }
         }
-        return result;
+        return toReturn;
     }
 
 

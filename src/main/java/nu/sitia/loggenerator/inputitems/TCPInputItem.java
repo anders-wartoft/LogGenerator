@@ -21,9 +21,7 @@ import nu.sitia.loggenerator.Configuration;
 
 import java.io.*;
 import java.net.*;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.logging.Level;
+import java.util.*;
 import java.util.logging.Logger;
 
 public class TCPInputItem extends AbstractInputItem {
@@ -36,6 +34,9 @@ public class TCPInputItem extends AbstractInputItem {
 
     /** The socket to use */
     private ServerSocket serverSocket;
+
+    protected Queue<String> result = new PriorityQueue<>();
+
 
     /**
      * Create a new TCPInputItem
@@ -63,9 +64,10 @@ public class TCPInputItem extends AbstractInputItem {
                 serverSocket.bind(socketAddress);
 
             } else {
-                // Listen to broadcast
+                // Listen to broadcast in a separate thread
                 serverSocket = new ServerSocket(port);
             }
+            new TCPInputHandler(serverSocket, result).start();
         } catch (SocketException e) {
             throw new RuntimeException("Socket exception", e);
         } catch (IOException e) {
@@ -92,30 +94,15 @@ public class TCPInputItem extends AbstractInputItem {
      * @return The read input
      */
     public List<String> next() {
-        List<String> result = new ArrayList<>();
-        try {
-            Socket socket = serverSocket.accept();
-            logger.log(Level.FINE, "Received connection from " + socket.getRemoteSocketAddress());
-            InputStream input = socket.getInputStream();
-            BufferedReader reader = new BufferedReader(new InputStreamReader(input));
-            // Wait until ready
-            while (!reader.ready()) {
-                Thread.sleep(1);
+        List<String> toReturn = new ArrayList<>();
+        synchronized (result) {
+            while (result.peek() != null) {
+                String event = result.element();
+                toReturn.add(event);
+                result.remove();
             }
-            // now, read every line
-            result = reader.lines().toList();
-            reader.close();
         }
-        catch (IOException e) {
-            try {
-                Thread.sleep(500);
-            } catch (InterruptedException ex) {
-                throw new RuntimeException("Socket receive interrupted");
-            }
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        }
-        return result;
+        return toReturn;
     }
 
     /**

@@ -2,6 +2,19 @@
 LogGenerator is a tool to debug log streams, i.e., syslog, Kafka, UDP diodes and similar chains of log collection systems.
 The tool reads input from an input module, filters the input (add a header, replace text etc.) and finally writes the output with an output module.
 
+LogGenerator uses input modules, filters and output modules and combines that into a chain. Each event from the input module is processed by zero or more filters, that can rewrite the contents. After filtration the events are written with an output module.
+
+Example: Read a log file, add a syslog header and write to a remote Kafka. In the syslog header, add a counter that starts at 100 and increases with each string. Also, add statistics messages (beginning of transaction etc).
+When the events are stored in Kafka, start another LogGenerator that fetches the Kafka events, checks the counter and writes the events to null (to increase performance). Give a measurement of the time elapsed, how many items were received, the event per second and an estimate of the bandwidth usage as well as a list of missed events (counter integers that are missing) and the next counter number we are expecting.
+
+The example above is literally two commands. 
+
+```bash
+java -jar target/LogGenerator-with-dependencies.jar -i file -ifn src/test/data/test.txt -o kafka -ocn test2 -otn test -obs 192.168.1.116:9092 -he "<{pri:}>{date:MMM dd HH:mm:ss} {oneOf:mymachine,yourmachine,localhost,{ipv4:192.168.0.0/16}} {string:a-z0-9/9}[{counter:a:100}]: " -s true
+java -jar target/LogGenerator-with-dependencies.jar -i kafka -icn test2 -itn test -ibs 192.168.1.116:9092 -gd "\[(\d+)\]:" -o cmd -s true
+```
+When running the last command, press Ctrl-C to see the gaps in the received data. Since we started the counter on 100, there should at least be one gap: 1-99.
+
 ### Input modules:
 There are input module for the following tasks:
 - Read files
@@ -116,7 +129,7 @@ Example `-o udp -oh localhost -op 5999`
 #### Write to TCP
 Send events with TCP.
 
-Parameters: `-o tcp -oh hostnae -op port`
+Parameters: `-o tcp -oh hostname -op port`
 
 Example `-o tcp -oh localhost -op 5999`
 
@@ -281,7 +294,7 @@ Example: `{oneOf:{ipv4:192.168.0.0/16},{ipv4:172.16.0.0/12},{ipv4:10.0.0.0/8}}` 
 ### Read a file, add a syslog header and send the output to the console
 This will add a syslog header to each line in the file before printing the line.
 
-`java -jar LogGenerator-with-dependencies.jar -i file -ifn test.txt -o cmd --he "<{pri:}>{date:MMM dd HH:mm:ss} {oneOf:mymachine,yourmachine,localhost,{ipv4:192.168.0.0/16}} {string:a-z0-9/9}[{random:1-65535}]: ""`
+`java -jar LogGenerator-with-dependencies.jar -i file -ifn test.txt -o cmd -he "<{pri:}>{date:MMM dd HH:mm:ss} {oneOf:mymachine,yourmachine,localhost,{ipv4:192.168.0.0/16}} {string:a-z0-9/9}[{random:1-65535}]: ""`
 
 Example: 
 - `<25>Dec 10 15:27:38 192.168.169.209 liiblhukp[38946]: Test row 1`
@@ -553,9 +566,15 @@ You can debug the input or output items independently. openssl and curl has nice
 From another console window, use either of these clients to connect to the server:
 ```bash
 openssl s_client -connect localhost:9999 -tls1_2 -status -msg -debug
+openssl s_client -connect localhost:9999 -tls1_2 -status -msg < src/test/data/test.txt
+ncat --ssl localhost 9999 < src/test/data/test.txt
 curl -iv https://localhost:9999
 ```
 or any browser with https://localhost:9999 (you will have to accept the certificate if the issuer path is not in the browser's truststore).
+
+Note that ncat can both do ssl and delays (throttle) so that can be a nice tool to send prefabricated events with. 
+Start by creating a large amount of events from a template and store in a file. Then use nc, ncat or similar to deliver the files, if the
+built-in networking is too slow.
 
 To start a debugging SSL server with openssl, first generate a .p12 file from the keystore:
 ```bash
@@ -576,6 +595,21 @@ For more debugging information, you can start the openssl server with:
 To start java with additional logging for ssl debugging, use:
 
 `-Djavax.net.debug=ssl:handshake:verbose:keymanager:trustmanager -Djava.security.debug=access:stack`
+
+### How do I know if a TCP input is working
+If you have started a TCP input with `-i tcp -ip 9999` then you can send data with 
+`nc {ip-address or name} {port} < {filename}`, e.g., `nc localhost 9999 < /var/log/messages`.
+
+### Gap Detection doesn't work when I use a property file
+On the command line you have to escape the backslash character, so a pattern would be:
+```properties
+-gd "<(\\d+)>"
+```
+But, in the property file you have to write the regex as is, without extra escape characters, like
+```properties
+gap-detection=<(\d+)>
+```
+There's an example in ssl-server.properties.
 
 ## What License are you using?
 See the license header in each java file. As long as you don't violate the licenses of the components (kafka and slf4j), you can do whatever you want with the code, just give me credit if you use the code.
