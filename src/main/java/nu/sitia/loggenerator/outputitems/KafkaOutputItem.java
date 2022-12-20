@@ -54,7 +54,7 @@ public class KafkaOutputItem extends AbstractOutputItem implements SendListener 
         super(config);
         super.addListener(this);
         this.clientId = config.getValue("-ocn");
-        this.topicName = config.getValue("otn");
+        this.topicName = config.getValue("-otn");
         this.bootstrapServer = config.getValue("-obs");
 
         if (null == clientId) {
