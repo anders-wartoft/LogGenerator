@@ -262,11 +262,17 @@ can for example be substituted with `words nice words is`.
 A counter is an integer with a starting value that will be substituted with the value of the counter on the first invocation. 
 On subsequent invocations, the value is increased by 1 for each invocation.
 
+A counter can be named, so different counters may have different values. If no name is given, a default name `defaultName` will be used for that counter.
+
 To differentiate between counters each counter has its own unique name. 
 
-Syntax: `{counter:(?<name>[a-zA-Z0-9\-_]+):(?<startvalue>\d+)}`
+Syntax: `{counter:((?<name>[a-zA-Z0-9\-_]+):)?(?<startvalue>\d+)}`
 
-Example: `{counter:counterName:14}` will be substituted by `14` the first time the template is evaluated, `15` the next time and so on.
+Example: 
+```
+{counter:counterName:14}` will be substituted by `14` the first time the template is evaluated, `15` the next time and so on.
+{counter:1}` will be substituted by `1` the first time the template is evaluated, `2` the next time and so on.
+```
 
 #### Pri
 A pri will just create a random facility, severity and priority for a syslog message and

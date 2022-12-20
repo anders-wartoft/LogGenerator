@@ -23,12 +23,14 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class CounterSubstitute extends AbstractSubstitute {
+    /** If no name is given for a counter */
+    private static final String DEFAULT_NAME = "defaultName";
     /** Regex for counter */
-    private static final String counterRegex = "\\{counter:(?<name>[a-zA-Z0-9\\-_]+):(?<startvalue>\\d+)}";
+    private static final String counterRegex = "\\{counter:((?<name>[a-zA-Z0-9\\-_]+):)?(?<startvalue>\\d+)}";
     /** Pattern for counter */
     private static final Pattern counterPattern = Pattern.compile(counterRegex);
     /** The actual counters */
-    private static final Map<String, Integer> counters = new HashMap<>();
+    private static Map<String, Integer> counters = new HashMap<>();
 
 
     /**
@@ -48,8 +50,11 @@ public class CounterSubstitute extends AbstractSubstitute {
         // First, get the interval
         Matcher matcher = counterPattern.matcher(part);
         if (matcher.find()) {
-            String name = matcher.group(1);
-            String startValue = matcher.group(2);
+            String name = matcher.group("name");
+            if (name == null) {
+                name = DEFAULT_NAME;
+            }
+            String startValue = matcher.group("startvalue");
             Integer value = Integer.valueOf(startValue);
             // Check if we have had this before
             if (counters.containsKey(name)) {
@@ -61,5 +66,12 @@ public class CounterSubstitute extends AbstractSubstitute {
             return result;
         }
         throw new RuntimeException(("Illegal counter pattern: " + input));
+    }
+
+    /**
+     * Reset the internal state:
+     */
+    public void clear() {
+        counters = new HashMap<>();
     }
 }
