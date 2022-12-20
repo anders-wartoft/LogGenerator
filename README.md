@@ -302,7 +302,7 @@ Example:
 
 ### Read a file, change the date from the lines in the file to the date right now and print to the console
 
-Example: If a log locks like this: 
+Example: If a log looks like this: 
 
 `Sat Dec 03 00:35:57.108 Usb Host Notification Apple80211Set: seqNum 5459 Total 1 chg 0 en0`
 
