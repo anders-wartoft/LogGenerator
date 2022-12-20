@@ -156,7 +156,7 @@ To send the text "test" 100.000 times over UDP and discard the result, but to se
 
 Server:
 
-`java -jar LogGenerator-with-dependencies.jar -i udp -ip 9999  -o cmd  -s true  -gd "(\\d+)$"`
+`java -jar LogGenerator-with-dependencies.jar -i udp -ip 9999  -o cmd  -s true  -gd "(\d+)$"`
 
 In another command window, start the client (same jar file):
 
@@ -181,7 +181,7 @@ There must be a capture group in the regex. The text matched by the capture grou
 
 Parameters: `-r {regex to find} -v {value to insert instead of the part matched by the regex}`
 
-Example: `-r "<(\\d+)>" -v "<2>"`
+Example: `-r "<(\d+)>" -v "<2>"`
 
 If you have a file with a lot of logs, like:
 
@@ -397,7 +397,7 @@ You can use several LogGenerators inserted at different places in your event str
 ### Lost events - Gap detection
 If the events transferred contains an increasing value, then the receiver can detect if any of the values are missing.
 
-To generate a header with that kind of value, use the {counter: variable.
+To generate a header with that kind of value, use {counter: variable: startNumber}.
 
 `{counter:name:1}`
 
@@ -413,7 +413,7 @@ Example with only one instance of LogGenerator:
 
 Server and client:
 
-`java -jar LogGenerator-with-dependencies.jar -i file -ifn src/test/data/test.txt -he "<{counter:test:42}>" -o cmd -gd "<(\\d+)>"`
+`java -jar LogGenerator-with-dependencies.jar -i file -ifn src/test/data/test.txt -he "<{counter:test:42}>" -o cmd -gd "<(\d+)>"`
 
 You should see the received data and the detected gaps:
 
@@ -429,7 +429,7 @@ Next expected number: 46
 Example with one client and one server:
 
 In a new terminal, start the server:
-`java -jar LogGenerator-with-dependencies.jar -i tcp -port 9999 -o cmd  -gd "<(\\d+)>"`
+`java -jar LogGenerator-with-dependencies.jar -i tcp -port 9999 -o cmd  -gd "<(\d+)>"`
 
 Start the client:
 
@@ -601,9 +601,13 @@ If you have started a TCP input with `-i tcp -ip 9999` then you can send data wi
 `nc {ip-address or name} {port} < {filename}`, e.g., `nc localhost 9999 < /var/log/messages`.
 
 ### Gap Detection doesn't work when I use a property file
-On the command line you have to escape the backslash character, so a pattern would be:
+On the command line you can escape the backslash character, so a pattern would be:
 ```properties
 -gd "<(\\d+)>"
+```
+Also, you can omit the escape:
+```properties
+-gd "<(\d+)>"
 ```
 But, in the property file you have to write the regex as is, without extra escape characters, like
 ```properties
