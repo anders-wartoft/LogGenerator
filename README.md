@@ -11,7 +11,7 @@ The example above is literally two commands.
 
 ```bash
 java -jar target/LogGenerator-with-dependencies.jar -i file -ifn src/test/data/test.txt -o kafka -ocn test2 -otn test -obs 192.168.1.116:9092 -he "<{pri:}>{date:MMM dd HH:mm:ss} {oneOf:mymachine,yourmachine,localhost,{ipv4:192.168.0.0/16}} {string:a-z0-9/9}[{counter:a:100}]: " -s true
-java -jar target/LogGenerator-with-dependencies.jar -i kafka -icn test2 -itn test -ibs 192.168.1.116:9092 -gd "\[(\d+)\]:" -o cmd -s true
+java -jar target/LogGenerator-with-dependencies.jar -i kafka -icn test2 -itn test -ibs 192.168.1.116:9092 -gd "\[(\d+)\]:" -o null -s true
 ```
 When running the last command, press Ctrl-C to see the gaps in the received data. Since we started the counter on 100, there should at least be one gap: 1-99.
 
