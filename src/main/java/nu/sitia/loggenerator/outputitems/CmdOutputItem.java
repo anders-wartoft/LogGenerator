@@ -44,8 +44,10 @@ public class CmdOutputItem extends AbstractOutputItem implements SendListener {
             // Call super.write to get batchSize events to the "send()" method here.
             // Ignore that and just output to the console with each line as a list
             // and if the line contains several \n then add each part as a list item
-            if (!elements.isEmpty()) {
-                elements.forEach(s -> System.out.println(Arrays.asList(s.split("\n"))));
+            for (String s:elements) {
+                String fixed = s.replaceAll("\r\n", System.lineSeparator());
+                String [] parts = fixed.split("\n");
+                System.out.println(Arrays.asList(parts));
             }
         } else {
             // super will call our send method with batchSize
