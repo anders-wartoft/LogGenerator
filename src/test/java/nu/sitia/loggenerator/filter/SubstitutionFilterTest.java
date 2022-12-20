@@ -39,4 +39,34 @@ public class SubstitutionFilterTest extends TestCase {
         assertEquals("{ip}", filter.getVariableMap().get("new-variable"));
     }
 
+    /**
+     * Custom variables
+     */
+    public void testStandardVariables()
+    {
+        String [] args = {
+                "-p", "src/test/data/config.properties"
+        };
+
+        Configuration config = new Configuration(args);
+        SubstitutionFilter filter = new SubstitutionFilter(config);
+
+        assertEquals("{<ipv4:0.0.0.0/0}", filter.getVariableMap().get("ip"));
+    }
+
+    /**
+     * Custom variables
+     */
+    public void testOverwriteStandardVariables()
+    {
+        String [] args = {
+                "-p", "src/test/data/overwrite.properties"
+        };
+
+        Configuration config = new Configuration(args);
+        SubstitutionFilter filter = new SubstitutionFilter(config);
+
+        assertEquals("192.168.1.1", filter.getVariableMap().get("ip"));
+    }
+
 }

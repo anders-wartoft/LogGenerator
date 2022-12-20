@@ -645,6 +645,9 @@ gap-detection=<(\d+)>
 ```
 There's an example in ssl-server.properties.
 
+### What happens if I use a name for the standard variables for my custom variable
+If there is a standard variable with a name of, e.g., `ip`, and you define a new variable with the same name, your variable definition will overwrite the standard variable.
+
 ## What License are you using?
 See the license header in each java file. As long as you don't violate the licenses of the components (kafka and slf4j), you can do whatever you want with the code, just give me credit if you use the code.
 
