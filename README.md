@@ -591,7 +591,7 @@ Start by browsing to https://localhost:9999 to see if the openssl server is resp
 For more debugging information, you can start the openssl server with:
 
 `openssl s_server -CAfile server.cer -accept 9999 -key server.key -debug`
-`
+
 To start java with additional logging for ssl debugging, use:
 
 `-Djavax.net.debug=ssl:handshake:verbose:keymanager:trustmanager -Djava.security.debug=access:stack`
