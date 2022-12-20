@@ -63,7 +63,7 @@ public class FilterListFactory {
                 header!= null ||
                 !template1.isNone()) {
             // Add variable expansion, like {date: etc
-            filterList.add(new SubstitutionFilter());
+            filterList.add(new SubstitutionFilter(config));
         }
 
         if (gapRegex != null) {

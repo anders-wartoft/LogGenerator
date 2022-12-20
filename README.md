@@ -351,16 +351,6 @@ If a fixed time is preferred, use `-t time:durationInMilliseconds`, example `-t 
 
 With a syslog template, a great number of unique logs can be generated.
 
-### System variables
-Some variables are built-in, expanding to other variables and thus easier to use.
-To use the syslog-header built-in variable, add `{syslog-header}` to either the template file or the header command line argument. 
-
-The following system variables can be used:
-
-- syslog-header: `<{pri:}>{date:MMM dd HH:mm:ss} {oneOf:mymachine,yourmachine,localhost,{ipv4:192.168.0.0/16}} {string:a-z0-9/9}[{random:1-65535}]: `
-- ip: `{<ipv4:0.0.0.0/0}`
-- rfc1918: `{oneOf:{ipv4:192.168.0.0/16},{ipv4:172.16.0.0/12},{ipv4:10.0.0.0/8}}`
-
 ## Configuration files
 Instead of passing all parameters on the command line, one parameter (-p configuration-file) can be used instead.
 A combination of parameters from the command line and property file is possible.
@@ -391,6 +381,40 @@ output-port=514
 Use the above property file:
 
 `java -jar LogGenerator-with-dependencies.jar -p <name-of-property-file>`
+
+### System variables
+Some variables are built-in, expanding to other variables and thus easier to use.
+To use the syslog-header built-in variable, add `{syslog-header}` to either the template file or the header command line argument. 
+
+The following system variables can be used:
+
+- syslog-header: `<{pri:}>{date:MMM dd HH:mm:ss} {oneOf:mymachine,yourmachine,localhost,{ipv4:192.168.0.0/16}} {string:a-z0-9/9}[{random:1-65535}]: `
+- ip: `{<ipv4:0.0.0.0/0}`
+- rfc1918: `{oneOf:{ipv4:192.168.0.0/16},{ipv4:172.16.0.0/12},{ipv4:10.0.0.0/8}}`
+
+### Custom variables
+In addition to the system variables, you can add a set of custom variables. Custom variables are text snippets that will be expanded to some value when the filtering is performed.
+
+There are three ways to add custom variables:
+
+1. On the command line, add `-vf` or `--variable-file`, and a name of a property file containing variable-name=value.
+2. In a property file added with `-p` or `--property-file`, add `variable-file=<path to a property file>`, e.g., `variable-file=src/test/data/variables.properties`
+3. In a property file added with `-p` or `--property-file`, add `custom.` and directly after that the variable-name=value, e.g., `custom.myIP={ipv4:192.168.1.0/24}`
+
+Example:
+Say you would like to always exchange the text `{company-name}` in a template with `sitia.nu`. Then add the following to a property file (let's call it variables.config):
+```properties
+company-name=sitia.nu
+```
+and add that file to the property file loaded by `-p` on the command to LogGenerator:
+```properties
+variable-file=variables.properties
+```
+If you only have a small number of custom variables, you could just load all of them in the property file loaded by `-p`:
+```properties
+custom.company-name=sitia.nu
+```
+Custom variables can contain variables.
 
 ## Chaining LogGenerator 
 Now that we have an understanding of the basics, we can progress to the more advanced use cases for LogGenerator.

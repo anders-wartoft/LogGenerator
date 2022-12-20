@@ -17,6 +17,7 @@
 
 package nu.sitia.loggenerator.filter;
 
+import nu.sitia.loggenerator.Configuration;
 import nu.sitia.loggenerator.filter.substituters.Substitution;
 
 import java.util.*;
@@ -32,11 +33,8 @@ public class SubstitutionFilter implements ProcessFilter {
     /**
      * Create a filter and set all parameters
      */
-    public SubstitutionFilter() {
-        variableMap = new HashMap<>();
-        variableMap.put("syslog-header", "<{pri:}>{date:MMM dd HH:mm:ss} {oneOf:my-machine,your-machine,localhost,{ipv4:192.168.0.0/16}} {string:a-z0-9/9}[{random:1-65535}]: ");
-        variableMap.put("ip", "{<ipv4:0.0.0.0/0}");
-        variableMap.put("rfc1918","{oneOf:{ipv4:192.168.0.0/16},{ipv4:172.16.0.0/12},{ipv4:10.0.0.0/8}}");
+    public SubstitutionFilter(Configuration config) {
+        variableMap = config.getVariableMap();
     }
 
     /**
@@ -49,6 +47,14 @@ public class SubstitutionFilter implements ProcessFilter {
         List<String> filtered = new ArrayList<>();
         toFilter.forEach(s -> filtered.add(substitution.substitute(s, variableMap, new Date())));
         return filtered;
+    }
+
+    /**
+     * Unit test code
+     * @return The internal variable map
+     */
+    protected Map<String, String> getVariableMap() {
+        return Collections.unmodifiableMap(this.variableMap);
     }
 
     /**

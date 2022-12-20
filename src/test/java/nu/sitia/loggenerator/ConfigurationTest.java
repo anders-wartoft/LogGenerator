@@ -4,6 +4,7 @@ import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
 
+
 /**
  * Unit test for simple App.
  */
@@ -60,6 +61,7 @@ public class ConfigurationTest
         assertEquals( "src/test/data/test.txt", config.getValue("-ifn" ));
         assertEquals( "src/test/data/out.txt", config.getValue("-ofn" ));
         assertEquals( "file", config.getValue("-o" ));
-
     }
+
+
 }

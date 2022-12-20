@@ -91,14 +91,27 @@ public class Configuration {
                 keys.add(new Item("-e", "--eps", "Max eps to send (events per second). Throttle if above."));
                 keys.add(new Item("-pp", "--printouts", "Milliseconds between extra printout for statistics."));
                 keys.add(new Item("-p", "--property-file", "Load configuration from a property file. The argument is the name of the file to load."));
-                keys.add(new Item("-ks", "--keystore", "Path to a Java keystore"));
-                keys.add(new Item("-ksp", "--keystore-password", "Password for the Java keystore"));
-                keys.add(new Item("-ts", "--truststore", "Path to a Java truststore"));
-                keys.add(new Item("-tsp", "--truststore-password", "Password for the Java truststore"));
-                keys.add(new Item("-prots", "--ssl-protocols", "A comma delimited list of acceptable protocols. Default is: \"TLSv1.3\""));
-                keys.add(new Item("-sp", "--ssl-protocol", "Protocol the SSL socket uses initially"));
-                keys.add(new Item("-cs", "--cipher-suites", "A comma delimited list of cipher suites to use. Default is \"TLS_AES_128_GCM_SHA256\""));
+                keys.add(new Item("-vf", "--variable-file", "Property file with variable definitions"));
 
+        }
+        static final Map<String, String> standardVariables = new HashMap<>();
+        static {
+                standardVariables.put("syslog-header", "<{pri:}>{date:MMM dd HH:mm:ss} {oneOf:my-machine,your-machine,localhost,{ipv4:192.168.0.0/16}} {string:a-z0-9/9}[{random:1-65535}]: ");
+                standardVariables.put("ip", "{<ipv4:0.0.0.0/0}");
+                standardVariables.put("rfc1918","{oneOf:{ipv4:192.168.0.0/16},{ipv4:172.16.0.0/12},{ipv4:10.0.0.0/8}}");
+        }
+
+        static final Map<String, String> customVariables = new HashMap<>();
+
+        /**
+         * Get all standard and custom variables
+         * @return A map of name-value for all variable substitutions we'd like to make
+         */
+        public Map<String, String> getVariableMap() {
+                Map<String, String> result = new HashMap<>();
+                result.putAll(standardVariables);
+                result.putAll(customVariables);
+                return result;
         }
 
         /** The actual parameters read from command line, yaml or property file */
@@ -185,6 +198,10 @@ public class Configuration {
                         readConfigFromPropertyFile(fileName);
 
                 }
+                if (getValue("--variable-file") != null) {
+                        String fileName = getValue("--variable-file");
+                        readVariablesFromPropertyFile(fileName);
+                }
         }
 
         /**
@@ -210,15 +227,19 @@ public class Configuration {
                                         } else {
                                                 String key = line.substring(0, index);
                                                 String value = line.substring(index + 1);
-                                                Item item = getItemFromString("-" + key);
-                                                if (null == item) {
-                                                        item = getItemFromString("--" + key);
+                                                if (key.startsWith("custom.")) {
+                                                        customVariables.put(key.substring("custom.".length()), value);
+                                                } else {
+                                                        Item item = getItemFromString("-" + key);
+                                                        if (null == item) {
+                                                                item = getItemFromString("--" + key);
+                                                        }
+                                                        if (null == item) {
+                                                                throw new RuntimeException("Unknown key: " + key + " on line " + lineNumber + " in property file: " + file.getAbsolutePath());
+                                                        }
+                                                        logger.finer(item.longName + ": " + value);
+                                                        parameters.put(item, value);
                                                 }
-                                                if (null == item) {
-                                                        throw new RuntimeException("Unknown key: " + key + " on line " + lineNumber + " in property file: " + file.getAbsolutePath());
-                                                }
-                                                logger.finer(item.longName + ": " + value);
-                                                parameters.put(item, value);
                                         }
                                 }
                                 lineNumber++;
@@ -237,9 +258,44 @@ public class Configuration {
         }
 
         /**
-         * toString
-         * @return A String representation of this configuration
+         * Load variables from a file
+         * @param fileName The file to use
          */
+        protected void readVariablesFromPropertyFile(String fileName) {
+                File file = new File(fileName);
+                if (!file.exists()) {
+                        throw new RuntimeException("The variable file " + file.getAbsolutePath() + " can't be found.");
+                }
+                logger.config("Reading variables from : " + file.getAbsolutePath());
+                try {
+                        FileInputStream input = new FileInputStream(fileName);
+                        Scanner scanner = new Scanner(input);
+                        int lineNumber = 1;
+                        while (scanner.hasNextLine()) {
+                                String line = scanner.nextLine();
+                                if (!line.startsWith("#")) {
+                                        int index = line.indexOf("=");
+                                        if (index < 1) {
+                                                logger.fine("Disregarding line " + lineNumber + " in " + file.getAbsolutePath() + " due to missing = character");
+                                        } else {
+                                                String key = line.substring(0, index);
+                                                String value = line.substring(index + 1);
+                                                logger.finer(key + ": " + value);
+                                                customVariables.put(key, value);
+                                        }
+                                }
+                                lineNumber++;
+                        }
+                } catch (FileNotFoundException e) {
+                        throw new RuntimeException(e);
+                }
+        }
+
+
+                                /**
+                                 * toString
+                                 * @return A String representation of this configuration
+                                 */
         public String toString() {
                 StringBuilder sb = new StringBuilder();
                 parameters.forEach((key, value) ->
