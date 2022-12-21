@@ -87,13 +87,13 @@ Example: `-i static -string "Test string to send" -l 1000` (only send 1000 event
 
 #### Static string ending with a counter starting from 1
 This is used to send a static string that is appended with an increasing number, starting from 1. This is a very fast way to send events ending with a counter.
-To send 1.000.000 events from "Test:1" to "Test:1000000", use `java -jar LogGenerator-with-dependencies.jar -i counter -string "Test:" -
---limit 1000000 -o cmd`
+To send 1.000.000 events from "Test:1" to "Test:1000000", use `java -jar LogGenerator-with-dependencies.jar -i counter -string "Test:" --limit 1000000 -o cmd`
 
 Parameters: `-i counter -string {the string to send}`
 
 Example: `-i counter -string "Test string number:"`
 
+If you want to test the generation speed, use the `null` output since that is faster than writing to the console. Add `-s true` for measurements: `java -jar target/LogGenerator-with-dependencies.jar -i counter -string "Test:" --limit 1000000 -o null -s true`
 
 ### Output modules
 These are the output modules available:
