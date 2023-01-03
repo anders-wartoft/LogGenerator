@@ -89,11 +89,13 @@ public class SSLTCPInputItem extends TCPInputItem {
      */
     public List<String> next() {
         List<String> toReturn = new ArrayList<>();
+        int size = 0;
         synchronized (result) {
-            while (result.peek() != null) {
+            while (result.peek() != null && (batchSize == 0 || size < batchSize)) {
                 String event = result.element();
                 toReturn.add(event);
                 result.remove();
+                size ++;
             }
         }
         return toReturn;
