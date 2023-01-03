@@ -52,7 +52,7 @@ public class TemplateFileInputItem extends FileInputItem {
      * @param config The command line arguments
      */
     public TemplateFileInputItem(Configuration config) {
-        super(config.getValue("-fn"), config);
+        super(config.getValue("-ifn"), config);
         String templateString = config.getValue("-t");
         if (templateString == null) {
             throw new RuntimeException(config.getNotFoundInformation("-t"));
@@ -142,9 +142,11 @@ public class TemplateFileInputItem extends FileInputItem {
      * Let the item teardown after reading
      */
     public void teardown() {
-        scanner.close();
-        // make sure we have to run setup() again before read()
-        scanner = null;
+        if (scanner != null) {
+            scanner.close();
+            // make sure we have to run setup() again before read()
+            scanner = null;
+        }
     }
 
     /**
