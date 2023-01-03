@@ -101,7 +101,7 @@ public class Configuration {
                 standardVariables.put("rfc1918","{oneOf:{ipv4:192.168.0.0/16},{ipv4:172.16.0.0/12},{ipv4:10.0.0.0/8}}");
         }
 
-        static final Map<String, String> customVariables = new HashMap<>();
+        final Map<String, String> customVariables = new HashMap<>();
 
         /**
          * Get all standard and custom variables
