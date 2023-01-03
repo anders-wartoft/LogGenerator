@@ -160,7 +160,7 @@ Server:
 
 In another command window, start the client (same jar file):
 
-`java -jar LogGenerator-with-dependencies.jar -i counter -string "test" -o udp -oh localhost -op 9999  -s true --limit 1000`
+`java -jar LogGenerator-with-dependencies.jar -i counter -string "test" -o udp -oh localhost -op 9999  -s true --limit 100000`
 
 ### Filter modules:
 - Add a header
