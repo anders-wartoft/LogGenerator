@@ -92,6 +92,7 @@ public class Configuration {
                 keys.add(new Item("-pp", "--printouts", "Milliseconds between extra printout for statistics."));
                 keys.add(new Item("-p", "--property-file", "Load configuration from a property file. The argument is the name of the file to load."));
                 keys.add(new Item("-vf", "--variable-file", "Property file with variable definitions"));
+                keys.add(new Item("-to", "--time-offset", "Time offset from now in ms. Added to the current date value when evaluating a {date} variable"));
 
         }
         static final Map<String, String> standardVariables = new HashMap<>();

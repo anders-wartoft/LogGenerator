@@ -217,6 +217,12 @@ Example (at new year 2023)
 - `{date:yyyyMMdd}` might be resolved to: `20230101`
 - `{date:MMM dd HH:mm:ss/en:US}` might be resolved to `Jan 01 00:00:00`
 
+Date can also have an offset with the `-to` (`--time-offset`) parameter. Time offset can be used to add or remove a number of milliseconds from the date variable. 
+
+Syntax: `-to` [offset in milliseconds]
+
+Example: `-to -86400000` to set the date variable to one day ago.
+
 #### Ipv4
 Insert an ip address from a specified subnet.
 

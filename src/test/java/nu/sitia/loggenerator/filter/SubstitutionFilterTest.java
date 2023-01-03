@@ -20,6 +20,11 @@ package nu.sitia.loggenerator.filter;
 import junit.framework.TestCase;
 import nu.sitia.loggenerator.Configuration;
 
+import java.text.SimpleDateFormat;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.List;
+
 public class SubstitutionFilterTest extends TestCase {
 
     /**
@@ -67,6 +72,26 @@ public class SubstitutionFilterTest extends TestCase {
         SubstitutionFilter filter = new SubstitutionFilter(config);
 
         assertEquals("192.168.1.1", filter.getVariableMap().get("ip"));
+    }
+
+    /**
+     * Custom variables
+     */
+    public void testTimeOffset()
+    {
+        long msDay = -1000 * 3600 * 24;
+        String [] args = {
+                "-to", String.valueOf(msDay) // yesterday
+        };
+        List<String> data = Arrays.asList("{date:yyyyMMdd}");
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd");
+        String today = sdf.format(new Date());
+
+        Configuration config = new Configuration(args);
+        SubstitutionFilter filter = new SubstitutionFilter(config);
+        List<String> result = filter.filter(data);
+
+        assertFalse(today.equals(result.get(0)));
     }
 
 }

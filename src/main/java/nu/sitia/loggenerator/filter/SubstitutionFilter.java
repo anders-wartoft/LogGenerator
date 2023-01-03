@@ -30,11 +30,22 @@ public class SubstitutionFilter implements ProcessFilter {
     /** Cached list of substitute */
     private final Substitution substitution = new Substitution();
 
+    /** Offset from the current time and date to use when evaluating variables */
+    private long timeOffset = 0;
+
     /**
      * Create a filter and set all parameters
      */
     public SubstitutionFilter(Configuration config) {
         variableMap = config.getVariableMap();
+        String offset = config.getValue("-to");
+        if (offset != null) {
+            try {
+                this.timeOffset = Long.parseLong(offset);
+            } catch (NumberFormatException e) {
+                throw new RuntimeException("Usage: -to [long value]. Example: -to -10000 for setting the date to 10 seconds ago.");
+            }
+        }
     }
 
     /**
@@ -45,7 +56,10 @@ public class SubstitutionFilter implements ProcessFilter {
     @Override
     public List<String> filter(List<String> toFilter) {
         List<String> filtered = new ArrayList<>();
-        toFilter.forEach(s -> filtered.add(substitution.substitute(s, variableMap, new Date())));
+        // Create a new date that represents now. Then, add the
+        // offset provided by the user (positive for future and negative for in the past
+        final Date date = new Date(new Date().getTime() + this.timeOffset);
+        toFilter.forEach(s -> filtered.add(substitution.substitute(s, variableMap, date)));
         return filtered;
     }
 
