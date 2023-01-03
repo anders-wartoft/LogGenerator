@@ -269,10 +269,10 @@ To differentiate between counters each counter has its own unique name.
 Syntax: `{counter:((?<name>[a-zA-Z0-9\-_]+):)?(?<startvalue>\d+)}`
 
 Example: 
-```
-{counter:counterName:14} will be substituted by `14` the first time the template is evaluated, `15` the next time and so on.
-{counter:1} will be substituted by `1` the first time the template is evaluated, `2` the next time and so on.
-```
+`{counter:counterName:14}` will be substituted by `14` the first time the template is evaluated, `15` the next time and so on.
+
+`{counter:1}` will be substituted by `1` the first time the template is evaluated, `2` the next time and so on.
+
 
 #### Pri
 A pri will just create a random facility, severity and priority for a syslog message and
