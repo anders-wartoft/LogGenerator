@@ -270,8 +270,8 @@ Syntax: `{counter:((?<name>[a-zA-Z0-9\-_]+):)?(?<startvalue>\d+)}`
 
 Example: 
 ```
-{counter:counterName:14}` will be substituted by `14` the first time the template is evaluated, `15` the next time and so on.
-{counter:1}` will be substituted by `1` the first time the template is evaluated, `2` the next time and so on.
+{counter:counterName:14} will be substituted by `14` the first time the template is evaluated, `15` the next time and so on.
+{counter:1} will be substituted by `1` the first time the template is evaluated, `2` the next time and so on.
 ```
 
 #### Pri
@@ -300,7 +300,7 @@ Example: `{oneOf:{ipv4:192.168.0.0/16},{ipv4:172.16.0.0/12},{ipv4:10.0.0.0/8}}` 
 ### Read a file, add a syslog header and send the output to the console
 This will add a syslog header to each line in the file before printing the line.
 
-`java -jar LogGenerator-with-dependencies.jar -i file -ifn test.txt -o cmd -he "<{pri:}>{date:MMM dd HH:mm:ss} {oneOf:mymachine,yourmachine,localhost,{ipv4:192.168.0.0/16}} {string:a-z0-9/9}[{random:1-65535}]: ""`
+`java -jar LogGenerator-with-dependencies.jar -i file -ifn test.txt -o cmd -he "<{pri:}>{date:MMM dd HH:mm:ss} {oneOf:mymachine,yourmachine,localhost,{ipv4:192.168.0.0/16}} {string:a-z0-9/9}[{random:1-65535}]: "`
 
 Example: 
 - `<25>Dec 10 15:27:38 192.168.169.209 liiblhukp[38946]: Test row 1`
