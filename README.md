@@ -408,7 +408,7 @@ There are three ways to add custom variables:
 3. In a property file added with `-p` or `--property-file`, add `custom.` and directly after that the variable-name=value, e.g., `custom.myIP={ipv4:192.168.1.0/24}`
 
 Example:
-Say you would like to always exchange the text `{company-name}` in a template with `sitia.nu`. Then add the following to a property file (let's call it variables.config):
+Say you would like to always exchange the text `{company-name}` in a template with `sitia.nu`. Then add the following to a property file (let's call it variables.properties):
 ```properties
 company-name=sitia.nu
 ```
