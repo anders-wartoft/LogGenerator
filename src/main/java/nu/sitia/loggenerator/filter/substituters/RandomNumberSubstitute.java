@@ -48,7 +48,7 @@ public class RandomNumberSubstitute extends AbstractSubstitute {
             String to = matcher.group(2);
             int low = Integer.parseInt(from);
             int high = Integer.parseInt(to);
-            int nr = new Random().nextInt(high-low) + low;
+            int nr = new Random().nextInt(1 + high - low) + low;
             return input.substring(0, startPos) + nr + input.substring(endPos);
         }
         throw new RuntimeException(("Illegal random pattern: " + input));

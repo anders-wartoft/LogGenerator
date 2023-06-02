@@ -36,7 +36,9 @@ public class Substitution {
      * Create the list of substitutes
      */
     public Substitution() {
+        items.add(new RepeatSubstitute(this));
         dateSubstitute = new DateSubstitute();
+        dateSubstitute.setDate(new Date());
         items.add(dateSubstitute);
         items.add(new CounterSubstitute());
         items.add(new Ipv4Substitute());
@@ -45,6 +47,11 @@ public class Substitution {
         items.add(new PrioritySubstitute());
         items.add(new RandomNumberSubstitute());
         items.add(new StringSubstitute());
+        items.add(new CounterMemoryRecallSubstitute());
+        items.add(new OneFromFileSubstitute());
+        items.add(new ProbSubstitute());
+        items.add(new MemorySetSubstitute());
+        items.add(new MemoryRecallSubstitute());
     }
 
     /**
@@ -58,7 +65,9 @@ public class Substitution {
      */
     public String substitute(String template, Map<String, String> translations, Date date) {
         // Update the timestamp
-        dateSubstitute.setDate(date);
+        if (null != date) {
+            dateSubstitute.setDate(date);
+        }
 
         String result = template;
         // Start with built-in values, like {syslog-header}, {ip}:

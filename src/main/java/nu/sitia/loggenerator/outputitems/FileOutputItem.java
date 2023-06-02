@@ -42,7 +42,7 @@ public class FileOutputItem extends AbstractOutputItem implements SendListener, 
         if (null == fileName) {
             throw new RuntimeException(config.getNotFoundInformation("-ofn"));
         }
-        addTransactionMessages = true;
+        addTransactionMessages = config.isStatistics();
     }
 
     /**

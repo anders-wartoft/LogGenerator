@@ -21,42 +21,62 @@ import java.util.Random;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class OneOfSubstitute extends AbstractSubstitute {
+public class ProbSubstitute extends AbstractSubstitute {
 
-    /** Regex for oneOf */
-    private static final String oneOfRegex = "\\{oneOf:(?<options>.*)(/(?<delimiter>.))?}";
+    /** Regex for prob */
+    private static final String probRegex = "\\{prob:(?<options>.*)}";
 
-    /** Cached pattern for getting oneOf */
-    private static final Pattern oneOfPattern = Pattern.compile(oneOfRegex);
+    /** Cached pattern for getting prob */
+    private static final Pattern probPattern = Pattern.compile(probRegex);
 
     /**
      * Get one of several options.
-     * {oneOf:a,b,c,d} will randomly pick a b c or d.
-     * If , is needed in the options, use the following structure:
-     * {oneOf:a;b;c;d/;}
+     * {prob:a/1,b/2,c/2,d/1} will randomly pick a b c or d, but b and c will have a double
+     * probability to be picked, compared to a or d.
      * @param input The string containing the ip variable specification
      * @return The input but with one of the choices instead of the specification
      */
     public String substitute(String input) {
         // Since Java doesn't have recursive regexes, we search for the end of the expression manually:
-        int startPos = input.indexOf("{oneOf:");
+        int startPos = input.indexOf("{prob:");
         if (startPos < 0) return input;
 
         int endPos = getExpressionEnd(input, startPos);
         String part = input.substring(startPos, endPos);
         // First, get the choices
-        Matcher matcher = oneOfPattern.matcher(part);
+        Matcher matcher = probPattern.matcher(part);
         if (matcher.find()) {
             String delimiter = ",";
             String choicesString = matcher.group(1);
-            if (matcher.groupCount() > 1) {
-                if (matcher.group(2) != null) {
-                    delimiter = matcher.group(2);
+            String [] choices = choicesString.split(delimiter);
+            String [] str = new String[choices.length];
+            int [] probability = new int [choices.length];
+            for (int i=0; i<choices.length; i++) {
+                String [] strprob = choices[i].split("/");
+                str[i] = strprob[0];
+                if (strprob.length > 1) {
+                    probability[i] = Integer.parseInt(strprob[1]);
+                } else {
+                    probability[i] = 1;
                 }
             }
-            String [] choices = split(choicesString, delimiter);
-            int nr = new Random().nextInt(choices.length);
-            String selected = choices[nr];
+            // Now we have two arrays, one with the values (str) and one with the relative probabilities
+            // Sum up the relative probabilities
+            int sumProbabilities = 0;
+            for (int i=0; i<probability.length; i++) {
+                sumProbabilities += probability[i];
+            }
+            // Now pick one of them
+            int nr = new Random().nextInt(sumProbabilities) + 1;
+            int sum = 0;
+            String selected = null;
+            for (int i=0; i<probability.length; i++) {
+                sum += probability[i];
+                if (sum >= nr && selected == null) {
+                    // Pick this one
+                    selected = str[i];
+                }
+            }
             return input.substring(0, startPos) + selected + input.substring(endPos);
         }
         throw new RuntimeException(("Illegal oneOf pattern: " + input));

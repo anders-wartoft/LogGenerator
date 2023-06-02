@@ -38,11 +38,12 @@ public class GapDetectionFilter implements ProcessFilter, ShutdownHandler {
      * Create a guardFilter and set all parameters
      * @param regex The regex to use to identify the id number
      */
-    public GapDetectionFilter(String regex) {
+    public GapDetectionFilter(String regex, boolean doubleDetection) {
         if (null == regex) {
             throw new RuntimeException("No gap regex detected");
         }
         pattern = Pattern.compile(regex);
+        detector.setDuplicateDetection(doubleDetection);
         this.regex = regex;
     }
 

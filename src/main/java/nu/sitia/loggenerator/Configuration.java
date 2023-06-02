@@ -76,7 +76,7 @@ public class Configuration {
                 keys.add(new Item("-ip", "--input-port", "The port to listen to"));
                 keys.add(new Item("-op", "--output-port", "The port to send UDP or TCP data to. Also add -ho hostname"));
                 keys.add(new Item("-l", "--limit", "Limit the amount of sent events to the argument number of events"));
-                keys.add(new Item("-t", "--template", "Load a file as a template and resolve variables before sending. The file to send is added with -fn or --file-name Values can be one of:" + System.lineSeparator() +
+                keys.add(new Item("-t", "--template", "Load a file as a template and resolve variables before sending. The file to send is added with -ifn or --input-file-name Values can be one of:" + System.lineSeparator() +
                         "    'none' - send the file without expanding the variables but in a random order" + System.lineSeparator() +
                         "    'continuous' - send a random row from the file with variables expanded. The same row can be sent several times. If you just want a specified number of events, add the -l (--limit) parameter to stop sending after the specified number of events." + System.lineSeparator() +
                         "    'time:{number}' - as 'continuous' but end the transmission after {number} ms" + System.lineSeparator() +
@@ -84,8 +84,10 @@ public class Configuration {
                 keys.add(new Item("-ib", "--input-batch-size", "How many rows to read before sending to processing"));
                 keys.add(new Item("-ob", "--output-batch-size", "How many rows to write (new line separated) every time the send method is called"));
                 keys.add(new Item("-gd", "--gap-detection", "Regex to find the event serial number. In the regex, the first capture group must be the number, e.g. \"<(\\d+)>\""));
+                keys.add(new Item("-dd", "--duplicate-detection", "If -gd (--gap-detection) is enabled, use this flag to also get a report on all serial numbers that occurs mote than once. Valid values are: false, true"));
+
                 keys.add(new Item("-rg", "--remove-guard", "Remove the statistics events (BEGIN_TRANSACTION, ...)"));
-                keys.add(new Item("-he", "-header", "String to add to the beginning of each entry. May contain variables."));
+                keys.add(new Item("-he", "--header", "String to add to the beginning of each entry. May contain variables."));
                 keys.add(new Item("-r", "--regex", "Regex to search for and replace with a value."));
                 keys.add(new Item("-v", "--value", "Value to replace the regex with."));
                 keys.add(new Item("-e", "--eps", "Max eps to send (events per second). Throttle if above."));
@@ -100,6 +102,12 @@ public class Configuration {
                 standardVariables.put("syslog-header", "<{pri:}>{date:MMM dd HH:mm:ss} {oneOf:my-machine,your-machine,localhost,{ipv4:192.168.0.0/16}} {string:a-z0-9/9}[{random:1-65535}]: ");
                 standardVariables.put("ip", "{<ipv4:0.0.0.0/0}");
                 standardVariables.put("rfc1918","{oneOf:{ipv4:192.168.0.0/16},{ipv4:172.16.0.0/12},{ipv4:10.0.0.0/8}}");
+                standardVariables.put("ipv6", "{repeat:8#{string:0-9a-f/4}#-#}");
+                standardVariables.put("hex", "{string:0-9a-f/1}");
+                standardVariables.put("HEX", "{string:0-9A-F/1}");
+                standardVariables.put("guid", "{string:0-9a-f/8}-{repeat:3#{string:0-9a-f/4}-}{string:0-9a-f/12}");
+                standardVariables.put("GUID", "{string:0-9A-F/8}-{repeat:3#{string:0-9A-F/4}-}{string:0-9A-F/12}");
+
         }
 
         final Map<String, String> customVariables = new HashMap<>();

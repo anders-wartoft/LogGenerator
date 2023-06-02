@@ -5,7 +5,7 @@ import junit.framework.TestCase;
 import junit.framework.TestSuite;
 
 /**
- * Unit test for simple App.
+ * Unit test for Gap Detector.
  */
 public class GapDetectorTest
     extends TestCase
@@ -47,4 +47,27 @@ public class GapDetectorTest
         assertTrue(detector.check(77) < 0);
         System.out.println(detector);
     }
+
+
+    /**
+     * Gap Test
+     */
+    public void testNumberOfReceivedNumbers()
+    {
+        GapDetector detector = new GapDetector();
+        detector.setDuplicateDetection(true);
+        detector.setExpectedNumber(1);
+        detector.check(1);
+        detector.check(2);
+        detector.check(2);
+        detector.check(2);
+        detector.check(4);
+        detector.check(4);
+        detector.check(4);
+        detector.check(4);
+        detector.check(5);
+        detector.setExpectedNumber(7);
+        System.out.println(detector);
+    }
+
 }

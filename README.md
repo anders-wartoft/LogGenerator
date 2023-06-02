@@ -166,6 +166,7 @@ In another command window, start the client (same jar file):
 - Add a header
 - Replace by regex
 - Replace variables
+- Remove transaction messages
 - Detect gaps
 
 #### Add a header
@@ -193,6 +194,13 @@ Then the following invocation will change the date to today:
 
 #### Replace variables
 Variable substitution will be present for template, regex and header processing. If a file is loaded as "file" or template "none" then the (processor intensive) substitutions will not be loaded.
+
+#### Remove transaction messages
+If the statistics module was used when generating messages and you want to remove them, use the Remove Guard filter on the receiver LogFilter.
+
+Parameters: `-rg` or `--remove-guard`
+
+Example: `-rg`
 
 #### Detect gaps
 Gaps are a continuous block of missing numbers. We use gaps to inform the filter that we are missing some events.
@@ -231,6 +239,15 @@ Syntax: `{ipv4:(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})/(\d{1,2})}`
 Example: 
 - `{ipv4:192.168.1.182/24}` might be resolved to `192.168.1.14`
 
+### Ipv6
+A very simple variable substitution exists for generating ipv6-format.
+The variable is defined as: `{repeat:8#{string:0-9a-f/4}#-#}`
+
+Syntax: `{ipv6}`
+
+Example:
+- `eaf1-65f0-f0df-2d39-9657-6cf2-9d29-9825`
+
 #### OneOf
 This variable will randomly pick one of the supplied arguments.
 
@@ -239,6 +256,27 @@ Syntax: `{oneOf:(?<options>.*)(/(?<delimiter>.))?}`
 Example:
 - `{oneOf:a,b,c,d}` will be replaced by one of a, b, c or d
 - `{oneOf:a;b;c;d/;}` if , is needed in the options, a delimiter can be provided in the template.
+
+#### OneFromFile
+OneFromFile works a bit like oneOf except the values come from an external file and the delimiter is not used. 
+Each line in the file will be a new option for oneFromFile. 
+
+Syntax: {oneFromFile:(?<filename>[^#]+)(#(?<encoding>.*))?}
+
+Example: 
+- `{oneFromFile:/home/user/Desktop/test.txt}`
+- `{oneFromFile:/home/user/Desktop/test.txt,ISO-8859-1}`
+
+
+### Prob
+This is a variant of the OneOf variable, with an option to set the relative probability for picking one of the choices, but without the delimiter option.
+
+Syntax: `{prob:(?<options>.*)}` where the options is a comma separated list of `(?<name>[^/]+)(/(?<probability>\d+))?`
+
+Example:
+- `{prob:a,b,c,d}` will work as `{oneOf:a,b,c,d}`
+- `{prob:a,b/2,c/100,d}` will first sum the relative probabilities: 1 + 2 + 100 + 1 = 104, then generate a random number between 1 and 104 and lastly pick the corresponding string from the list. 
+The possibility of choosing c is high, but a, b and d will be occasionally selected.
 
 #### Random
 A Random variable will pick a random number in the specified interval (included).
@@ -255,6 +293,19 @@ Syntax: `{string:(?<characters>[^/]+)/(?<numberof>\d+)}`
 Example: `{string:a-c/8`} will for example create `aaaccaca`
 
 The first argument can be for example a-zA-Z0-9_\- to include letters, numbers, the underscore _ and the hyphen - characters.
+
+### Repeat
+A repeat variable will repeat a string a number of times.
+
+Syntax: `{repeat:(?<times>[^#]+)#(?<torepeat>[^#]+)(#(?<delimiter>[^#]+))?#}`
+
+Example: `{repeat:5#a#}` will be substituted with `aaaaa`
+
+Example: `{repeat:5#a#-#}` will be substituted with `a-a-a-a-a`
+
+Example: `{repeat:{random:1-7}}#b#}` might be substituted with one to seven `b` 
+
+The <torepeat> field can be another variable.
 
 #### Lorem.
 The Lorem variable will pick a number of random word from a list of words and add with a delimiter between.
@@ -279,6 +330,9 @@ Example:
 
 `{counter:1}` will be substituted by `1` the first time the template is evaluated, `2` the next time and so on.
 
+#### CounterMemoryRecall
+Each time a counter is used, the counter value is automatically saved in a cache. If you want to use the same value
+again you can access the last 
 
 #### Pri
 A pri will just create a random facility, severity and priority for a syslog message and
@@ -288,6 +342,23 @@ Syntax: `{pri:}`
 
 Example: `{pri:}` might be substituted by `165`
 
+#### MemorySet, MemoryRecall
+The MemorySet will not create any output, but only save the value in the internal cache. After an expression has been
+evaluated, the value can be retrieved with the MemoryRecall variable.
+
+Syntax: `\{ms(:(?<name>[a-zA-Z0-9\-_]+))?/(?<value>.*)}`
+Syntax: 
+
+Example:
+Save the value TEST in the default memory:
+- `{ms/TEST}`
+
+Retrieve the last saved default memory:
+- `{mr}`
+
+Save the value gained from {oneOf:a,b,c,d} in a variable with the name `other`. Also, output the value from that variable.
+This will evaluate to `a a`, `b b`, `c c` or `d d`.
+- `{ms:other/{oneOf:a,b,c,e}} {mr:other}`
 
 ## Order of substitution
 The substitutions will process one after another and repeat until the result is stable, so the output of one filter can be the input to another.
@@ -487,6 +558,13 @@ Next expected number: 48
 
 Now it's easy to configure the first LogGenerator to send logs to, e.g., Kafka or rsyslog and connect the LogGenerator receiver to accept UDP connections or read from Kafka.
 By sending more data and possibly throttle the data, you can test how much load different parts of the log chain can handle.
+
+### Duplicates detection
+When using gap detection, the flag `-dd` can be used to also report on events that are received more than once.
+
+Syntax: `-dd true`
+
+Example: `java -jar LogGenerator-with-dependencies.jar -i file -ifn src/test/data/test.txt -he "<{counter:test:42}>" -o tcp -host localhost -port 9999 -dd true`
 
 ## Improving performance
 First, regexes can be really slow. If you want good performance, use the static or counter input module and no headers. 

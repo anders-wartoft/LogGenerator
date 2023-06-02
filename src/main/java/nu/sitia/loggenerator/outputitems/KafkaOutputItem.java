@@ -68,6 +68,7 @@ public class KafkaOutputItem extends AbstractOutputItem implements SendListener 
         if (null == bootstrapServer) {
             throw new RuntimeException(config.getNotFoundInformation("-obs"));
         }
+        addTransactionMessages = config.isStatistics();
     }
 
     /**
@@ -114,7 +115,6 @@ public class KafkaOutputItem extends AbstractOutputItem implements SendListener 
         properties.put("value.serializer", "org.apache.kafka.common.serialization.StringSerializer");
         producer = new KafkaProducer<>(properties);
         logger.info("Connected to kafka " + this.bootstrapServer);
-        addTransactionMessages = true;
     }
 
     @Override

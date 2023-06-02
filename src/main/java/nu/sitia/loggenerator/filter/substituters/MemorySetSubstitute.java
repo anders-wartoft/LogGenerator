@@ -22,48 +22,54 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class CounterSubstitute extends AbstractSubstitute {
-    /** If no name is given for a counter */
+public class MemorySetSubstitute extends AbstractSubstitute {
+    /** If no name is given for a memory */
     public static final String DEFAULT_NAME = "defaultName";
-    /** Regex for counter */
-    private static final String counterRegex = "\\{counter:((?<name>[a-zA-Z0-9\\-_]+):)?(?<startvalue>\\d+)}";
-    /** Pattern for counter */
-    private static final Pattern counterPattern = Pattern.compile(counterRegex);
-    /** The actual counters */
-    private static Map<String, Integer> counters = new HashMap<>();
+    /** Regex for memory */
+    private static final String msRegex = "\\{ms(:(?<name>[a-zA-Z0-9\\-_]+))?/(?<value>.*)}";
+    /** Pattern for memory */
+    private static final Pattern msPattern = Pattern.compile(msRegex);
+    /** The actual memories */
+    private static Map<String, String> cache = new HashMap<>();
 
 
     /**
-     * Replace the specification with a number. For each
-     * invocation with the same name, use the next number for that name
-     * {counter:myCounter:6} will be substituted for 6 on the first
-     * invocation, 7 on the next and so on.
+     * Remember the contents of the value field for later.
+     * The contents (value) can be recalled with {mr}.
+     * Several named memories can be used by utilizing the name field:
+     * {ms:name/expression}
+     * From the above construction, the expression can be retrieved later on
+     * with
+     * {mr:name}
+     * Expression can contain variables, like:
+     * {ms/{oneOf:a,b,c,d}}
+     * will yield one of a, b, c or d
+     * and
+     * {mr}
+     * will evaluate to exactly the same value
      * @param input The string containing the variable specification
-     * @return The input but with one of the counter numbers instead of the specification
+     * @return The expression from the input (and saving the value for later on)
      */
     public String substitute(String input) {
-        int startPos = input.indexOf("{counter:");
+        int startPos = input.indexOf("{ms");
         if (startPos < 0) return input;
 
         int endPos = AbstractSubstitute.getExpressionEnd(input, startPos);
         String part = input.substring(startPos, endPos);
-        // First, get the interval
-        Matcher matcher = counterPattern.matcher(part);
+        // First, get the name
+        Matcher matcher = msPattern.matcher(part);
         if (matcher.find()) {
             String name = matcher.group("name");
             if (name == null) {
                 name = DEFAULT_NAME;
             }
-            String startValue = matcher.group("startvalue");
-            Integer value = Integer.valueOf(startValue);
-            // Check if we have had this before
-            if (counters.containsKey(name)) {
-                // There is a saved value, use that value + 1 as the next value
-                value = counters.get(name) + 1;
-            }
-            String result = input.substring(0, startPos) + value + input.substring(endPos);
+            String value = matcher.group("value");
+            // Special case here. We need to evaluate the contents of the value field
+            Substitution substitution = new Substitution();
+            String newValue = substitution.substitute(value, new HashMap<>(), null);
+            String result = input.substring(0, startPos) + newValue + input.substring(endPos);
             // and save the value for later
-            counters.put(name, value);
+            cache.put(name, newValue);
             return result;
         }
         throw new RuntimeException(("Illegal counter pattern: " + input));
@@ -73,18 +79,21 @@ public class CounterSubstitute extends AbstractSubstitute {
      * Reset the internal state:
      */
     public void clear() {
-        counters = new HashMap<>();
+        cache = new HashMap<>();
     }
 
 
     /**
      * Utility method so other classes can read the value of
-     * all counters, by name
-     * @param key The name of the counter
-     * @return The Integer value of the counter or null if not found
+     * all saved data, by name
+     * @param key The name of the memory
+     * @return The String value of the memory or null if not found
      */
-    public static Integer getCounterValue(String key) {
-        return counters.get(key);
+    public static String getCounterValue(String key) {
+        if (null == key) {
+            return cache.get(DEFAULT_NAME);
+        }
+        return cache.get(key);
     }
 
 }

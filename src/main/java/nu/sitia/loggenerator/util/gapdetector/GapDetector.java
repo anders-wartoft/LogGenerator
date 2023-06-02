@@ -17,8 +17,10 @@
 
 package nu.sitia.loggenerator.util.gapdetector;
 
+import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 
 public class GapDetector {
 
@@ -38,6 +40,15 @@ public class GapDetector {
         expectedNumber = newNumber;
     }
 
+    /** Should we also keep track of duplicate values? */
+    protected boolean duplicateDetection = false;
+
+    /** The list of doubles and how many times we have seen them */
+    protected Map<Long, Long> duplicates = new LinkedHashMap<>();
+
+    /** Number of unique received numbers */
+    protected Long nrReceived = 0L;
+
     /**
      * We have received a number. Check if this number is
      * the next we anticipate.
@@ -54,11 +65,13 @@ public class GapDetector {
         if (nextNumber == expectedNumber) {
             // This is what we want
             expectedNumber++;
+            nrReceived++;
             return 0;
         } else if (nextNumber < expectedNumber) {
             // Check if we have received this before
             Gap gap = isInGap(nextNumber);
             if (gap != null) {
+                nrReceived++;
                 if (nextNumber == gap.getFrom() && nextNumber == gap.getTo()) {
                     // This gap covers exactly the number. Just remove this gap
                     gaps.remove(gap);
@@ -76,9 +89,21 @@ public class GapDetector {
                     gaps.add(position+2, gap2);
                     gaps.remove(gap);
                 }
+            } else if (duplicateDetection) {
+                // nextNumber < expectedNumber but not in any gaps,
+                // so we have seen this before
+                Long cached = duplicates.get(nextNumber);
+                if (cached == null) {
+                    // Now we have seen this number twice
+                    cached = 2L;
+                } else {
+                    cached++;
+                }
+                duplicates.put(nextNumber, cached);
             }
             return nextNumber - expectedNumber;
         } else {
+            nrReceived++;
             // gap detected
             Gap gap = new Gap(expectedNumber, nextNumber-1);
             gaps.add(gap);
@@ -106,6 +131,10 @@ public class GapDetector {
         return null;
     }
 
+    public void setDuplicateDetection(boolean dd) {
+        this.duplicateDetection = dd;
+    }
+
     /**
      * Return all gaps as a printable string
      * @return The gaps, one gap for each line
@@ -113,9 +142,17 @@ public class GapDetector {
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
+        if (duplicateDetection) {
+            sb.append("Duplicate detection found: " + duplicates.size() + " duplicate (or more) values.").append(System.lineSeparator());
+            duplicates.forEach((key, value) -> sb.append(key + " - " + value).append(System.lineSeparator()));
+        }
+        sb.append("Number of unique received numbers: ").append(nrReceived).append(System.lineSeparator());
         sb.append("Next expected number: ").append(expectedNumber).append(System.lineSeparator());
-        for (Gap gap:gaps) {
-            sb.append(gap.getFrom()).append("-").append(gap.getTo()).append(System.lineSeparator());
+        if (gaps.size() > 0) {
+            sb.append("Gaps found: " + gaps.size() + ".").append(System.lineSeparator());
+            for (Gap gap : gaps) {
+                sb.append(gap.getFrom()).append("-").append(gap.getTo()).append(System.lineSeparator());
+            }
         }
         return sb.toString();
     }

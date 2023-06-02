@@ -17,6 +17,9 @@
 
 package nu.sitia.loggenerator.filter.substituters;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public abstract class AbstractSubstitute implements Substitute {
 
     /**
@@ -41,5 +44,47 @@ public abstract class AbstractSubstitute implements Substitute {
             }
         }
         throw new RuntimeException("Error parsing the expression " + input.substring(startPos));
+    }
+
+    /**
+     * Split a string by a character. If a field starts with a { tnen
+     * the characters within the field should not be used fof splitting.
+     * The field is terminated by a matching }
+     * @param input The input to split
+     * @param delimiter The delimiter to use
+     * @return An array of String from the input
+     */
+    protected String [] split(String input, String delimiter) {
+        List<String> result = new ArrayList<>();
+        int index;
+        do {
+            int pos = 0;
+            if (input.indexOf("{") == 0) {
+                pos = 1;
+                int found = 1;
+                // spool forward until we find a matching }
+                do {
+                    char c = input.charAt(pos);
+                    if (c == '}') {
+                        found --;
+                    }
+                    if (c == '{') {
+                        found ++;
+                    }
+                    pos ++;
+                    if (pos > input.length()) {
+                        throw new RuntimeException("Error in input for substituter: " + input + " malformed {}");
+                    }
+                } while (found > 0);
+            }
+            index = input.indexOf(delimiter, pos);
+            if (index >= 0) {
+                String temp = input.substring(0, index);
+                result.add(temp);
+                input = input.substring(index + delimiter.length());
+            }
+        } while (index >= 0);
+        result.add(input);
+        return result.toArray(new String[result.size()]);
     }
 }

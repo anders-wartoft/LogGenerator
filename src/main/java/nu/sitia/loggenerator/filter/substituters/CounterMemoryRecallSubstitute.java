@@ -22,69 +22,43 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class CounterSubstitute extends AbstractSubstitute {
-    /** If no name is given for a counter */
-    public static final String DEFAULT_NAME = "defaultName";
-    /** Regex for counter */
-    private static final String counterRegex = "\\{counter:((?<name>[a-zA-Z0-9\\-_]+):)?(?<startvalue>\\d+)}";
-    /** Pattern for counter */
-    private static final Pattern counterPattern = Pattern.compile(counterRegex);
-    /** The actual counters */
-    private static Map<String, Integer> counters = new HashMap<>();
-
+public class CounterMemoryRecallSubstitute extends AbstractSubstitute {
+    /** If no name is given for a cmr */
+    private static final String DEFAULT_NAME = CounterSubstitute.DEFAULT_NAME;
+    /** Regex for cmr */
+    private static final String cmrRegex = "\\{cmr(:(?<name>[a-zA-Z0-9\\-_]+))?}";
+    /** Pattern for cmr */
+    private static final Pattern cmrPattern = Pattern.compile(cmrRegex);
 
     /**
      * Replace the specification with a number. For each
      * invocation with the same name, use the next number for that name
-     * {counter:myCounter:6} will be substituted for 6 on the first
-     * invocation, 7 on the next and so on.
+     * {cmr:myCounter} will be substituted for the value of the counter:myCounter
      * @param input The string containing the variable specification
      * @return The input but with one of the counter numbers instead of the specification
      */
     public String substitute(String input) {
-        int startPos = input.indexOf("{counter:");
+        int startPos = input.indexOf("{cmr");
         if (startPos < 0) return input;
 
         int endPos = AbstractSubstitute.getExpressionEnd(input, startPos);
         String part = input.substring(startPos, endPos);
         // First, get the interval
-        Matcher matcher = counterPattern.matcher(part);
+        Matcher matcher = cmrPattern.matcher(part);
         if (matcher.find()) {
             String name = matcher.group("name");
             if (name == null) {
                 name = DEFAULT_NAME;
             }
-            String startValue = matcher.group("startvalue");
-            Integer value = Integer.valueOf(startValue);
-            // Check if we have had this before
-            if (counters.containsKey(name)) {
-                // There is a saved value, use that value + 1 as the next value
-                value = counters.get(name) + 1;
+            Integer counterValue = CounterSubstitute.getCounterValue(name);
+            String value = "";
+            if (counterValue != null) {
+                value = String.valueOf(counterValue);
             }
             String result = input.substring(0, startPos) + value + input.substring(endPos);
-            // and save the value for later
-            counters.put(name, value);
             return result;
         }
         throw new RuntimeException(("Illegal counter pattern: " + input));
-    }
-
-    /**
-     * Reset the internal state:
-     */
-    public void clear() {
-        counters = new HashMap<>();
-    }
-
-
-    /**
-     * Utility method so other classes can read the value of
-     * all counters, by name
-     * @param key The name of the counter
-     * @return The Integer value of the counter or null if not found
-     */
-    public static Integer getCounterValue(String key) {
-        return counters.get(key);
     }
 
 }

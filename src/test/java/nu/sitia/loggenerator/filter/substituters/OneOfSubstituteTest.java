@@ -28,4 +28,13 @@ public class OneOfSubstituteTest
         assertEquals(14, actual.length());
     }
 
+    /**
+     * Test oneOf recursively
+     */
+    public void testOneOfRecurse() {
+        String template = "test foo {oneOf:a,b,{oneOf:1,2,3,4},d} bar";
+        String actual = new OneOfSubstitute().substitute(template);
+        assertEquals(14, actual.length());
+    }
+
 }

@@ -19,6 +19,8 @@ package nu.sitia.loggenerator.filter;
 
 import junit.framework.TestCase;
 import nu.sitia.loggenerator.Configuration;
+import nu.sitia.loggenerator.filter.substituters.RepeatSubstitute;
+import nu.sitia.loggenerator.filter.substituters.Substitution;
 
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
@@ -94,4 +96,21 @@ public class SubstitutionFilterTest extends TestCase {
         assertFalse(today.equals(result.get(0)));
     }
 
+    /**
+     * Custom variables
+     */
+    public void testIpv6()
+    {
+        String [] args = {
+        };
+        List<String> data = Arrays.asList("{ipv6}");
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd");
+        String today = sdf.format(new Date());
+
+        Configuration config = new Configuration(args);
+        SubstitutionFilter filter = new SubstitutionFilter(config);
+        List<String> result = filter.filter(data);
+
+        assertTrue(result.get(0).length() == 39);
+    }
 }

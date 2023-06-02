@@ -39,6 +39,8 @@ public class FilterListFactory {
         String template = config.getValue("-t");
         String regex = config.getValue("-r");
         String value = config.getValue("-v");
+        String doubleDetection = config.getValue("-dd");
+        boolean dd = "true".equalsIgnoreCase(doubleDetection);
 
         List<ProcessFilter> filterList = new LinkedList<>();
 
@@ -67,7 +69,7 @@ public class FilterListFactory {
         }
 
         if (gapRegex != null) {
-            filterList.add(new GapDetectionFilter(gapRegex));
+            filterList.add(new GapDetectionFilter(gapRegex, dd));
         }
 
         return filterList;
