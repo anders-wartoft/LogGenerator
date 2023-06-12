@@ -4,7 +4,7 @@ The tool reads input from an input module, filters the input (add a header, repl
 
 LogGenerator uses input modules, filters and output modules and combines that into a chain. Each event from the input module is processed by zero or more filters, that can rewrite the contents. After filtration the events are written with an output module.
 
-Example: Read a log file, add a syslog header and write to a remote Kafka. In the syslog header, add a counter that starts at 100 and increases with each string. Also, add statistics messages (beginning of transaction etc).
+Example: Read a log file, add a syslog header and write to a remote Kafka. In the syslog header, add a counter that starts at 100 and increases with each string. Also, add statistics messages (beginning of transaction etc.).
 When the events are stored in Kafka, start another LogGenerator that fetches the Kafka events, checks the counter and writes the events to null (to increase performance). Give a measurement of the time elapsed, how many items were received, the event per second and an estimate of the bandwidth usage as well as a list of missed events (counter integers that are missing) and the next counter number we are expecting.
 
 The example above is literally two commands. 
@@ -53,16 +53,16 @@ Note that all * must be within quotes, since otherwise, the OS will expand that 
 #### Receive UDP
 Set up a UDP server. 
 
-Parameters: `-i udp [-host {host}][ -port number`
+Parameters: `-i udp [-ih {host}][ -ip portnumber`
 
-Example: `-i udp -host localhost -port 5999` or `-i udp -port 5999`
+Example: `-i udp -ih localhost -ip 5999` or `-i udp -ip 5999`
 
 #### Receive TCP
 Set up a TCP server. 
 
-Parameters: `-i tcp [-host {host}] -port number`
+Parameters: `-i tcp [-ih {host}] -ip portnumber`
 
-Example: `-i tcp -host 192.168.1.2 -port 5999` or `-i tcp -port 5999`
+Example: `-i tcp -ih 192.168.1.2 -ip 5999` or `-i tcp -ip 5999`
 
 ### Receive TCP SSL
 Set up a TCP server with encrypted communication.
@@ -196,7 +196,7 @@ Then the following invocation will change the date to today:
 Variable substitution will be present for template, regex and header processing. If a file is loaded as "file" or template "none" then the (processor intensive) substitutions will not be loaded.
 
 #### Remove transaction messages
-If the statistics module was used when generating messages and you want to remove them, use the Remove Guard filter on the receiver LogFilter.
+If the statistics module was used when generating messages, and you want to remove them, use the Remove Guard filter on the receiver LogFilter.
 
 Parameters: `-rg` or `--remove-guard`
 
@@ -271,7 +271,7 @@ Example:
 ### Prob
 This is a variant of the OneOf variable, with an option to set the relative probability for picking one of the choices, but without the delimiter option.
 
-Syntax: `{prob:(?<options>.*)}` where the options is a comma separated list of `(?<name>[^/]+)(/(?<probability>\d+))?`
+Syntax: `{prob:(?<options>.*)}` where the options are a comma separated list of `(?<name>[^/]+)(/(?<probability>\d+))?`
 
 Example:
 - `{prob:a,b,c,d}` will work as `{oneOf:a,b,c,d}`
@@ -294,7 +294,7 @@ Example: `{string:a-c/8`} will for example create `aaaccaca`
 
 The first argument can be for example a-zA-Z0-9_\- to include letters, numbers, the underscore _ and the hyphen - characters.
 
-### Repeat
+#### Repeat
 A repeat variable will repeat a string a number of times.
 
 Syntax: `{repeat:(?<times>[^#]+)#(?<torepeat>[^#]+)(#(?<delimiter>[^#]+))?#}`
@@ -332,7 +332,14 @@ Example:
 
 #### CounterMemoryRecall
 Each time a counter is used, the counter value is automatically saved in a cache. If you want to use the same value
-again you can access the last 
+again you can access the last value of a specific counter.
+
+Syntax: `{cmr(:(?<name>[a-zA-Z0-9\\-_]+))?}"`
+
+Example:
+`{cmr}` will be substituted by the last number of the default counter
+
+`{cmr:myname}` will be substituted by the last number of the counter with the name `myname`
 
 #### Pri
 A pri will just create a random facility, severity and priority for a syslog message and
@@ -466,7 +473,7 @@ To use the syslog-header built-in variable, add `{syslog-header}` to either the 
 The following system variables can be used:
 
 - syslog-header: `<{pri:}>{date:MMM dd HH:mm:ss} {oneOf:mymachine,yourmachine,localhost,{ipv4:192.168.0.0/16}} {string:a-z0-9/9}[{random:1-65535}]: `
-- ip: `{<ipv4:0.0.0.0/0}`
+- ip: `{ipv4:0.0.0.0/0}`
 - rfc1918: `{oneOf:{ipv4:192.168.0.0/16},{ipv4:172.16.0.0/12},{ipv4:10.0.0.0/8}}`
 
 ### Custom variables
@@ -529,30 +536,35 @@ You should see the received data and the detected gaps:
 [<43>Test row 2]
 [<44>Test row 3]
 [<45>Test row 4]
+Number of unique received numbers: 4
 Next expected number: 46
+Gaps found: 1.
 1-41
+
 ```
 
 Example with one client and one server:
 
 In a new terminal, start the server:
-`java -jar LogGenerator-with-dependencies.jar -i tcp -port 9999 -o cmd  -gd "<(\d+)>"`
+`java -jar LogGenerator-with-dependencies.jar -i tcp -ip 9999 -o cmd  -gd "<(\d+)>"`
 
 Start the client:
 
-`java -jar LogGenerator-with-dependencies.jar -i file -ifn src/test/data/test.txt -he "<{counter:test:42}>" -o tcp -host localhost -port 9999`
+`java -jar LogGenerator-with-dependencies.jar -i file -ifn src/test/data/test.txt -he "<{counter:test:42}>" -o tcp -oh localhost -op 9999 -dd true`
 
 You should see the received data. To see the gaps, press Ctrl-C:
 
 ```
-[<42>--------BEGIN_TRANSACTION--------]
-[<43>Test row 1]
-[<44>Test row 2]
-[<45>Test row 3]
-[<46>Test row 4]
-[<47>--------END_TRANSACTION--------]
+INFO: Serving TCP server on port: 9999
+[<42>Test row 1]
+[<43>Test row 2]
+[<44>Test row 3]
+[<45>Test row 4]
 ^CSigint
-Next expected number: 48
+Duplicate detection found: 0 duplicate (or more) values.
+Number of unique received numbers: 4
+Next expected number: 46
+Gaps found: 1.
 1-41
 ```
 
@@ -564,7 +576,7 @@ When using gap detection, the flag `-dd` can be used to also report on events th
 
 Syntax: `-dd true`
 
-Example: `java -jar LogGenerator-with-dependencies.jar -i file -ifn src/test/data/test.txt -he "<{counter:test:42}>" -o tcp -host localhost -port 9999 -dd true`
+Example: `java -jar LogGenerator-with-dependencies.jar -i file -ifn src/test/data/test.txt -he "<{counter:test:42}>" -o tcp -oh localhost -op 9999 -dd true`
 
 ## Improving performance
 First, regexes can be really slow. If you want good performance, use the static or counter input module and no headers. 
@@ -629,7 +641,7 @@ This is open source, so "Use the Source, Luke".
 ### The variables are not expanded. They are delivered as {date:... and not as 2023-01-01...
 On the sending side, use the template file input `-i template -t file` or similar (see above).
 
-Example: to send random data from a template file to a udp listener on port 9999 for 5 seconds, use:
+Example: to send random data from a template file to an udp listener on port 9999 for 5 seconds, use:
 
 `java -Djava.util.logging.config.file=logging.properties -jar target/LogGenerator-with-dependencies.jar -i template -ifn src/test/data/template.txt -o udp -oh localhost -op 9999 -t time:5000 `
 
