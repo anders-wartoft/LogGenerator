@@ -211,6 +211,13 @@ public class Configuration {
                         String fileName = getValue("--variable-file");
                         readVariablesFromPropertyFile(fileName);
                 }
+                // Command line override
+                for (int i=0; i<args.length; i+=2) {
+                        String key = args[i];
+                        Item item = getItemFromString(key);
+                        parameters.put(item, args[i+1]);
+                }
+
         }
 
         /**
