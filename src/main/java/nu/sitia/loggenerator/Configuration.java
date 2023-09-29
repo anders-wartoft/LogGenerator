@@ -59,7 +59,7 @@ public class Configuration {
         static {
                 keys.add(new Item("-h", "--help", "Show the help information"));
                 keys.add(new Item("-i", "--input", "The input module to use. Valid arguments are: counter, file, kafka, static, tcp, udp or template"));
-                keys.add(new Item("-o", "--output", "The output module to use. Valid arguments are: cmd, file, kafka, null, tcp or udp"));
+                keys.add(new Item("-o", "--output", "The output module to use. Valid arguments are: cmd, file, kafka, null, elastic, tcp or udp"));
                 keys.add(new Item("-ifn", "--input-file-name", "The file name to use for the input module. Can be a file or a directory."));
                 keys.add(new Item("-g", "--glob", "If -fn denotes a directory, this glob can be used to select some of the files in the directory. The globs are java.nio globs. Remember to put asterisks (*) within quotes so that the OS doesn't expand the globs before LogGenerator can get them."));
                 keys.add(new Item("-ofn", "--output-file-name", "The file name to use for the output module."));
@@ -95,7 +95,20 @@ public class Configuration {
                 keys.add(new Item("-p", "--property-file", "Load configuration from a property file. The argument is the name of the file to load."));
                 keys.add(new Item("-vf", "--variable-file", "Property file with variable definitions"));
                 keys.add(new Item("-to", "--time-offset", "Time offset from now in ms. Added to the current date value when evaluating a {date} variable"));
-
+                keys.add(new Item("-eoh", "--elastic-output-host", "Hostname of ip address for the Elastic Output Item server"));
+                keys.add(new Item("-eop", "--elastic-output-port", "Port number of the Elastic Output Item server"));
+                keys.add(new Item("-eoi", "--elastic-output-index", "Index to write to for the Elastic Output Item"));
+                keys.add(new Item("-eoid", "--elastic-output-id", "String to use as event id for the Elastic Output Item. Use ${id} to insert the id from the input, extracted with the regex pattern -eoidre"));
+                keys.add(new Item("-eoidre", "--elastic-output-id-regex", "Regex to use to find the event id from the incoming logs. Used as the variable ${id} in the elastic-output-id variable"));
+                keys.add(new Item("-eoak", "--elastic-output-api-key", "The API key to use to connect to the Elasticsearch instance"));
+                keys.add(new Item("-eoc", "--elastic-output-cer", "The x.509 certificate for the Elastic server. In a Chrome browser, connect to https://server:port and authenticate. Right click on the padlock or triangle. Click Certificate. Click Info. Click Export... to save the cer file from the Elastic Instance"));
+                keys.add(new Item("-eih", "--elastic-input-host", "Hostname of ip address for the Elastic Input Item server"));
+                keys.add(new Item("-eip", "--elastic-input-port", "Port number of the Elastic Input Item server"));
+                keys.add(new Item("-eii", "--elastic-input-index", "Index to read from for the Elastic Input Item"));
+                keys.add(new Item("-eif", "--elastic-input-field", "Field to use for the gap detection. Empty string will use the _id field in the Elastic response"));
+                keys.add(new Item("-eiak", "--elastic-input-api-key", "The API key to use to connect to the Elasticsearch instance"));
+                keys.add(new Item("-eic", "--elastic-input-cer", "The x.509 certificate for the Elastic server. In a Chrome browser, connect to https://server:port and authenticate. Right click on the padlock or triangle. Click Certificate. Click Info. Click Export... to save the cer file from the Elastic Instance"));
+                keys.add(new Item("-eiq", "--elastic-input-query", "A query string used to get the response from Elastic"));
         }
         static final Map<String, String> standardVariables = new HashMap<>();
         static {

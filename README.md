@@ -24,6 +24,7 @@ There are input module for the following tasks:
 - Receive TCP
 - Receive TCP SSL
 - Fetch from Kafka topics
+- Fetch from Elasticsearch
 - Static string
 - Static string ending with a counter starting from 1
 
@@ -76,6 +77,42 @@ Parameters: `-i kafka -cn {client name} -tn {topic name} -bs {boostrap server}`
 
 Example: `-i kafka -cn test -tn testtopic -bs localhost:9092`
 
+#### Fetch from Elasticsearch index
+Connect to an Elasticsearch instance and read from an index:
+
+The main use case is to get one field from an index and send to a receiver, for example a gap detector to be able to see if there are missing events (or duplicates) in the index.
+
+Parameters: `-i elastic -eih {hostname or ip} -eip {port number} -eii {index name} -eif {field to get} -eiak {API key} -eic {x.509 certificate in cer format} -eiq {query string in query dsl format}`
+
+Example:
+``` properties
+# Elasticsearch
+input=elastic
+output=cmd
+# Elastic instance to connect to
+elastic-input-host=192.168.1.131
+# Port number
+elastic-input-port=9200
+# Index to read from
+elastic-input-index=testindex
+# The API key to use
+elastic-input-api-key=QTNTTzM0b0ItZ0x3UEpJTTh1Z0k6cEF6Zk42NGhSdEcwUTFpYWE2Y0hBQQ==
+# Field to use for gap detection (with the elastic-input-id-regex)
+elastic-input-field=_id
+# cer file of the elastic server
+elastic-input-cer=./target/elastic.cer
+# Query for the input item
+elastic-input-query={"query": { "query_string": { "query": "*" }}, "_source": ["_id"]}
+# How many items to fetch from Elastic in each REST request
+input-batch-size=1000
+# Detect gaps in the id:s. Since we extract only the _id field, this should suffice
+gap-detection=-(\d+)$
+# Check if we have duplicate id:s in the stream
+duplicate-detection=true
+# Don't generate guards
+statistics=false
+```
+
 #### Static string
 Send the same string over and over again. 
 
@@ -103,6 +140,7 @@ These are the output modules available:
 - Write to TCP
 - Write to TCP with SSL
 - Write to Kafka
+- Write to Elastic
 - Write to null (throw away the result, used for performance testing)
 
 #### Write to file
@@ -144,6 +182,34 @@ Connect to a Kafka server and write the events to a topic. N.B., these are not u
 Parameters: `-o kafka -ocm {client name} -otn {topic name} -obs {boostrap server}`
 
 Example: `-o kafka -ocn test -otn testtopic -obs localhost:9092`
+
+#### Write to Elastic
+Connect to an Elasticsearch instance and write events to an index.
+
+The main use case is to be able to generate events with _id set to some enumerable string, e.g., test-33.
+
+Parameters `-o elastic -eoh {hostname or ip} -eop {port number} -eoi {index} -eoak {API Key} -eoir {regex to find an id from input} -eoi {format for output id} -eoc {X.509 certificate for the elastic server in cer format}`
+
+``` properties
+# Elasticsearch
+output=elastic
+# Elastic instance to connect to
+elastic-output-host=192.168.1.131
+# Port number
+elastic-output-port=9200
+# Index to write to
+elastic-output-index=testindex
+# The API key to use
+elastic-output-api-key=QTNTTzM0b0ItZ0x3UEpJTTh1Z0k6cEF6Zk42NGhSdEcwUTFpYWE2Y0hBQQ==
+# Pattern to use to find the id of the incoming logs
+elastic-output-id-regex=(\d+)$
+# String to user as an id when sending logs to elastic. ${id} will be exchanged for the value from the elastic-output-id-regex above for each log
+elastic-output-id=testsystem-${id}
+# cer file of the elastic server
+elastic-output-cer=./target/elastic.cer
+# Don't generate guards
+statistics=false
+```
 
 #### Write to null
 This will throw away the result. It is useful, e.g., when testing for performance.
@@ -630,6 +696,12 @@ Server:
 Client:
 
 `java -jar target/LogGenerator-with-dependencies.jar -o kafka -ocn test2 -otn test -obs 192.168.1.116:9092 -i counter -string "Test:" --limit 100  -s true -ob 10`
+
+### How do I get a cer file for the Elastic module (input or output)?
+There are several ways. You can use openssl from the command line but the simplest way is to open a browser and navigate to
+`https://hostname-for-elastic-instance:9200`. The procedure is a bit different for different browser, but basically:
+when the page is displayed, either a padlock or a triangle with an exclamation mark inside is visible in the address field of the browser.
+Right click on the padlock/triangle, choose certificate, info and Export... You can now save the certificate and use with the parameter -eoc or -eic.
 
 ### Whats the --------BEGIN_TRANSACTION-------- for?
 Those are messages inserted into the event stream to be able to detect start of transfers and to save a timestamp for the statistics module to work.

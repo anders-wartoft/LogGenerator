@@ -40,6 +40,7 @@ public class OutputItemFactory {
             case "tcp-ssl", "TCP-SSL" -> new SSLTCPOutputItem(config);
             case "file", "FILE" -> new FileOutputItem(config);
             case "kafka", "KAFKA" -> new KafkaOutputItem(config);
+            case "elastic", "ELASTIC" -> new ElasticOutputItem(config);
             case "null", "NULL" -> new NullOutputItem(config);
             default -> throw new RuntimeException("Illegal output type: " + outputType);
         };

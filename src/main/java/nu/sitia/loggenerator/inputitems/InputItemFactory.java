@@ -44,6 +44,7 @@ public class InputItemFactory {
             case "tcp-ssl", "TCP-SSL" -> new SSLTCPInputItem(config);
             case "tcp", "TCP" -> new TCPInputItem(config);
             case "kafka", "KAFKA" -> new KafkaInputItem(config);
+            case "elastic", "ELASTIC" -> new ElasticInputItem(config);
             case "static", "STATIC" -> new StaticInputItem(config);
             case "counter", "COUNTER" -> new CounterInputItem(config);
             default -> throw new RuntimeException("Illegal input type: " + input);
