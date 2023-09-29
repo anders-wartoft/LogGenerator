@@ -69,7 +69,7 @@ public class Configuration {
                 keys.add(new Item("-ibs", "--input-bootstrap-server", "The Kafka hostname:port number to connect to for reading"));
                 keys.add(new Item("-ocn", "--output-client-name", "The client id for Kafka output modules"));
                 keys.add(new Item("-otn", "--output-topic-name", "The name of the topic to write to"));
-                keys.add(new Item("-obs", "--output-bootstrap", "The Kafka hostname:port number to connect to for writing"));
+                keys.add(new Item("-obs", "--output-bootstrap-server", "The Kafka hostname:port number to connect to for writing"));
                 keys.add(new Item("-s", "--statistics", "Add guard messages to the sent data to be able to calculate eps etc."));
                 keys.add(new Item("-ih", "--input-host", "The address to bind to if listening to UDP or TCP input. If not added, the socket will bind to all interfaces"));
                 keys.add(new Item("-oh", "--output-host", "The address to send UDP or TCP data to. Also add -po port number"));

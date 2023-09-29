@@ -114,6 +114,9 @@ public class ItemProxy {
         }
 
         this.sentEvents = 0;
+        if (statistics != null) {
+            this.sentEvents = -1; // compensate for the BEGIN-TRANSACTION message
+        }
 
 
         // Ctrl-C
