@@ -58,7 +58,7 @@ public class Configuration {
 
         static {
                 keys.add(new Item("-h", "--help", "Show the help information"));
-                keys.add(new Item("-i", "--input", "The input module to use. Valid arguments are: counter, file, kafka, static, tcp, udp or template"));
+                keys.add(new Item("-i", "--input", "The input module to use. Valid arguments are: counter, file, kafka, elastic, static, tcp, udp or template"));
                 keys.add(new Item("-o", "--output", "The output module to use. Valid arguments are: cmd, file, kafka, null, elastic, tcp or udp"));
                 keys.add(new Item("-ifn", "--input-file-name", "The file name to use for the input module. Can be a file or a directory."));
                 keys.add(new Item("-g", "--glob", "If -fn denotes a directory, this glob can be used to select some of the files in the directory. The globs are java.nio globs. Remember to put asterisks (*) within quotes so that the OS doesn't expand the globs before LogGenerator can get them."));
