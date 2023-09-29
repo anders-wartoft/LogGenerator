@@ -10,42 +10,32 @@
  * Software.
  *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE
- *  WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
+ *  WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NON-INFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
  * COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
  * OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
 package nu.sitia.loggenerator.outputitems;
 
-
-
-import co.elastic.clients.elasticsearch.core.IndexRequest;
-import co.elastic.clients.elasticsearch.core.IndexResponse;
-import co.elastic.clients.elasticsearch.ml.put_trained_model.PreprocessorBuilders;
 import nu.sitia.loggenerator.Configuration;
 import org.apache.http.Header;
 import org.apache.http.HttpHost;
-import org.apache.http.RequestLine;
-import org.apache.http.impl.nio.client.HttpAsyncClientBuilder;
 import org.apache.http.message.BasicHeader;
 import org.apache.http.ssl.SSLContextBuilder;
 import org.apache.http.ssl.SSLContexts;
-import org.apache.http.ssl.TrustStrategy;
 import org.apache.http.util.EntityUtils;
 import org.elasticsearch.client.*;
 
-import javax.net.ssl.*;
+import javax.net.ssl.HostnameVerifier;
+import javax.net.ssl.SSLContext;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.Socket;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.KeyStore;
 import java.security.cert.Certificate;
-import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
-import java.security.cert.X509Certificate;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Date;
@@ -57,25 +47,25 @@ import java.util.regex.Pattern;
 public class ElasticOutputItem extends AbstractOutputItem implements SendListener {
     static final Logger logger = Logger.getLogger(ElasticOutputItem.class.getName());
     /** The url to connect to */
-    private String host;
+    private final String host;
 
-    private int port;
+    private final int port;
 
     /** The API key to use */
-    private String apiKey;
+    private final String apiKey;
 
-    private String index;
+    private final String index;
 
-    private Pattern pattern;
+    private final Pattern pattern;
 
     /** The client to use in the communication */
     private RestClient restClient;
 
-    private String idRegex;
+    private final String idRegex;
 
-    private String id;
+    private final String id;
 
-    private String certificatePath;
+    private final String certificatePath;
 
     private static RequestOptions COMMON_OPTIONS;
 
@@ -146,18 +136,16 @@ public class ElasticOutputItem extends AbstractOutputItem implements SendListene
                         request.setJsonEntity(content);
                         request.setOptions(COMMON_OPTIONS);
 
-                        Response response = null;
+                        Response response;
                         try {
                             response = restClient.performRequest(request);
-                            RequestLine requestLine = response.getRequestLine();
-                            HttpHost host = response.getHost();
                             int statusCode = response.getStatusLine().getStatusCode();
                             Header[] headers = response.getHeaders();
                             try {
                                 String responseBody = EntityUtils.toString(response.getEntity());
                                 StringBuilder builder = new StringBuilder();
                                 Arrays.stream(headers).toList().forEach(s -> builder.append(s.toString()).append(" "));
-                                logger.fine(statusCode + ":" + builder.toString() + " : " + responseBody);
+                                logger.fine(statusCode + ":" + builder + " : " + responseBody);
                             } catch (IOException ex) {
                                 throw new RuntimeException(ex);
                             }
@@ -194,13 +182,7 @@ public class ElasticOutputItem extends AbstractOutputItem implements SendListene
             final SSLContext sslContext = sslContextBuilder.build();
             this.restClient = RestClient.builder(
                             new HttpHost(this.host, this.port, "https"))
-                    .setHttpClientConfigCallback(new RestClientBuilder.HttpClientConfigCallback() {
-                        @Override
-                        public HttpAsyncClientBuilder customizeHttpClient(
-                                HttpAsyncClientBuilder httpClientBuilder) {
-                            return httpClientBuilder.setSSLContext(sslContext).setSSLHostnameVerifier(HOSTNAME_VERIFIER);
-                        }
-                    })
+                    .setHttpClientConfigCallback(httpClientBuilder -> httpClientBuilder.setSSLContext(sslContext).setSSLHostnameVerifier(HOSTNAME_VERIFIER))
                     .setDefaultHeaders(new Header[]{
                             new BasicHeader("Authorization", "ApiKey " + apiKey)
                     })

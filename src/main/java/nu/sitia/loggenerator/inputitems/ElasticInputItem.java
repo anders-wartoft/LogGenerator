@@ -22,7 +22,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import nu.sitia.loggenerator.Configuration;
 import org.apache.http.Header;
 import org.apache.http.HttpHost;
-import org.apache.http.impl.nio.client.HttpAsyncClientBuilder;
 import org.apache.http.message.BasicHeader;
 import org.apache.http.ssl.SSLContextBuilder;
 import org.apache.http.ssl.SSLContexts;
@@ -43,26 +42,23 @@ import java.util.ArrayList;
 import java.util.List;
 
 import java.util.logging.Logger;
-import java.util.regex.Pattern;
 
 
 public class ElasticInputItem extends AbstractInputItem {
     static final Logger logger = Logger.getLogger(ElasticInputItem.class.getName());
     /** The url to connect to */
-    private String host;
+    private final String host;
 
-    private int port;
+    private final int port;
 
     /** The API key to use */
-    private String apiKey;
+    private final String apiKey;
 
-    private String index;
+    private final String index;
 
     /** A JSON formatted query */
-    private String query;
-    private String field;
-
-    private Pattern pattern;
+    private final String query;
+    private final String field;
 
     /** The client to use in the communication */
     private RestClient restClient;
@@ -70,7 +66,7 @@ public class ElasticInputItem extends AbstractInputItem {
     /** The higher lever api */
 //    private ElasticsearchClient esClient;
 
-    private String certificatePath;
+    private final String certificatePath;
 
     private static RequestOptions COMMON_OPTIONS;
 
@@ -124,13 +120,7 @@ public class ElasticInputItem extends AbstractInputItem {
             final SSLContext sslContext = sslContextBuilder.build();
             this.restClient = RestClient.builder(
                             new HttpHost(this.host, this.port, "https"))
-                    .setHttpClientConfigCallback(new RestClientBuilder.HttpClientConfigCallback() {
-                        @Override
-                        public HttpAsyncClientBuilder customizeHttpClient(
-                                HttpAsyncClientBuilder httpClientBuilder) {
-                            return httpClientBuilder.setSSLContext(sslContext).setSSLHostnameVerifier(HOSTNAME_VERIFIER);
-                        }
-                    })
+                    .setHttpClientConfigCallback(httpClientBuilder -> httpClientBuilder.setSSLContext(sslContext).setSSLHostnameVerifier(HOSTNAME_VERIFIER))
                     .setDefaultHeaders(new Header[]{
                             new BasicHeader("Authorization", "ApiKey " + apiKey)
                     })
