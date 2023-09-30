@@ -17,6 +17,11 @@
 
 package nu.sitia.loggenerator.util.gapdetector;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectWriter;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+
 import java.util.*;
 
 public class GapDetector {
@@ -168,5 +173,38 @@ public class GapDetector {
             }
         }
         return sb.toString();
+    }
+
+    public String toJson() {
+        ObjectMapper mapper = new ObjectMapper();
+        ObjectNode result = mapper.createObjectNode();
+        ArrayNode gapArray = result.putArray("gaps");
+
+        for (Gap gap: this.gaps) {
+            ObjectNode gapNode = mapper.createObjectNode();
+            gapNode.put("from", gap.getFrom());
+            gapNode.put("to", gap.getTo());
+            gapArray.add(gapNode);
+        }
+
+        result.put("unique", this.nrReceived);
+
+        Map<Long, Long> sortedMap = getSorted(this.duplicates);
+        ArrayNode duplicateList = result.putArray("duplicates");
+
+        for (Map.Entry<Long, Long> entry : this.duplicates.entrySet()) {
+            ObjectNode duplicateNode = mapper.createObjectNode();
+            duplicateNode.put(entry.getKey().toString(), entry.getValue());
+            duplicateList.add(duplicateNode);
+        }
+
+        result.put("next", this.expectedNumber);
+        ObjectWriter ow = new ObjectMapper().writer();
+        try {
+            String json = ow.writeValueAsString(result);
+            return json;
+        } catch (Exception e) {
+            return this.toString();
+        }
     }
 }
