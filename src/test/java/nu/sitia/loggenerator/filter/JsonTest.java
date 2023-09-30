@@ -33,7 +33,7 @@ public class JsonTest
     }
 
     /**
-     * Test regex.
+     * Test jsonfilter
      */
     public void testJson() {
         String input = "{\"query\": { \"query_string\": { \"query\": \"*\" }}, \"_source\": [\"_id\"]}";
