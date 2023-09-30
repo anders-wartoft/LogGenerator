@@ -10,17 +10,14 @@
  * Software.
  *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE
- *  WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
+ *  WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NON-INFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
  * COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
  * OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
 package nu.sitia.loggenerator.util.gapdetector;
 
-import java.util.LinkedHashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class GapDetector {
 
@@ -136,6 +133,21 @@ public class GapDetector {
     }
 
     /**
+     * Sort the duplicates map
+     * @param toSort A map to sort
+     * @return A map sorted on the keys in ascending order
+     */
+    private Map<Long, Long> getSorted(Map<Long, Long>toSort) {
+        List<Map.Entry<Long, Long>> entries = new ArrayList<>(toSort.entrySet());
+        entries.sort(Map.Entry.comparingByKey());
+        Map<Long, Long> sortedMap = new LinkedHashMap<>();
+        for (Map.Entry<Long, Long> entry : entries) {
+            sortedMap.put(entry.getKey(), entry.getValue());
+        }
+        return sortedMap;
+    }
+
+    /**
      * Return all gaps as a printable string
      * @return The gaps, one gap for each line
      */
@@ -143,13 +155,14 @@ public class GapDetector {
     public String toString() {
         StringBuilder sb = new StringBuilder();
         if (duplicateDetection) {
-            sb.append("Duplicate detection found: " + duplicates.size() + " duplicate (or more) values.").append(System.lineSeparator());
-            duplicates.forEach((key, value) -> sb.append(key + " - " + value).append(System.lineSeparator()));
+            sb.append("Duplicate detection found: ").append(duplicates.size()).append(" duplicate (or more) values.").append(System.lineSeparator());
+            Map<Long, Long> sortedMap = getSorted(duplicates);
+            sortedMap.forEach((key, value) -> sb.append(key).append(" - ").append(value).append(System.lineSeparator()));
         }
         sb.append("Number of unique received numbers: ").append(nrReceived).append(System.lineSeparator());
         sb.append("Next expected number: ").append(expectedNumber).append(System.lineSeparator());
         if (gaps.size() > 0) {
-            sb.append("Gaps found: " + gaps.size() + ".").append(System.lineSeparator());
+            sb.append("Gaps found: ").append(gaps.size()).append(".").append(System.lineSeparator());
             for (Gap gap : gaps) {
                 sb.append(gap.getFrom()).append("-").append(gap.getTo()).append(System.lineSeparator());
             }
