@@ -92,4 +92,12 @@ public class GapDetectionFilter implements ProcessFilter, ShutdownHandler {
     public void shutdown() {
         System.out.println(detector);
     }
+
+    /**
+     * toString in json format
+     * @return the internal state
+     */
+    public String toJson() {
+        return detector.toJson();
+    }
 }
