@@ -40,6 +40,8 @@ public class FilterListFactory {
         String regex = config.getValue("-r");
         String value = config.getValue("-v");
         String doubleDetection = config.getValue("-dd");
+        String jsonFilter = config.getValue("-jf");
+
         boolean dd = "true".equalsIgnoreCase(doubleDetection);
 
         List<ProcessFilter> filterList = new LinkedList<>();
@@ -59,6 +61,10 @@ public class FilterListFactory {
         Template template1 = new NoneTemplate();
         if (template != null) {
             template1 = TemplateFactory.getTemplate(template);
+        }
+
+        if (jsonFilter != null) {
+            filterList.add(new JsonFilter(jsonFilter));
         }
 
         if (regex != null ||
