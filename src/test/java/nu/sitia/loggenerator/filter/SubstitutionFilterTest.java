@@ -19,8 +19,6 @@ package nu.sitia.loggenerator.filter;
 
 import junit.framework.TestCase;
 import nu.sitia.loggenerator.Configuration;
-import nu.sitia.loggenerator.filter.substituters.RepeatSubstitute;
-import nu.sitia.loggenerator.filter.substituters.Substitution;
 
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
@@ -113,4 +111,32 @@ public class SubstitutionFilterTest extends TestCase {
 
         assertTrue(result.get(0).length() == 39);
     }
+
+
+    /**
+     * Test jsonfilter. Let the input be a json structure,
+     * get a part of the json structure and do a
+     * gap detection on that part.
+     */
+    public void testJson() {
+        String [] input = {
+                "{\"_index\":\"testindex\",\"_score\":1.0,\"_source\":{\"_id\":\"test-1\",\"@timestamp\":\"2023-09-29T20:24:29\",\"message\":\"Test row 11\"}}",
+                "{\"_index\":\"testindex\",\"_score\":1.0,\"_source\":{\"_id\":\"test-1\",\"@timestamp\":\"2023-09-29T20:24:29\",\"message\":\"Test row 11\"}}",
+                "{\"_index\":\"testindex\",\"_score\":1.0,\"_source\":{\"_id\":\"test-2\",\"@timestamp\":\"2023-09-29T20:24:29\",\"message\":\"Test row 22\"}}",
+                "{\"_index\":\"testindex\",\"_score\":1.0,\"_source\":{\"_id\":\"test-11\",\"@timestamp\":\"2023-09-29T20:24:29\",\"message\":\"Test row 33\"}}",
+                "{\"_index\":\"testindex\",\"_score\":1.0,\"_source\":{\"_id\":\"test-11\",\"@timestamp\":\"2023-09-29T20:24:29\",\"message\":\"Test row 33\"}}",
+                "{\"_index\":\"testindex\",\"_score\":1.0,\"_source\":{\"_id\":\"test-22\",\"@timestamp\":\"2023-09-29T20:24:29\",\"message\":\"Test row 44\"}}"
+        };
+        String path = "_source->_id";
+
+        JsonFilter jsonFilter = new JsonFilter(path);
+        String regex = "test-(\\d+)$";
+        GapDetectionFilter gapDetector = new GapDetectionFilter(regex, true);
+        List<String> result1 = jsonFilter.filter(List.of(input));
+        List<String> result2 = gapDetector.filter(result1);
+        String expected = "{\"gaps\":[{\"from\":3,\"to\":10},{\"from\":12,\"to\":21}],\"unique\":4,\"duplicates\":[{\"1\":2},{\"11\":2}],\"next\":23}";
+        assertEquals(expected, gapDetector.toJson());
+
+    }
+
 }
