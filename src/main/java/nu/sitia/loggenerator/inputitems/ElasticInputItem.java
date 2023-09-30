@@ -164,13 +164,8 @@ public class ElasticInputItem extends AbstractInputItem {
                 for (JsonNode x : rootNode.get("hits").get("hits")) {
                     if (this.field != null) {
                         try {
-                            String value = x.get(this.field).toString();
-                            if (value != null && value.length() > 2 && "\"".equals(value.substring(0, 1)) ) {
-                                // Remove leading and trailing " from single values
-                                result.add(value.substring(1, value.length() - 1));
-                            } else {
-                                result.add(value);
-                            }
+                            String value = x.get(this.field).asText();
+                            result.add(value);
                         } catch (Exception e) {
                             logger.warning(String.format("Can't read field %s. Is this field present in the result? %s", this.field, x));
                             throw (e);
