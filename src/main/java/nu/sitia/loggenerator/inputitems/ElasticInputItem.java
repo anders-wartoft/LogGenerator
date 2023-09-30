@@ -57,7 +57,7 @@ public class ElasticInputItem extends AbstractInputItem {
     private final String index;
 
     /** A JSON formatted query */
-    private final String query;
+    private String query= "{\"query\": { \"query_string\": { \"query\": \"*\" }}, \"_source\": [\"_id\"]}";
     private final String field;
 
     /** The client to use in the communication */
@@ -89,7 +89,9 @@ public class ElasticInputItem extends AbstractInputItem {
         this.apiKey = config.getValue("-eiak");
         this.certificatePath = config.getValue("-eic");
         this.field = config.getValue("-eif");
-        this.query = config.getValue("-eiq");
+        if (config.getValue("-eiq") != null) {
+            this.query = config.getValue("-eiq");
+        }
 
         RequestOptions.Builder builder = RequestOptions.DEFAULT.toBuilder();
         builder.addHeader("Authorization", "ApiKey " + apiKey);
@@ -160,15 +162,25 @@ public class ElasticInputItem extends AbstractInputItem {
                 logger.fine(String.format("StatusCode: %d, hits: %d", statusCode, hits));
                 ArrayList<String> result = new ArrayList<>();
                 for (JsonNode x : rootNode.get("hits").get("hits")) {
-                    try {
-                        String value = x.get(this.field).toString();
-                        result.add(value.substring(1, value.length()-1));
-                    } catch(Exception e) {
-                        logger.warning(String.format("Can't read field %s. Is this field present in the result? %s", this.field, x));
-                        throw (e);
+                    if (this.field != null) {
+                        try {
+                            String value = x.get(this.field).toString();
+                            if (value != null && value.length() > 2 && "\"".equals(value.substring(0, 1)) ) {
+                                // Remove leading and trailing " from single values
+                                result.add(value.substring(1, value.length() - 1));
+                            } else {
+                                result.add(value);
+                            }
+                        } catch (Exception e) {
+                            logger.warning(String.format("Can't read field %s. Is this field present in the result? %s", this.field, x));
+                            throw (e);
+                        }
+                    } else {
+                        // Read everything
+                        JsonNode event = rootNode.get("hits").get("hits");
+                        result.add(event.toString());
                     }
                 }
-
                 this.readPosition += result.size();
                 return result;
             } catch (IOException ex) {

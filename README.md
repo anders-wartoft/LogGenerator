@@ -703,6 +703,44 @@ There are several ways. You can use openssl from the command line but the simple
 when the page is displayed, either a padlock or a triangle with an exclamation mark inside is visible in the address field of the browser.
 Right click on the padlock/triangle, choose certificate, info and Export... You can now save the certificate and use with the parameter -eoc or -eic.
 
+### How do I get other data than _id from the Elastic input module?
+First, remove the _source from the query. _source will determine what fields are returned from the query. 
+Optionally, you can set the `elastic-input-field=_source` to retrieve all fields from the query but remove everything from the search.
+
+In the query, instead of this:
+``` json
+{"query": { "query_string": { "query": "*" }}, "_source": ["_id"]}
+```
+Just remove the _source:
+``` json
+{"query": { "query_string": { "query": "*" }}}
+```
+Now, you will get lines like this from Elastic:
+``` 
+[[{"_index":"testindex","_id":"test2-11","_score":1.0,"_source":{"@timestamp":"2023-09-29T20:24:29","message":"Test row 11"}},{"_index":"testindex","_id":"test2-22","_score":1.0,"_source":{"@timestamp":"2023-09-29T20:24:29","message":"Test row 22"}},{"_index":"testindex","_id":"test2-33","_score":1.0,"_source":{"@timestamp":"2023-09-29T20:24:29","message":"Test row 33"}},{"_index":"testindex","_id":"test2-44","_score":1.0,"_source":{"@timestamp":"2023-09-29T20:24:29","message":"Test row 44"}},{"_index":"testindex","_id":"test3-11","_score":1.0,"_source":{"@timestamp":"2023-09-29T20:25:45","message":"Test row 11"}},{"_index":"testindex","_id":"test3-22","_score":1.0,"_source":{"@timestamp":"2023-09-29T20:25:45","message":"Test row 22"}},{"_index":"testindex","_id":"test3-33","_score":1.0,"_source":{"@timestamp":"2023-09-29T20:25:45","message":"Test row 33"}},{"_index":"testindex","_id":"test3-44","_score":1.0,"_source":{"@timestamp":"2023-09-29T20:25:45","message":"Test row 44"}},{"_index":"testindex","_id":"test2-","_score":1.0,"_source":{"@timestamp":"2023-09-29T20:24:05","message":"Test row 11"}},{"_index":"testindex","_id":"DnQE4YoB-gLwPJIMROhW","_score":1.0,"_source":{"@timestamp":"2023-09-29T14:57:47","message":"Test row 1"}},{"_index":"testindex","_id":"D3QE4YoB-gLwPJIMRegw","_score":1.0,"_source":{"@timestamp":"2023-09-29T14:57:48","message":"Test row 2"}},{"_index":"testindex","_id":"testsystem-11","_score":1.0,"_source":{"@timestamp":"2023-09-29T19:08:52","message":"Test row 11"}},{"_index":"testindex","_id":"testsystem-22","_score":1.0,"_source":{"@timestamp":"2023-09-29T19:08:52","message":"Test row 22"}},{"_index":"testindex","_id":"testsystem-33","_score":1.0,"_source":{"@timestamp":"2023-09-29T19:08:52","message":"Test row 33"}},{"_index":"testindex","_id":"testsystem-44","_score":1.0,"_source":{"@timestamp":"2023-09-29T19:08:52","message":"Test row 44"}},{"_index":"testindex","_id":"EHQE4YoB-gLwPJIMRehL","_score":1.0,"_source":{"@timestamp":"2023-09-29T14:57:48","message":"Test row 3"}},{"_index":"testindex","_id":"EXQE4YoB-gLwPJIMRehZ","_score":1.0,"_source":{"@timestamp":"2023-09-29T14:57:48","message":"Test row 4"}},{"_index":"testindex","_id":"FnQH4YoB-gLwPJIMwei0","_score":1.0,"_source":{"@timestamp":"2023-09-29T15:01:36","message":"Test row 1"}},{"_index":"testindex","_id":"F3QH4YoB-gLwPJIMwejL","_score":1.0,"_source":{"@timestamp":"2023-09-29T15:01:36","message":"Test row 2"}},{"_index":"testindex","_id":"GHQH4YoB-gLwPJIMwejf","_score":1.0,"_source":{"@timestamp":"2023-09-29T15:01:36","message":"Test row 3"}},{"_index":"testindex","_id":"GXQH4YoB-gLwPJIMwejz","_score":1.0,"_source":{"@timestamp":"2023-09-29T15:01:36","message":"Test row 4"}},{"_index":"testindex","_id":"testsystem-1","_score":1.0,"_source":{"@timestamp":"2023-09-29T15:34:36","message":"Test row 1"}},{"_index":"testindex","_id":"testsystem-2","_score":1.0,"_source":{"@timestamp":"2023-09-29T15:34:36","message":"Test row 2"}},{"_index":"testindex","_id":"testsystem-3","_score":1.0,"_source":{"@timestamp":"2023-09-29T15:34:36","message":"Test row 3"}},{"_index":"testindex","_id":"testsystem-4","_score":1.0,"_source":{"@timestamp":"2023-09-29T15:34:36","message":"Test row 4"}},{"_index":"testindex","_id":"myid-1","_score":1.0,"_source":{"@timestamp":"2023-09-29T15:10:02","message":"Test row 1"}},{"_index":"testindex","_id":"myid-2","_score":1.0,"_source":{"@timestamp":"2023-09-29T15:10:02","message":"Test row 2"}},{"_index":"testindex","_id":"myid-3","_score":1.0,"_source":{"@timestamp":"2023-09-29T15:10:02","message":"Test row 3"}},{"_index":"testindex","_id":"myid-4","_score":1.0,"_source":{"@timestamp":"2023-09-29T15:10:02","message":"Test row 4"}},{"_index":"testindex","_id":"EnQE4YoB-gLwPJIM3-ib","_score":1.0,"_source":{"@timestamp":"2023-09-29T14:58:27","message":"Test row 1"}},{"_index":"testindex","_id":"E3QE4YoB-gLwPJIM3-iz","_score":1.0,"_source":{"@timestamp":"2023-09-29T14:58:27","message":"Test row 2"}},{"_index":"testindex","_id":"FHQE4YoB-gLwPJIM3-jB","_score":1.0,"_source":{"@timestamp":"2023-09-29T14:58:27","message":"Test row 3"}},{"_index":"testindex","_id":"FXQE4YoB-gLwPJIM3-jR","_score":1.0,"_source":{"@timestamp":"2023-09-29T14:58:27","message":"Test row 4"}}]]
+```
+
+If you are only interested in the source, set `elastic-input-field=_source`. The result will now become:
+``` 
+[{"@timestamp":"2023-09-29T19:08:52","message":"Test row 11"}]
+```
+Note that the _id is not in the returned content here. For further selection, use a RegexFilter or a (future) JSONFilter for processing.
+If the size of the data is large, you might want to consider just getting the _id with the _source parameter to minimize the impact on the cluster.
+
+``` json
+{"query": { "query_string": { "query": "*" }}, "_source": ["_id"]}
+```
+and in the property file:
+`elastic-input-field=_source`
+Might give the following output:
+``` 
+[myid-1]
+[myid-2]
+[myid-3]
+[myid-4]
+```
+Used in conjunction with a gap detector, the LogGenerator can verify that all logs from a source (that has a enumerable field) is stored in the Elastic instance once and only once.
+
 ### Whats the --------BEGIN_TRANSACTION-------- for?
 Those are messages inserted into the event stream to be able to detect start of transfers and to save a timestamp for the statistics module to work.
 They are generated by some module but only if `-s true` is set (statistics).
