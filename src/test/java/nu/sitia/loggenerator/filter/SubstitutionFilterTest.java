@@ -131,12 +131,15 @@ public class SubstitutionFilterTest extends TestCase {
 
         JsonFilter jsonFilter = new JsonFilter(path);
         String regex = "test-(\\d+)$";
-        GapDetectionFilter gapDetector = new GapDetectionFilter(regex, true);
+        boolean jsonReport = false;
+        boolean doubleDetection = true;
+        GapDetectionFilter gapDetector = new GapDetectionFilter(regex, doubleDetection, jsonReport);
         List<String> result1 = jsonFilter.filter(List.of(input));
-        List<String> result2 = gapDetector.filter(result1);
+        gapDetector.filter(result1);
         String expected = "{\"gaps\":[{\"from\":3,\"to\":10},{\"from\":12,\"to\":21}],\"unique\":4,\"duplicates\":[{\"1\":2},{\"11\":2}],\"next\":23}";
-        assertEquals(expected, gapDetector.toJson());
-
+        String result = gapDetector.toJson();
+        System.out.println(result);
+        assertEquals(expected, result);
     }
 
 }
