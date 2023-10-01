@@ -274,8 +274,13 @@ The GapDetector will inspect each event, search for an identification number by 
 If an event is missing then this will be reported after the end of processing.
 
 Parameters `-gd {regex with caputure group}`
+Optional parameters
+``` 
+-dd   --duplicate-detection          If -gd (--gap-detection) is enabled, use this flag to also get a report on all serial numbers that occurs mote than once. Valid values are: false, true
+-gdjr --gap-detection-json-report    Should the gap detector report in JSON format instead of printable format? Valid values are: false, true
+```
 
-Example: `-gd "<(\d+)>"`
+Example: `-gd "<(\d+)> -dd true -gdjr true"`
 
 A good use of gap detection is to send events over unreliable media and check if all events were delivered.
 To assure that the gap detection is on, start the counter on the sending side with a number that is larger than 1. In that case, the gap detector will produce at least one gap (1-your start number).

@@ -85,6 +85,7 @@ public class Configuration {
                 keys.add(new Item("-ob", "--output-batch-size", "How many rows to write (new line separated) every time the send method is called"));
                 keys.add(new Item("-gd", "--gap-detection", "Regex to find the event serial number. In the regex, the first capture group must be the number, e.g. \"<(\\d+)>\""));
                 keys.add(new Item("-dd", "--duplicate-detection", "If -gd (--gap-detection) is enabled, use this flag to also get a report on all serial numbers that occurs mote than once. Valid values are: false, true"));
+                keys.add(new Item("-gdjr", "--gap-detection-json-report", "Should the gap detector report in JSON format instead of printable format? Valid values are: false, true"));
 
                 keys.add(new Item("-rg", "--remove-guard", "Remove the statistics events (BEGIN_TRANSACTION, ...)"));
                 keys.add(new Item("-he", "--header", "String to add to the beginning of each entry. May contain variables."));

@@ -34,14 +34,18 @@ public class GapDetectionFilter implements ProcessFilter, ShutdownHandler {
     /** Used in toString() */
     private final String regex;
 
+    /** Printable or JSON report */
+    private final boolean jsonReport;
+
     /**
      * Create a guardFilter and set all parameters
      * @param regex The regex to use to identify the id number
      */
-    public GapDetectionFilter(String regex, boolean doubleDetection) {
+    public GapDetectionFilter(String regex, boolean doubleDetection, boolean json) {
         if (null == regex) {
             throw new RuntimeException("No gap regex detected");
         }
+        jsonReport = json;
         pattern = Pattern.compile(regex);
         detector.setDuplicateDetection(doubleDetection);
         this.regex = regex;
@@ -90,7 +94,11 @@ public class GapDetectionFilter implements ProcessFilter, ShutdownHandler {
      */
     @Override
     public void shutdown() {
-        System.out.println(detector);
+        if (jsonReport) {
+            System.out.println(detector.toJson());
+        } else {
+            System.out.println(detector);
+        }
     }
 
     /**
