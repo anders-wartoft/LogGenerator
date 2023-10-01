@@ -4,6 +4,9 @@ import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
 
+import java.util.Date;
+import java.util.HashMap;
+
 
 /**
  * Unit test for simple App.
@@ -33,8 +36,8 @@ public class OneOfSubstituteTest
      */
     public void testOneOfRecurse() {
         String template = "test foo {oneOf:a,b,{oneOf:1,2,3,4},d} bar";
-        String actual = new OneOfSubstitute().substitute(template);
+        String actual = new Substitution().substitute(template, new HashMap<>(), new Date());
+        System.out.println(actual);
         assertEquals(14, actual.length());
     }
-
 }
