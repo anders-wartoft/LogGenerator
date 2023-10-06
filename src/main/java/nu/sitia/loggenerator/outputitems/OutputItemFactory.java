@@ -33,16 +33,12 @@ public class OutputItemFactory {
             throw new RuntimeException(config.getNotFoundInformation("-o"));
         }
 
-        return switch (outputType) {
-            case "cmd", "CMD" -> new CmdOutputItem(config);
-            case "udp", "UDP" -> new UDPOutputItem(config);
-            case "tcp", "TCP" -> new TCPOutputItem(config);
-            case "tcp-ssl", "TCP-SSL" -> new SSLTCPOutputItem(config);
-            case "file", "FILE" -> new FileOutputItem(config);
-            case "kafka", "KAFKA" -> new KafkaOutputItem(config);
-            case "elastic", "ELASTIC" -> new ElasticOutputItem(config);
-            case "null", "NULL" -> new NullOutputItem(config);
-            default -> throw new RuntimeException("Illegal output type: " + outputType);
-        };
+        if (outputType.equalsIgnoreCase("cmd")) return new CmdOutputItem(config);
+        if (outputType.equalsIgnoreCase("udp")) return new UDPOutputItem(config);
+        if (outputType.equalsIgnoreCase("tcp-ssl")) return new SSLTCPOutputItem(config);
+        if (outputType.equalsIgnoreCase("kafka")) return new KafkaOutputItem(config);
+        if (outputType.equalsIgnoreCase("elastic")) return new ElasticOutputItem(config);
+        if (outputType.equalsIgnoreCase("null")) return new NullOutputItem(config);
+        throw new RuntimeException("Illegal output type: " + outputType);
     }
 }

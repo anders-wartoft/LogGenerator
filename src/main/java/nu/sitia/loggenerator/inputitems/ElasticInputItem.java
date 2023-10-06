@@ -172,8 +172,7 @@ public class ElasticInputItem extends AbstractInputItem {
                         }
                     } else {
                         // Read everything
-                        JsonNode event = rootNode.get("hits").get("hits");
-                        result.add(event.toString());
+                        result.add(x.toString());
                     }
                 }
                 this.readPosition += result.size();

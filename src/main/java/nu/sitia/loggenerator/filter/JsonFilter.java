@@ -18,14 +18,13 @@
 package nu.sitia.loggenerator.filter;
 
 
-import com.fasterxml.jackson.core.json.JsonWriteFeature;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import nu.sitia.loggenerator.util.JsonUtil;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 public class JsonFilter implements ProcessFilter {
 
@@ -44,34 +43,20 @@ public class JsonFilter implements ProcessFilter {
     }
 
 
-    private String matchPath(JsonNode input, String path) {
-        String[] paths = path.split("->", 2);
-        String toMatch = paths[0];
-        if (input.has(toMatch)) {
-            JsonNode matchedNode = input.get(toMatch);
-            if (paths.length > 1) {
-                return matchPath(matchedNode, paths[1]);
-            }
-            return matchedNode.asText();
-        }
-        // No match
-        return input.toString();
-    }
-
     /**
      * Filter one string
      *
      * @param toFilter The string to change
      * @return toFilter with a header added before the string.
      */
-    private String filter(String toFilter) {
+    private List<String> filter(String toFilter) {
         ObjectMapper objectMapper = new ObjectMapper();
         try {
             JsonNode rootNode = objectMapper.readTree(toFilter);
-            return matchPath(rootNode, this.path);
+            return new JsonUtil().matchPath(rootNode, this.path);
         } catch (Exception e) {
             // Ignore. This is not JSON
-            return toFilter;
+            return List.of(toFilter);
         }
     }
 
@@ -79,8 +64,7 @@ public class JsonFilter implements ProcessFilter {
     public List<String> filter(List<String> toFilter) {
         List<String> filtered = new ArrayList<>();
         toFilter.forEach(s ->
-                filtered.add(filter(s)));
-
+                filtered.addAll(filter(s)));
         return filtered;
     }
 

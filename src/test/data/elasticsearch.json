@@ -1,0 +1,109 @@
+{
+  "took": 1,
+  "timed_out": false,
+  "_shards": {
+    "total": 1,
+    "successful": 1,
+    "skipped": 0,
+    "failed": 0
+  },
+  "hits": {
+    "total": {
+      "value": 33,
+      "relation": "eq"
+    },
+    "max_score": 1,
+    "hits": [
+      {
+        "_index": "testindex",
+        "_id": "test2-11",
+        "_score": 1,
+        "_source": {
+          "@timestamp": "2023-09-29T20:24:29",
+          "message": "Test row 11"
+        }
+      },
+      {
+        "_index": "testindex",
+        "_id": "test2-22",
+        "_score": 1,
+        "_source": {
+          "@timestamp": "2023-09-29T20:24:29",
+          "message": "Test row 22"
+        }
+      },
+      {
+        "_index": "testindex",
+        "_id": "test2-33",
+        "_score": 1,
+        "_source": {
+          "@timestamp": "2023-09-29T20:24:29",
+          "message": "Test row 33"
+        }
+      },
+      {
+        "_index": "testindex",
+        "_id": "test2-44",
+        "_score": 1,
+        "_source": {
+          "@timestamp": "2023-09-29T20:24:29",
+          "message": "Test row 44"
+        }
+      },
+      {
+        "_index": "testindex",
+        "_id": "test3-11",
+        "_score": 1,
+        "_source": {
+          "@timestamp": "2023-09-29T20:25:45",
+          "message": "Test row 11"
+        }
+      },
+      {
+        "_index": "testindex",
+        "_id": "test3-22",
+        "_score": 1,
+        "_source": {
+          "@timestamp": "2023-09-29T20:25:45",
+          "message": "Test row 22"
+        }
+      },
+      {
+        "_index": "testindex",
+        "_id": "test3-33",
+        "_score": 1,
+        "_source": {
+          "@timestamp": "2023-09-29T20:25:45",
+          "message": "Test row 33"
+        }
+      },
+      {
+        "_index": "testindex",
+        "_id": "test3-44",
+        "_score": 1,
+        "_source": {
+          "@timestamp": "2023-09-29T20:25:45",
+          "message": "Test row 44"
+        }
+      },
+      {
+        "_index": "testindex",
+        "_id": "test2-",
+        "_score": 1,
+        "_source": {
+          "@timestamp": "2023-09-29T20:24:05",
+          "message": "Test row 11"
+        }
+      },
+      {
+        "_index": "testindex",
+        "_id": "DnQE4YoB-gLwPJIMROhW",
+        "_score": 1,
+        "_source": {
+          "@timestamp": "2023-09-29T14:57:47",
+          "message": "Test row 1"
+        }
+      }
+    ]
+  }
+}

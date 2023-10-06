@@ -127,7 +127,7 @@ public class SubstitutionFilterTest extends TestCase {
                 "{\"_index\":\"testindex\",\"_score\":1.0,\"_source\":{\"_id\":\"test-11\",\"@timestamp\":\"2023-09-29T20:24:29\",\"message\":\"Test row 33\"}}",
                 "{\"_index\":\"testindex\",\"_score\":1.0,\"_source\":{\"_id\":\"test-22\",\"@timestamp\":\"2023-09-29T20:24:29\",\"message\":\"Test row 44\"}}"
         };
-        String path = "_source->_id";
+        String path = "_source._id";
 
         JsonFilter jsonFilter = new JsonFilter(path);
         String regex = "test-(\\d+)$";

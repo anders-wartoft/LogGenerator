@@ -35,4 +35,47 @@ public class AppTest
     {
         assertTrue( true );
     }
+
+    /**
+     * Test file read and write to "Cmd" output
+     */
+    public void testItemProxyGapDetection()
+    {
+        String [] args = {
+                "-i", "counter",
+                "-string", "Test:",
+                "-o", "cmd",
+                "--limit", "10",
+                "-gd", ":(\\d+)$",
+                "-s", "true"
+        };
+        App app = new App();
+        app.main(args);
+    }
+
+    /**
+     * Test read Elastic (not in testcases)
+     */
+/**    public void testElastic()
+    {
+        String [] args = {
+                "-p", "./src/test/data/elasticsearch-input.properties",
+                "--json-filter", "_source"
+        };
+        App app = new App();
+        app.main(args);
+    }
+*/
+    public void testElastic()
+    {
+        String [] args = {
+                "-i", "json-file",
+                "-ifn", "./src/test/data/elasticsearch.json",
+                "-o", "cmd",
+                "-jfp", "hits.hits",
+                "-jf", "_id"
+        };
+        App app = new App();
+        app.main(args);
+    }
 }

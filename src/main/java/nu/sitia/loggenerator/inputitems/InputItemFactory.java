@@ -36,19 +36,18 @@ public class InputItemFactory {
             throw new RuntimeException(config.getNotFoundInformation("-i"));
         }
 
-        return switch (input) {
-            case "template", "TEMPLATE" -> new TemplateFileInputItem(config);
-            // special case. the FileInputItem needs to be able to send begin- and end messages with the filename
-            case "file", "FILE" -> getFileInputItem(inputName, config);
-            case "udp", "UDP" -> new UDPInputItem(config);
-            case "tcp-ssl", "TCP-SSL" -> new SSLTCPInputItem(config);
-            case "tcp", "TCP" -> new TCPInputItem(config);
-            case "kafka", "KAFKA" -> new KafkaInputItem(config);
-            case "elastic", "ELASTIC" -> new ElasticInputItem(config);
-            case "static", "STATIC" -> new StaticInputItem(config);
-            case "counter", "COUNTER" -> new CounterInputItem(config);
-            default -> throw new RuntimeException("Illegal input type: " + input);
-        };
+        if (input.equalsIgnoreCase("template")) return new TemplateFileInputItem(config);
+        // special case. the FileInputItem needs to be able to send begin- and end messages with the filename
+        if (input.equalsIgnoreCase("file")) return getFileInputItem(inputName, config);
+        if (input.equalsIgnoreCase("json-file")) return new JsonFileInputItem(inputName, config);
+        if (input.equalsIgnoreCase("udp")) return new UDPInputItem(config);
+        if (input.equalsIgnoreCase("tcp-ssl")) return new SSLTCPInputItem(config);
+        if (input.equalsIgnoreCase("tcp")) return new TCPInputItem(config);
+        if (input.equalsIgnoreCase("kafka")) return new KafkaInputItem(config);
+        if (input.equalsIgnoreCase("elastic")) return new ElasticInputItem(config);
+        if (input.equalsIgnoreCase("static")) return new StaticInputItem(config);
+        if (input.equalsIgnoreCase("counter")) return new CounterInputItem(config);
+        throw new RuntimeException("Illegal input type: " + input);
     }
 
     /**

@@ -15,11 +15,21 @@ java -jar target/LogGenerator-with-dependencies.jar -i kafka -icn test2 -itn tes
 ```
 When running the last command, press Ctrl-C to see the gaps in the received data. Since we started the counter on 100, there should at least be one gap: 1-99.
 
+### Release notes
+#### 1.02
+- Bug fixes for Elastic Input Item
+- Added Json File Input Item
+- Json- and Elastic items now emit found array items as new events
+- Refactored the code to run on Java 11
+- Changed maven script to Java 11
+- Bug fixes in Json Filter. You can now extract a field with the dot (.) notation, e.g., _source.message
+
 ### Input modules:
 There are input module for the following tasks:
 - Read files
 - Read files in a directory
 - Read files in a directory with globs
+- Read JSON file
 - Receive UDP
 - Receive TCP
 - Receive TCP SSL
@@ -50,6 +60,43 @@ Parameters: `-i file -ifn {directory name -g "{glob}"`).
 Example: `-i file -ifn ./src/test/data/ -g "**.txt"`
 
 Note that all * must be within quotes, since otherwise, the OS will expand that variable.
+
+#### Read JSON file
+If a file is in JSON format (not line json but the entire file is one JSON object) you can read the file with the JSON File input.
+
+Parameters: `-i json-file -ifn {filename}`
+
+Example: `-i json-file -ifn ./src/test/data/elasticsearch.json`
+
+If the file contains an array you would like to extract, use the parameter `-jfp` `--json-file-path`.
+E.g., the JSON output from an Elastic query is structured like this:
+``` 
+{
+  "took": 1,
+  "timed_out": false,
+  ...
+  "hits": {
+    "total": {
+      "value": 33,
+      "relation": "eq"
+    },
+    "max_score": 1,
+    "hits": [
+      {
+        "_index": "testindex",
+        "_id": "test2-11",
+        ...
+      },
+      {
+        "_index": "testindex",
+        "_id": "test2-22",
+        ...
+```
+To read this response from file, use the `json-file` input and set `-jfp` to `hits.hits`. The result will be an array of elements and each element will be emitted as a new event.
+So, to extract the `_id` from each element, add a `json-filter` with `-jf _id`. Now only the `_id` field will be propagated.
+
+The command line will then become:
+`java -jar LogGenerator-with-dependencies.jar -i json-file -ifn ./src/test/data/elasticsearch.json -jfp hits.hits -jf _id -o cmd`
 
 #### Receive UDP
 Set up a UDP server. 
@@ -97,7 +144,7 @@ elastic-input-port=9200
 elastic-input-index=testindex
 # The API key to use
 elastic-input-api-key=QTNTTzM0b0ItZ0x3UEpJTTh1Z0k6cEF6Zk42NGhSdEcwUTFpYWE2Y0hBQQ==
-# Field to use for gap detection (with the elastic-input-id-regex)
+# Field to use for gap detection
 elastic-input-field=_id
 # cer file of the elastic server
 elastic-input-cer=./target/elastic.cer
@@ -177,7 +224,7 @@ Send events with encrypted TCP.
 Parameters and example, see below in the Q&A section.
 
 #### Write to Kafka
-Connect to a Kafka server and write the events to a topic. N.B., these are not unique arguments for kafka input and output so there is no way to read from a Kafka topic and write to another topic. The tool is not meant to be used for that kind of usage.
+Connect to a Kafka server and write the events to a topic.
 
 Parameters: `-o kafka -ocm {client name} -otn {topic name} -obs {boostrap server}`
 
@@ -234,6 +281,7 @@ In another command window, start the client (same jar file):
 - Replace variables
 - Remove transaction messages
 - Detect gaps
+- Extract JSON
 
 #### Add a header
 To send a file line by line but to each line prepend a header, that can contain text and variables.
@@ -267,6 +315,15 @@ If the statistics module was used when generating messages, and you want to remo
 Parameters: `-rg` or `--remove-guard`
 
 Example: `-rg`
+
+#### Extract JSON
+If an event is in JSON format, the json-filter can be used to extract a field from the input.
+
+Parameters: `-jf` or `--json-filter`
+
+Example: `-jf hits.hits`
+
+If the target is an object, the object is returned as the event. If the target is a simple datatype, the contents of the data type is returned. If the object is an array, the array is deconstructed and sent as one event for each item in the array.
 
 #### Detect gaps
 Gaps are a continuous block of missing numbers. We use gaps to inform the filter that we are missing some events.
@@ -336,7 +393,7 @@ Syntax: {oneFromFile:(?<filename>[^#]+)(#(?<encoding>.*))?}
 
 Example: 
 - `{oneFromFile:/home/user/Desktop/test.txt}`
-- `{oneFromFile:/home/user/Desktop/test.txt,ISO-8859-1}`
+- `{oneFromFile:/home/user/Desktop/test.txt#ISO-8859-1}`
 
 
 ### Prob
@@ -682,7 +739,7 @@ I won't be uploading a jar file, but you can easily get the jar by:
 
 The jar is now in a directory called `target`.
 
-Note that the package is developed with Java 17. It might work on earlier releases but that is not a goal with the project.
+Note that the package is developed with Java 11.
 
 ### I want to enable logging, how do I do that?
 Logging can be enabled by adding instructions to the logging framework. The amount of logging is not great though.
@@ -706,7 +763,7 @@ Client:
 There are several ways. You can use openssl from the command line but the simplest way is to open a browser and navigate to
 `https://hostname-for-elastic-instance:9200`. The procedure is a bit different for different browser, but basically:
 when the page is displayed, either a padlock or a triangle with an exclamation mark inside is visible in the address field of the browser.
-Right click on the padlock/triangle, choose certificate, info and Export... You can now save the certificate and use with the parameter -eoc or -eic.
+Right-click on the padlock/triangle, choose certificate, info and Export... You can now save the certificate and use with the parameter -eoc or -eic.
 
 ### How do I get other data than _id from the Elastic input module?
 First, remove the _source from the query. _source will determine what fields are returned from the query. 
@@ -725,7 +782,7 @@ Now, you will get lines like this from Elastic:
 [{"_index":"testindex","_id":"test2-11","_score":1.0,"_source":{"@timestamp":"2023-09-29T20:24:29","message":"Test row 11"}}]]
 ```
 
-If you are only interested in the source, set `elastic-input-field=_source`. The result will now become:
+If you are only interested in the _source, set `elastic-input-field=_source`. The result will now become:
 ``` 
 [{"@timestamp":"2023-09-29T19:08:52","message":"Test row 11"}]
 ```
@@ -744,7 +801,7 @@ Might give the following output:
 [myid-3]
 [myid-4]
 ```
-Used in conjunction with a gap detector, the LogGenerator can verify that all logs from a source (that has a enumerable field) is stored in the Elastic instance once and only once.
+Used in conjunction with a gap detector, the LogGenerator can verify that all logs from a source (that has an enumerable field) is stored in the Elastic instance once and only once.
 
 ### Whats the --------BEGIN_TRANSACTION-------- for?
 Those are messages inserted into the event stream to be able to detect start of transfers and to save a timestamp for the statistics module to work.
@@ -838,16 +895,17 @@ To start java with additional logging for ssl debugging, use:
 `-Djavax.net.debug=ssl:handshake:verbose:keymanager:trustmanager -Djava.security.debug=access:stack`
 
 ### How do I know if a TCP input is working
-If you have started a TCP input with `-i tcp -ip 9999` then you can send data with 
+If you have started a TCP input with `-i tcp -ip 9999 -o cmd` then you can send data with 
 `nc {ip-address or name} {port} < {filename}`, e.g., `nc localhost 9999 < /var/log/messages`.
+An even easier method is to use an Internet Browser and open http://localhost:9999. The browser won't receive any data but the command window should write a few lines beginning with GET, Host, User-Agent and similar.
 
 ### Gap Detection doesn't work when I use a property file
 On the command line you can escape the backslash character, so a pattern would be:
-```properties
+``` bash
 -gd "<(\\d+)>"
 ```
 Also, you can omit the escape:
-```properties
+``` basj
 -gd "<(\d+)>"
 ```
 But, in the property file you have to write the regex as is, without extra escape characters, like

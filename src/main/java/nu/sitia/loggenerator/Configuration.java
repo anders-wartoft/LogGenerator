@@ -50,15 +50,13 @@ public class Configuration {
             END_FILE.add(END_FILE_TEXT);
         }
 
-        /** The class that holds the shorthand and long parameter keys as well as a description */
-        private record Item(String shortName, String longName, String description) { }
 
         /** A list of valid parameter keys */
         static final List<Item> keys = new ArrayList<>();
 
         static {
                 keys.add(new Item("-h", "--help", "Show the help information"));
-                keys.add(new Item("-i", "--input", "The input module to use. Valid arguments are: counter, file, kafka, elastic, static, tcp, udp or template"));
+                keys.add(new Item("-i", "--input", "The input module to use. Valid arguments are: counter, file, kafka, elastic, static, tcp, udp, json-file or template"));
                 keys.add(new Item("-o", "--output", "The output module to use. Valid arguments are: cmd, file, kafka, null, elastic, tcp or udp"));
                 keys.add(new Item("-ifn", "--input-file-name", "The file name to use for the input module. Can be a file or a directory."));
                 keys.add(new Item("-g", "--glob", "If -fn denotes a directory, this glob can be used to select some of the files in the directory. The globs are java.nio globs. Remember to put asterisks (*) within quotes so that the OS doesn't expand the globs before LogGenerator can get them."));
@@ -110,6 +108,8 @@ public class Configuration {
                 keys.add(new Item("-eiak", "--elastic-input-api-key", "The API key to use to connect to the Elasticsearch instance"));
                 keys.add(new Item("-eic", "--elastic-input-cer", "The x.509 certificate for the Elastic server. In a Chrome browser, connect to https://server:port and authenticate. Right click on the padlock or triangle. Click Certificate. Click Info. Click Export... to save the cer file from the Elastic Instance"));
                 keys.add(new Item("-eiq", "--elastic-input-query", "A query string used to get the response from Elastic"));
+                keys.add(new Item("-jf", "--json-filter", "Get a specific node in the JSON input. Use . to traverse the JSON input. If the returned object is an array, the array items are sent in the event chain as new events"));
+                keys.add(new Item("-jfp", "--json-file-path", "Get a specific node in the JSON file input. Use . to traverse the JSON input. If the returned object is an array, the array items are sent in the event chain as new events"));
         }
         static final Map<String, String> standardVariables = new HashMap<>();
         static {
@@ -147,8 +147,8 @@ public class Configuration {
          */
         private Item getItemFromString(String key) {
                 for (Item item: keys) {
-                        if (item.shortName.equalsIgnoreCase(key)
-                          || item.longName.equalsIgnoreCase(key)) {
+                        if (item.getShortName().equalsIgnoreCase(key)
+                          || item.getLongName().equalsIgnoreCase(key)) {
                                 return item;
                         }
                 }
@@ -176,7 +176,7 @@ public class Configuration {
         private void printHelp() {
                 System.out.println("Arguments: ");
                 for (Item key:keys) {
-                        System.out.println(key.shortName + " " + key.longName + " " + key.description);
+                        System.out.println(key.getShortName() + " " + key.getLongName() + " " + key.getDescription());
                 }
         }
 
@@ -190,7 +190,7 @@ public class Configuration {
                 if (null == item) {
                         return "Bug detected. " + string + " should not be an argument.";
                 }
-                return "Missing argument (" + item.shortName + ") or (" + item.longName + "). " + item.description;
+                return "Missing argument (" + item.getShortName() + ") or (" + item.getLongName() + "). " + item.getDescription();
         }
 
         /**
@@ -202,12 +202,12 @@ public class Configuration {
                         String key = args[i];
                         Item item = getItemFromString(key);
                         if (item != null) {
-                                if (item.longName.equalsIgnoreCase("--help")) {
+                                if (item.getLongName().equalsIgnoreCase("--help")) {
                                         printHelp();
                                         System.exit(0);
                                 }
                                 if (parameters.containsKey(item)) {
-                                        throw new RuntimeException("Argument " + item.shortName + " (" + item.longName + ") has already been declared. ");
+                                        throw new RuntimeException("Argument " + item.getShortName() + " (" + item.getLongName() + ") has already been declared. ");
                                 }
                                 parameters.put(item, args[i+1]);
                         } else {
@@ -267,7 +267,7 @@ public class Configuration {
                                                         if (null == item) {
                                                                 throw new RuntimeException("Unknown key: " + key + " on line " + lineNumber + " in property file: " + file.getAbsolutePath());
                                                         }
-                                                        logger.finer(item.longName + ": " + value);
+                                                        logger.finer(item.getLongName() + ": " + value);
                                                         parameters.put(item, value);
                                                 }
                                         }
@@ -329,7 +329,7 @@ public class Configuration {
         public String toString() {
                 StringBuilder sb = new StringBuilder();
                 parameters.forEach((key, value) ->
-                        sb.append(key.longName)
+                        sb.append(key.getLongName())
                         .append(":  ")
                         .append(value).append(System.lineSeparator()));
                 return sb.toString();

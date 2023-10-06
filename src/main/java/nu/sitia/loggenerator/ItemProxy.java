@@ -99,25 +99,21 @@ public class ItemProxy {
 
         if (templateString != null) {
             Template template = TemplateFactory.getTemplate(templateString);
-            if (template instanceof TimeTemplate tt) {
-                endTime = tt.getTime();
+            if (TimeTemplate.class.isInstance(template)) {
+                endTime = ((TimeTemplate)template).getTime();
             }
         }
 
         // order might be important
-        if (input instanceof ShutdownHandler sh) {
-            shutdownHandlers.add(sh);
+        if (ShutdownHandler.class.isInstance(input)) {
+            shutdownHandlers.add((ShutdownHandler) input);
         }
         shutdownHandlers.addAll(getShutdownHandlers(filterList));
-        if (output instanceof ShutdownHandler sh) {
-            shutdownHandlers.add(sh);
+        if (ShutdownHandler.class.isInstance(output)) {
+            shutdownHandlers.add((ShutdownHandler) output);
         }
 
         this.sentEvents = 0;
-        if (statistics != null) {
-            this.sentEvents = -1; // compensate for the BEGIN-TRANSACTION message
-        }
-
 
         // Ctrl-C
         Signal.handle(new Signal("INT"),  // SIGINT
@@ -232,8 +228,8 @@ public class ItemProxy {
     private List<ShutdownHandler> getShutdownHandlers(List<ProcessFilter> processFilters) {
         List<ShutdownHandler> shutdownHandlerList = new LinkedList<>();
         processFilters.forEach(s ->  {
-            if (s instanceof ShutdownHandler sh) {
-                shutdownHandlerList.add(sh);
+            if (ShutdownHandler.class.isInstance(s)) {
+                shutdownHandlerList.add((ShutdownHandler) s);
             }
         });
         return shutdownHandlerList;

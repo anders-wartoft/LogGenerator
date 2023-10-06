@@ -37,7 +37,7 @@ public class JsonTest
      */
     public void testJson() {
         String input = "{\"query\": { \"query_string\": { \"query\": \"*\" }}, \"_source\": [\"_id\"]}";
-        String path = "query->query_string->query";
+        String path = "query.query_string.query";
         String expected = "*";
 
         JsonFilter jsonFilter = new JsonFilter(path);
@@ -47,5 +47,18 @@ public class JsonTest
         assertEquals(expected, result.get(0));
     }
 
+
+    /**
+     * Test jsonfilterArray
+     */
+    public void testJsonArray() {
+        String input = "{\"cars\": { \"makes\": [\"Ford\", \"BMW\", \"Fiat\"] }}";
+        String path = "cars.makes";
+
+        JsonFilter jsonFilter = new JsonFilter(path);
+
+        List<String> result = jsonFilter.filter(List.of(input));
+        assertEquals(3, result.size());
+    }
 
 }
