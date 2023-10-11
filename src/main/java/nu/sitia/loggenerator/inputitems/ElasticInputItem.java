@@ -19,7 +19,9 @@ package nu.sitia.loggenerator.inputitems;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import nu.sitia.loggenerator.Configuration;
+import nu.sitia.loggenerator.util.JsonUtil;
 import org.apache.http.Header;
 import org.apache.http.HttpHost;
 import org.apache.http.message.BasicHeader;
@@ -164,8 +166,7 @@ public class ElasticInputItem extends AbstractInputItem {
                 for (JsonNode x : rootNode.get("hits").get("hits")) {
                     if (this.field != null) {
                         try {
-                            String value = x.get(this.field).asText();
-                            result.add(value);
+                            result.addAll(new JsonUtil().matchPath(x, this.field));
                         } catch (Exception e) {
                             logger.warning(String.format("Can't read field %s. Is this field present in the result? %s", this.field, x));
                             throw (e);

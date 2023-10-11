@@ -37,6 +37,7 @@ import java.security.KeyStore;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateFactory;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
@@ -144,7 +145,13 @@ public class ElasticOutputItem extends AbstractOutputItem implements SendListene
                             try {
                                 String responseBody = EntityUtils.toString(response.getEntity());
                                 StringBuilder builder = new StringBuilder();
-                                Arrays.stream(headers).toList().forEach(s -> builder.append(s.toString()).append(" "));
+                                List<Header> list = new ArrayList<>();
+                                for (Header header : headers) {
+                                    list.add(header);
+                                }
+                                for (Header s : list) {
+                                    builder.append(s.toString()).append(" ");
+                                }
                                 logger.fine(statusCode + ":" + builder + " : " + responseBody);
                             } catch (IOException ex) {
                                 throw new RuntimeException(ex);

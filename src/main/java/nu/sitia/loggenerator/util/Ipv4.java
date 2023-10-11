@@ -109,7 +109,7 @@ public class Ipv4 {
         long startingAddress = getStartingAddress(ipv4, cidr);
         long nrValues = nrValuesInSubnet(cidr);
         if (nrValues > 1) {
-            return new Random().nextLong(nrValues - 1) + startingAddress;
+            return Math.abs(new Random().nextLong()) % (nrValues - 1) + startingAddress;
         }
         // Special case. /32 cidr. Return the ip number supplied as an argument
         return ipv4ToLong(ipv4);

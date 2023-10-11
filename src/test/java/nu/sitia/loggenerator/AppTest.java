@@ -56,17 +56,17 @@ public class AppTest
     /**
      * Test read Elastic (not in testcases)
      */
-/**    public void testElastic()
+    public void testElastic()
     {
         String [] args = {
                 "-p", "./src/test/data/elasticsearch-input.properties",
-                "--json-filter", "_source"
+                "-eif", "_source"
         };
         App app = new App();
         app.main(args);
     }
-*/
-    public void testElastic()
+
+/**    public void testElastic()
     {
         String [] args = {
                 "-i", "json-file",
@@ -78,4 +78,5 @@ public class AppTest
         App app = new App();
         app.main(args);
     }
+ */
 }

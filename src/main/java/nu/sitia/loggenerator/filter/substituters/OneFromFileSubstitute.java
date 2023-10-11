@@ -26,6 +26,7 @@ import java.nio.file.Paths;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 public class OneFromFileSubstitute extends AbstractSubstitute {
 
@@ -99,7 +100,7 @@ public class OneFromFileSubstitute extends AbstractSubstitute {
         try (
             BufferedReader buffReader = Files.newBufferedReader(Paths.get(fileName), Charset.forName(encoding)); ) {
             List<String> content = new LinkedList<>();
-            return buffReader.lines().toList();
+            return buffReader.lines().collect(Collectors.toList());
         } catch (Exception e) {
             e.printStackTrace();
             throw new RuntimeException(e);
