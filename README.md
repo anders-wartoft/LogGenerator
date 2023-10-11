@@ -15,8 +15,9 @@ java -jar target/LogGenerator-with-dependencies.jar -i kafka -icn test2 -itn tes
 ```
 When running the last command, press Ctrl-C to see the gaps in the received data. Since we started the counter on 100, there should at least be one gap: 1-99.
 
-### Release notes
+### Latest Release notes
 #### 1.02
+- There's an exploit for one of the dependencies (jackson xml) used for previous versions. Please download the new or get the new source and re-build the LogGenerator.
 - Bug fixes for Elastic Input Item
 - Added Json File Input Item
 - Json- and Elastic items now emit found array items as new events
@@ -729,7 +730,10 @@ Example:
 `java -jar LogGenerator-with-dependencies.jar -i counter -string "Test:" --limit 100000 -o null -s true -gd "(\d+)$"`
 
 ### This sounds nice and all, but how do I start? Can I get the built jar?
-I won't be uploading a jar file, but you can easily get the jar by:
+From version 1.02, the jar will be available on the download page.
+
+### Build instructions
+For building the jar, use the following commands:
 
 `git clone https://github.com/anders-wartoft/LogGenerator.git`
 
