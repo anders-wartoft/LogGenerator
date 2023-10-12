@@ -209,6 +209,10 @@ public class Configuration {
                                 if (parameters.containsKey(item)) {
                                         throw new RuntimeException("Argument " + item.getShortName() + " (" + item.getLongName() + ") has already been declared. ");
                                 }
+                                if (args.length < i+2) {
+                                        System.out.println("Missing argument for: " + item.getLongName() + " (" + item.getShortName() + ")");
+                                        System.exit(-1);
+                                }
                                 parameters.put(item, args[i+1]);
                         } else {
                                 printHelp();
