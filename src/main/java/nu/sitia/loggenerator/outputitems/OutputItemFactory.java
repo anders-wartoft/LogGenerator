@@ -39,6 +39,8 @@ public class OutputItemFactory {
         if (outputType.equalsIgnoreCase("kafka")) return new KafkaOutputItem(config);
         if (outputType.equalsIgnoreCase("elastic")) return new ElasticOutputItem(config);
         if (outputType.equalsIgnoreCase("null")) return new NullOutputItem(config);
+        if (outputType.equalsIgnoreCase("tcp")) return new TCPOutputItem(config);
+        if (outputType.equalsIgnoreCase("file")) return new FileOutputItem(config);
         throw new RuntimeException("Illegal output type: " + outputType);
     }
 }

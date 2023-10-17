@@ -16,14 +16,8 @@ java -jar target/LogGenerator-with-dependencies.jar -i kafka -icn test2 -itn tes
 When running the last command, press Ctrl-C to see the gaps in the received data. Since we started the counter on 100, there should at least be one gap: 1-99.
 
 ### Latest Release notes
-#### 1.02
-- There's an exploit for one of the dependencies (jackson xml) used for previous versions. Please download the new or get the new source and re-build the LogGenerator.
-- Bug fixes for Elastic Input Item
-- Added Json File Input Item
-- Json- and Elastic items now emit found array items as new events
-- Refactored the code to run on Java 11
-- Changed maven script to Java 11
-- Bug fixes in Json Filter. You can now extract a field with the dot (.) notation, e.g., _source.message
+#### 1.04
+- Bug fixe in output item factory. Missing TCP and File outputs.
 
 ### Input modules:
 There are input module for the following tasks:

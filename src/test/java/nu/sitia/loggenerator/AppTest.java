@@ -56,7 +56,7 @@ public class AppTest
     /**
      * Test read Elastic (not in testcases)
      */
-    public void testElastic()
+/**    public void testElastic()
     {
         String [] args = {
                 "-p", "./src/test/data/elasticsearch-input.properties",
@@ -65,7 +65,7 @@ public class AppTest
         App app = new App();
         app.main(args);
     }
-
+*/
 /**    public void testElastic()
     {
         String [] args = {
