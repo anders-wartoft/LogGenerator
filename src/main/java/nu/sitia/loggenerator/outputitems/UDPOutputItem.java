@@ -23,6 +23,7 @@ import nu.sitia.loggenerator.Configuration;
 import java.io.IOException;
 import java.net.*;
 import java.nio.charset.StandardCharsets;
+import java.util.ConcurrentModificationException;
 import java.util.List;
 import java.util.logging.Logger;
 
@@ -86,16 +87,20 @@ public class UDPOutputItem extends AbstractOutputItem implements SendListener {
      */
     @Override
     public void send(List<String> toSend) {
-        for (String data : toSend) {
-            byte[] buffer = data.getBytes(StandardCharsets.UTF_8);
-            DatagramPacket request = new DatagramPacket(buffer, buffer.length, address, port);
-            try {
-                logger.fine("Sending: " + toSend);
-                socket.send(request);
-                logger.finer("Sent message without exception");
-            } catch (IOException e) {
-                throw new RuntimeException("Socket send exception", e);
+        try {
+            for (String data : toSend) {
+                byte[] buffer = data.getBytes(StandardCharsets.UTF_8);
+                DatagramPacket request = new DatagramPacket(buffer, buffer.length, address, port);
+                try {
+                    logger.fine("Sending: " + toSend);
+                    socket.send(request);
+                    logger.finer("Sent message without exception");
+                } catch (IOException e) {
+                    throw new RuntimeException("Socket send exception", e);
+                }
             }
+        } catch(ConcurrentModificationException cme) {
+            // Shutdown interrupted an array method, ignore
         }
     }
 
