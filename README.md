@@ -16,8 +16,9 @@ java -jar target/LogGenerator-with-dependencies.jar -i kafka -icn test2 -itn tes
 When running the last command, press Ctrl-C to see the gaps in the received data. Since we started the counter on 100, there should at least be one gap: 1-99.
 
 ### Latest Release notes
-#### 1.04
-- Bug fixe in output item factory. Missing TCP and File outputs.
+#### 1.05
+- SelectFilter added. Use a regular expression to specify what to keep in each event
+- GapDetection will now print gaps each time the statistics is printed. Events that appear out of order will now be reflected without need to shut down the receiver.
 
 ### Input modules:
 There are input module for the following tasks:
@@ -285,6 +286,22 @@ Parameters: `-he {header text}`
 
 Example: `-he {syslog-header}`, `-he "My custom header with date: {date:yyyyMMdd}: "`
 
+### Select by regex
+If you want to filter out everything but a specific part of an event, you can use the SelectFilter.
+Specify what to keep with a group in a regular expression.
+
+Parameters: `-se {regex with a capture group to keep}`
+
+Example: `-se '-(\d+}$'`
+
+If you have events that are formatted like this:
+
+`[Sat Dec 03 00:35:57.399 Usb Host Notification Apple80211Set: seqNum 5460 Total 1 chg 0 en0]`
+
+and for example want to extract the first word after the timestamp, you can use the following parameters:
+
+`-se '\.\d{3} (\S+) '`
+
 #### Replace by regex
 A use case is if you have a lot of nice logs, but the date is not possible to use. You can load the file and add a regex to find the date, then replace the date with a {date:...} variable or a static string.
 There must be a capture group in the regex. The text matched by the capture group will be replaced by the value.
@@ -336,6 +353,35 @@ Example: `-gd "<(\d+)> -dd true -gdjr true"`
 
 A good use of gap detection is to send events over unreliable media and check if all events were delivered.
 To assure that the gap detection is on, start the counter on the sending side with a number that is larger than 1. In that case, the gap detector will produce at least one gap (1-your start number).
+
+A special use case is to continuously monitor for missed events and also to be able to react to events that come out of order and not report them as missing.
+For example, log events are generated with:
+
+`java -jar LogGenerator.jar -i counter -string test- -o udp -oh localhost -op 9999 -e 10 -s true`
+
+`-e 100` will limit the generated events to 100 every second.
+
+You can now start a server and monitor for missing events. 
+
+`java -jar LogGenerator.jar -i udp -ip 9999 -gd '-(\d+)$' -cgd true -o null -s true`
+
+If you start the server after the client you will have some missing events (after 30 seconds), for example:
+``` 
+Transaction:  transferred 439 lines in 43939 milliseconds, 0,010 kEPS 0,001 MBPS
+Gaps found: 1.
+1-442
+Number of unique received numbers: 439
+Next expected number: 882
+```
+If you now restart the client and wait another 30 seconds, you should se a smaller gap, or none at all.
+```
+Transaction transfer: TRANSACTION transferred 285 lines in 28391 milliseconds, 0,010 kEPS 0,001 MBPS
+Gaps found: 1.
+286-442
+Number of unique received numbers: 724
+Next expected number: 882
+```
+So, the gap detection can detect events that should have been delivered earlier, and remove them from the gaps.
 
 ### Variables
 #### Date

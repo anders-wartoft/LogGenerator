@@ -64,6 +64,9 @@ public class LogStatistics {
         return transactionMessages;
     }
 
+    /** Flag to be able to signal to the ItemProxy if statistics has been printed */
+    private boolean hasPrinted = false;
+
     /**
      * Constructor
      * @param config Used to get the printout every ms value
@@ -83,9 +86,12 @@ public class LogStatistics {
      * Inspect the data that is about to be sent for connection
      * messages.
      * @param filtered The list of strings to send
+     * @return true iff the statistics have been printed out
      */
-    public void calculateStatistics(List<String> filtered) {
+    public boolean calculateStatistics(List<String> filtered) {
+        hasPrinted = false;
         filtered.forEach(this::checkMessage);
+        return hasPrinted;
     }
 
     /**
@@ -149,6 +155,7 @@ public class LogStatistics {
      * @param bytes How many characters the compound logs have contained (close enough to bytes received)
      */
     private void printMetrics(String beginning, long ms, long nrMessages, String name, long bytes) {
+        hasPrinted = true;
         System.out.format("%s: %s transferred %d lines in %d milliseconds, %.3f kEPS %.3f MBPS%n",
                 beginning,
                 name,

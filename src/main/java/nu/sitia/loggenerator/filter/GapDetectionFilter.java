@@ -102,6 +102,14 @@ public class GapDetectionFilter implements ProcessFilter, ShutdownHandler {
     }
 
     /**
+     * Get the detector for this filter
+     * @return the GapDetector
+     */
+    public GapDetector getDetector() {
+        return detector;
+    }
+
+    /**
      * toString in json format
      * @return the internal state
      */

@@ -159,6 +159,12 @@ public class GapDetector {
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
+        if (gaps.size() > 0) {
+            sb.append("Gaps found: ").append(gaps.size()).append(".").append(System.lineSeparator());
+            for (Gap gap : gaps) {
+                sb.append(gap.getFrom()).append("-").append(gap.getTo()).append(System.lineSeparator());
+            }
+        }
         if (duplicateDetection) {
             sb.append("Duplicate detection found: ").append(duplicates.size()).append(" duplicate (or more) values.").append(System.lineSeparator());
             Map<Long, Long> sortedMap = getSorted(duplicates);
@@ -166,12 +172,6 @@ public class GapDetector {
         }
         sb.append("Number of unique received numbers: ").append(nrReceived).append(System.lineSeparator());
         sb.append("Next expected number: ").append(expectedNumber).append(System.lineSeparator());
-        if (gaps.size() > 0) {
-            sb.append("Gaps found: ").append(gaps.size()).append(".").append(System.lineSeparator());
-            for (Gap gap : gaps) {
-                sb.append(gap.getFrom()).append("-").append(gap.getTo()).append(System.lineSeparator());
-            }
-        }
         return sb.toString();
     }
 

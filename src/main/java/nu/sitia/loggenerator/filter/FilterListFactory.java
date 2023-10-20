@@ -42,6 +42,7 @@ public class FilterListFactory {
         String doubleDetection = config.getValue("-dd");
         String jsonFilter = config.getValue("-jf");
         String jsonReport = config.getValue("-gdjr");
+        String select = config.getValue("-se");
 
         boolean dd = "true".equalsIgnoreCase(doubleDetection);
 
@@ -79,7 +80,9 @@ public class FilterListFactory {
             filterList.add(new GapDetectionFilter(gapRegex, dd,
                     "true".equalsIgnoreCase(jsonReport)));
         }
-
+        if (select != null) {
+            filterList.add(new SelectFilter(select));
+        }
         return filterList;
     }
 }

@@ -17,6 +17,7 @@
 
 package nu.sitia.loggenerator;
 
+import nu.sitia.loggenerator.filter.GapDetectionFilter;
 import nu.sitia.loggenerator.filter.ProcessFilter;
 import nu.sitia.loggenerator.inputitems.InputItem;
 import nu.sitia.loggenerator.outputitems.OutputItem;
@@ -63,6 +64,11 @@ public class ItemProxy {
 
     /** If -t time:xxx, this is the start time + xxx */
     private long endTime = 0;
+
+    /** If we have a gapDetector and the flag -cgd is true, then show
+     * gaps every time the statistics has been printed.
+     */
+    private ProcessFilter gapDetector = null;
 
     /**
      * Default constructor
@@ -113,6 +119,15 @@ public class ItemProxy {
             shutdownHandlers.add((ShutdownHandler) output);
         }
 
+        String isContinousGapDetectionString = config.getValue("-cgd");
+        if (isContinousGapDetectionString != null && isContinousGapDetectionString.equalsIgnoreCase("true")) {
+            gapDetector = getGapDetector(filterList);
+            if (null == gapDetector) {
+                throw new RuntimeException("The flag -cgd cannot be used without a GapDetector (-gd)");
+            }
+        }
+
+
         this.sentEvents = 0;
 
         // Ctrl-C
@@ -131,6 +146,18 @@ public class ItemProxy {
                     System.exit(-1);
                 });
 
+    }
+
+
+    /**
+     * Search the list of filters and, if present, return a GapDetecttionFilter
+     * @param filterList a List<filter> to search
+     * @return GapDetectionFilter or null
+     */
+    private ProcessFilter getGapDetector(List<ProcessFilter>filterList) {
+        return filterList.stream().reduce(null, (_sofar, element) ->
+                element instanceof GapDetectionFilter ? element: null
+        );
     }
 
     /**
@@ -166,7 +193,11 @@ public class ItemProxy {
             sentEvents += toSend.size();
 
             if (statistics != null) {
-                statistics.calculateStatistics(filtered);
+                boolean hasPrinted = statistics.calculateStatistics(filtered);
+                if (hasPrinted && null != gapDetector) {
+                    // Also, print the gapDetection periodically
+                    System.out.println(((GapDetectionFilter)gapDetector).getDetector().toString());
+                }
             }
             // Should we throttle the output to lower the eps?
             throttle(statistics);

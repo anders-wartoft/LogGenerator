@@ -82,6 +82,7 @@ public class Configuration {
                 keys.add(new Item("-ib", "--input-batch-size", "How many rows to read before sending to processing"));
                 keys.add(new Item("-ob", "--output-batch-size", "How many rows to write (new line separated) every time the send method is called"));
                 keys.add(new Item("-gd", "--gap-detection", "Regex to find the event serial number. In the regex, the first capture group must be the number, e.g. \"<(\\d+)>\""));
+                keys.add(new Item("-cgd", "--continuous-gap-detection", "Should Gap Detection be printed every time a statistics report is printed? Valid values are: false, true. Default is false"));
                 keys.add(new Item("-dd", "--duplicate-detection", "If -gd (--gap-detection) is enabled, use this flag to also get a report on all serial numbers that occurs mote than once. Valid values are: false, true"));
                 keys.add(new Item("-gdjr", "--gap-detection-json-report", "Should the gap detector report in JSON format instead of printable format? Valid values are: false, true"));
 
@@ -110,6 +111,7 @@ public class Configuration {
                 keys.add(new Item("-eiq", "--elastic-input-query", "A query string used to get the response from Elastic"));
                 keys.add(new Item("-jf", "--json-filter", "Get a specific node in the JSON input. Use . to traverse the JSON input. If the returned object is an array, the array items are sent in the event chain as new events"));
                 keys.add(new Item("-jfp", "--json-file-path", "Get a specific node in the JSON file input. Use . to traverse the JSON input. If the returned object is an array, the array items are sent in the event chain as new events"));
+                keys.add(new Item("-se", "--select", "Remove everything except what matches the next argument's first group. Example -se 'userid:(\\S+)'"));
         }
         static final Map<String, String> standardVariables = new HashMap<>();
         static {
