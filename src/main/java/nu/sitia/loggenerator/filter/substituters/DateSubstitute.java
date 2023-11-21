@@ -28,7 +28,7 @@ public class DateSubstitute extends AbstractSubstitute {
     private Date date;
 
     /** Regex for a date pattern */
-    private static final String dateRegex = "\\{date:(?<datepattern>[yYmMHhsz+-dD:\\d'T. ]+)(/(?<locale>[^}]+))?}";
+    private static final String dateRegex = "\\{date:(?<datepattern>[yYmMHhsz+-dD:\\d'T. ]+|epoch)(/(?<locale>[^}]+))?}";
     /** Cached pattern for getting date format string */
     private static final Pattern datePattern = Pattern.compile(dateRegex);
 
@@ -49,21 +49,25 @@ public class DateSubstitute extends AbstractSubstitute {
 
         int endPos = getExpressionEnd(input, startPos);
         String part = input.substring(startPos, endPos);
-        // First, get the date format string
-        Matcher matcher = datePattern.matcher(part);
-        if (matcher.find()) {
-            String datePattern = matcher.group(1);
-            String locale = "en:US";
-            // the format might add /locale-name
-            if (matcher.groupCount() > 2) {
-                if (matcher.group(2) != null) {
-                    locale = matcher.group(2);
-                }
-            }
-            SimpleDateFormat formatter = new SimpleDateFormat(datePattern, Locale.forLanguageTag(locale));
-            String formattedDateString = formatter.format(date);
+        if ("{date:epoch}".equalsIgnoreCase(part)) {
+            String formattedDateString = String.format("%013d", date.getTime());
             return input.substring(0, startPos) + formattedDateString + input.substring(endPos);
-        }
-        throw new RuntimeException(("Illegal date pattern: " + input));
+        } else {
+            // First, get the date format string
+            Matcher matcher = datePattern.matcher(part);
+            if (matcher.find()) {
+                String datePattern = matcher.group(1);
+                String locale = "en:US";
+                // the format might add /locale-name
+                if (matcher.groupCount() > 2) {
+                    if (matcher.group(2) != null) {
+                        locale = matcher.group(2);
+                    }
+                }
+                SimpleDateFormat formatter = new SimpleDateFormat(datePattern, Locale.forLanguageTag(locale));
+                String formattedDateString = formatter.format(date);
+                return input.substring(0, startPos) + formattedDateString + input.substring(endPos);
+            }
+            throw new RuntimeException(("Illegal date pattern: " + input));        }
     }
 }

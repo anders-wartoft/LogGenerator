@@ -16,9 +16,11 @@ java -jar target/LogGenerator-with-dependencies.jar -i kafka -icn test2 -itn tes
 When running the last command, press Ctrl-C to see the gaps in the received data. Since we started the counter on 100, there should at least be one gap: 1-99.
 
 ### Latest Release notes
-#### 1.05
-- SelectFilter added. Use a regular expression to specify what to keep in each event
-- GapDetection will now print gaps each time the statistics is printed. Events that appear out of order will now be reflected without need to shut down the receiver.
+#### 1.06-SNAPSHOT
+- DropFilter added. Use a regular expression to specify events to drop
+- DateSubstitute now supports epoch format
+- Moved headers to last in event chain. Headers will now be created after all other filters have been executed
+- The eps limiter can now use floating points, so to send one event every 4 seconds, use -e 0.25
 
 ### Input modules:
 There are input module for the following tasks:
@@ -274,6 +276,8 @@ In another command window, start the client (same jar file):
 ### Filter modules:
 - Add a header
 - Replace by regex
+- Select by regex
+- Drop by regex
 - Replace variables
 - Remove transaction messages
 - Detect gaps
@@ -301,6 +305,22 @@ If you have events that are formatted like this:
 and for example want to extract the first word after the timestamp, you can use the following parameters:
 
 `-se '\.\d{3} (\S+) '`
+
+### Drop by regex
+If you want to drop an event depending on a regular expression, use the DropFilter.
+Use a regex to specify the content to search for. If the DropFilter finds a match, the event will be dropped.
+
+Parameters: `-df {regex}`
+
+Example: `-df 'INFO'`
+
+If you have events that are formatted like this:
+
+`[Sat Dec 03 00:35:57.399 Usb Host Notification Apple80211Set: seqNum 5460 Total 1 chg 0 en0]`
+
+and for example want to discard all events that contain `chg 0`, you can use the following parameters:
+
+`-df 'chg 0'`
 
 #### Replace by regex
 A use case is if you have a lot of nice logs, but the date is not possible to use. You can load the file and add a regex to find the date, then replace the date with a {date:...} variable or a static string.
@@ -386,13 +406,14 @@ So, the gap detection can detect events that should have been delivered earlier,
 ### Variables
 #### Date
 A Date variable will take the current time and format according to a Java 
-date format string. 
+date format string. Epoch timestamps are supported but only the version with 13 digits.
 
-Syntax: `{date:(?<datepattern>[yYmMHhsz+-dD:\d'T. ]+)(/(?<locale>[^}]+))?}`
+Syntax: `{date:(?<datepattern>[yYmMHhsz+-dD:\d'T. ]+|epoch)(/(?<locale>[^}]+))?}`
 
 Example (at new year 2023)
 - `{date:yyyyMMdd}` might be resolved to: `20230101`
 - `{date:MMM dd HH:mm:ss/en:US}` might be resolved to `Jan 01 00:00:00`
+- `{date:epoch}` might be resolved to e.g., `0946681200000` (for Jan 01, 2000)
 
 Date can also have an offset with the `-to` (`--time-offset`) parameter. Time offset can be used to add or remove a number of milliseconds from the date variable. 
 

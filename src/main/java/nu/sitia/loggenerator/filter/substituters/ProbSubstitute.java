@@ -10,7 +10,7 @@
  * Software.
  *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE
- *  WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
+ *  WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NON-INFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
  * COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
  * OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
@@ -63,8 +63,8 @@ public class ProbSubstitute extends AbstractSubstitute {
             // Now we have two arrays, one with the values (str) and one with the relative probabilities
             // Sum up the relative probabilities
             int sumProbabilities = 0;
-            for (int i=0; i<probability.length; i++) {
-                sumProbabilities += probability[i];
+            for (int j : probability) {
+                sumProbabilities += j;
             }
             // Now pick one of them
             int nr = new Random().nextInt(sumProbabilities) + 1;

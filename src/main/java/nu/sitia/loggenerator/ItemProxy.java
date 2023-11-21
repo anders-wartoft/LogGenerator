@@ -10,7 +10,7 @@
  * Software.
  *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE
- *  WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
+ *  WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NON-INFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
  * COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
  * OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
@@ -48,7 +48,7 @@ public class ItemProxy {
     private final List<ProcessFilter> filterList;
 
     /** Preferred eps */
-    private final long eps;
+    private final double eps;
 
     /** Limit the number of events to send */
     private final long limit;
@@ -89,7 +89,7 @@ public class ItemProxy {
 
         String epsString = config.getValue("-e");
         if (null != epsString) {
-            this.eps = Long.parseLong(epsString);
+            this.eps = Double.parseDouble(epsString);
         } else {
             this.eps = 0;
         }
@@ -119,8 +119,8 @@ public class ItemProxy {
             shutdownHandlers.add((ShutdownHandler) output);
         }
 
-        String isContinousGapDetectionString = config.getValue("-cgd");
-        if (isContinousGapDetectionString != null && isContinousGapDetectionString.equalsIgnoreCase("true")) {
+        String isContinuousGapDetectionString = config.getValue("-cgd");
+        if (isContinuousGapDetectionString != null && isContinuousGapDetectionString.equalsIgnoreCase("true")) {
             gapDetector = getGapDetector(filterList);
             if (null == gapDetector) {
                 throw new RuntimeException("The flag -cgd cannot be used without a GapDetector (-gd)");
@@ -150,7 +150,7 @@ public class ItemProxy {
 
 
     /**
-     * Search the list of filters and, if present, return a GapDetecttionFilter
+     * Search the list of filters and, if present, return a GapDetectionFilter
      * @param filterList a List<filter> to search
      * @return GapDetectionFilter or null
      */
@@ -238,7 +238,7 @@ public class ItemProxy {
             long sentMessages = statistics.getTransactionMessages();
             long now = new Date().getTime();
             // how long time should we spend on sending these messages?
-            long estimatedTime = 1000 * sentMessages / eps;
+            long estimatedTime = (long)(1000 * sentMessages / eps);
             long waitTime = transactionStart + estimatedTime - now;
             if (waitTime > 10) {
                 try {

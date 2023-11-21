@@ -17,13 +17,8 @@
 
 package nu.sitia.loggenerator.inputitems;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.net.ServerSocket;
-import java.net.Socket;
-import java.util.List;
-import java.util.PriorityQueue;
 import java.util.Queue;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -31,9 +26,9 @@ import java.util.logging.Logger;
 public class TCPInputHandler extends Thread {
     static final Logger logger = Logger.getLogger(TCPInputHandler.class.getName());
 
-    private Queue<String> received;
-    private ServerSocket socket;
-    private BufferedReader reader;
+    private final Queue<String> received;
+    private final ServerSocket socket;
+
     public TCPInputHandler(ServerSocket socket, Queue<String> received) {
         this.socket = socket;
         this.received = received;

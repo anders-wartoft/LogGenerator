@@ -10,7 +10,7 @@
  * Software.
  *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE
- *  WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
+ *  WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NON-INFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
  * COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
  * OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
@@ -26,16 +26,13 @@ import java.util.logging.Logger;
 
 public class TCPInputItem extends AbstractInputItem {
     static final Logger logger = Logger.getLogger(TCPInputItem.class.getName());
-    /** The address to bind to. If not specified, bind to all nics */
+    /** The address to bind to. If not specified, bind to all interfaces */
     protected final String hostName;
 
     /** The port to listen on */
     protected final int port;
 
-    /** The socket to use */
-    private ServerSocket serverSocket;
-
-    protected Queue<String> result = new PriorityQueue<>();
+    protected final Queue<String> result = new PriorityQueue<>();
 
 
     /**
@@ -57,6 +54,7 @@ public class TCPInputItem extends AbstractInputItem {
      */
     public void setup() throws RuntimeException {
         try {
+            ServerSocket serverSocket;
             if (hostName != null) {
                 // Listen on a specified address
                 serverSocket = new ServerSocket();

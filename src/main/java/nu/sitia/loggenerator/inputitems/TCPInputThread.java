@@ -28,9 +28,9 @@ import java.util.logging.Logger;
 public class TCPInputThread extends Thread {
     static final Logger logger = Logger.getLogger(TCPInputThread.class.getName());
 
-    private Queue<String> received;
-    private Socket socket;
-    private BufferedReader reader;
+    private final Queue<String> received;
+    private final Socket socket;
+
     public TCPInputThread(Socket socket, Queue<String> received) {
         this.socket = socket;
         this.received = received;

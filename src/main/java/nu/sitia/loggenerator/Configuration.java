@@ -112,6 +112,7 @@ public class Configuration {
                 keys.add(new Item("-jf", "--json-filter", "Get a specific node in the JSON input. Use . to traverse the JSON input. If the returned object is an array, the array items are sent in the event chain as new events"));
                 keys.add(new Item("-jfp", "--json-file-path", "Get a specific node in the JSON file input. Use . to traverse the JSON input. If the returned object is an array, the array items are sent in the event chain as new events"));
                 keys.add(new Item("-se", "--select", "Remove everything except what matches the next argument's first group. Example -se 'userid:(\\S+)'"));
+                keys.add(new Item("-df", "--drop-filter", "Drop an event if the supplied regex is found in an event. Example -df 'INFO|DEBUG'"));
         }
         static final Map<String, String> standardVariables = new HashMap<>();
         static {

@@ -27,14 +27,14 @@ public class RepeatSubstitute extends AbstractSubstitute {
     /** Pattern for repeat */
     private static final Pattern repeatPattern = Pattern.compile(repeatRegex);
 
-    private Substitution substitution;
+    private final Substitution substitution;
 
     /**
      * The first parameter must be able to contain variables. In order to resolve them,
      * we must be able to call the substitution recursively. Save the class for that purpose.
      * If the last parameter is used, the last parameter is inserted between all instances
      * of torepeat.
-     * @param substitution The class to use to resolve the times parameter.
+     * @param substitution The class to use to resolve the time parameter.
      */
     public RepeatSubstitute(Substitution substitution) {
         this.substitution = substitution;
@@ -59,7 +59,7 @@ public class RepeatSubstitute extends AbstractSubstitute {
         if (matcher.find()) {
             int repeat;
             String times = matcher.group("times");
-            if (times.indexOf("{") >= 0) {
+            if (times.contains("{")) {
                 // Resolve recursively
                 times = substitution.substitute(times, new HashMap<>(), new Date());
             }
@@ -76,7 +76,7 @@ public class RepeatSubstitute extends AbstractSubstitute {
                     sb.append(delimiter);
                 }
             }
-            String result = input.substring(0, startPos) + sb.toString() + input.substring(endPos);
+            String result = input.substring(0, startPos) + sb + input.substring(endPos);
             return result;
         }
         throw new RuntimeException(("Illegal resolve pattern: " + input));

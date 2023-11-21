@@ -10,7 +10,7 @@
  * Software.
  *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE
- *  WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
+ *  WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NON-INFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
  * COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
  * OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
@@ -20,7 +20,6 @@ package nu.sitia.loggenerator.filter.substituters;
 import java.io.BufferedReader;
 import java.io.File;
 import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.*;
@@ -31,13 +30,13 @@ import java.util.stream.Collectors;
 public class OneFromFileSubstitute extends AbstractSubstitute {
 
     /** Regex for oneOf */
-    private static final String oneFromFileRegex = "\\{oneFromFile:(?<filename>[^#]+)(#(?<encoding>.*))?\\}";
+    private static final String oneFromFileRegex = "\\{oneFromFile:(?<filename>[^#]+)(#(?<encoding>.*))?}";
 
     /** Cached pattern for getting oneFromFile */
     private static final Pattern oneFromFilePattern = Pattern.compile(oneFromFileRegex);
 
     /** Cached files */
-    private static Map<String, List<String>> cache = new HashMap<>();
+    private static final Map<String, List<String>> cache = new HashMap<>();
 
     /**
      * Get one of several options from a file.
@@ -72,8 +71,9 @@ public class OneFromFileSubstitute extends AbstractSubstitute {
     /**
      * Get the cached file contents. If the file is not loaded yet,
      * load the file and save the contents in the cache.
-     * @param fileName
-     * @return
+     * @param fileName The file to read
+     * @param encoding Encoding of the file contents
+     * @return The read file
      */
     private List<String> getContent(String fileName, String encoding) {
         if (cache.containsKey(fileName)) {
@@ -98,8 +98,7 @@ public class OneFromFileSubstitute extends AbstractSubstitute {
             throw new RuntimeException("File: " + file.getAbsolutePath() + " not found");
         }
         try (
-            BufferedReader buffReader = Files.newBufferedReader(Paths.get(fileName), Charset.forName(encoding)); ) {
-            List<String> content = new LinkedList<>();
+            BufferedReader buffReader = Files.newBufferedReader(Paths.get(fileName), Charset.forName(encoding))) {
             return buffReader.lines().collect(Collectors.toList());
         } catch (Exception e) {
             e.printStackTrace();

@@ -38,7 +38,7 @@ import java.security.cert.Certificate;
 import java.security.cert.CertificateFactory;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.logging.Logger;
@@ -146,9 +146,7 @@ public class ElasticOutputItem extends AbstractOutputItem implements SendListene
                                 String responseBody = EntityUtils.toString(response.getEntity());
                                 StringBuilder builder = new StringBuilder();
                                 List<Header> list = new ArrayList<>();
-                                for (Header header : headers) {
-                                    list.add(header);
-                                }
+                                Collections.addAll(list, headers);
                                 for (Header s : list) {
                                     builder.append(s.toString()).append(" ");
                                 }
