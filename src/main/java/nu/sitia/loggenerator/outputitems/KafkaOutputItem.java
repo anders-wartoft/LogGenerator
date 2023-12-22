@@ -30,9 +30,9 @@ import java.util.logging.Logger;
 public class KafkaOutputItem extends AbstractOutputItem implements SendListener {
     static final Logger logger = Logger.getLogger(KafkaOutputItem.class.getName());
     /** The hostname:port to connect to */
-    private final String bootstrapServer;
+    private String bootstrapServer;
     /** The client id to use */
-    private final String clientId;
+    private String clientId;
 
     /** Connection properties */
     private final Properties properties = new Properties();
@@ -41,7 +41,7 @@ public class KafkaOutputItem extends AbstractOutputItem implements SendListener 
     private KafkaProducer<Integer, String> producer;
 
     /** The topic name */
-    private final String topicName;
+    private String topicName;
 
     /** The Kafka message number */
     private int messageNr = 1;
@@ -53,22 +53,51 @@ public class KafkaOutputItem extends AbstractOutputItem implements SendListener 
     public KafkaOutputItem(Configuration config) {
         super(config);
         super.addListener(this);
-        this.clientId = config.getValue("-ocn");
-        this.topicName = config.getValue("-otn");
-        this.bootstrapServer = config.getValue("-obs");
+    }
 
-        if (null == clientId) {
-            throw new RuntimeException(config.getNotFoundInformation("-ocn"));
+    @Override
+    public boolean setParameter(String key, String value) {
+        if (key != null && (key.equalsIgnoreCase("--help") || key.equalsIgnoreCase("-h"))) {
+            System.out.println("KafkaOutputItem. Write to Kafka\n" +
+                    "Parameters:\n" +
+                    "--client-id, -ci <client id> The client id to use\n" +
+                    "--topic, -t <topic name> The topic name to write to\n" +
+                    "--bootstrap-server, -b <hostname:port> The hostname:port to connect to\n");
+            System.exit(1);
         }
+        if (super.setParameter(key, value)) {
+            return true;
+        }
+        if (key != null && (key.equalsIgnoreCase("--client-id") || key.equalsIgnoreCase("-ci"))) {
+            this.clientId = value;
+            logger.fine("clientId " + value);
+            return true;
+        }
+        if (key != null && (key.equalsIgnoreCase("--topic") || key.equalsIgnoreCase("-t"))) {
+            this.topicName = value;
+            logger.fine("topic " + value);
+            return true;
+        }
+        if (key != null && (key.equalsIgnoreCase("--bootstrap-server") || key.equalsIgnoreCase("-b"))) {
+            this.bootstrapServer = value;
+            logger.fine("bootstrapServer " + value);
+            return true;
+        }
+        return false;
+    }
 
-        if (null == topicName) {
-            throw new RuntimeException(config.getNotFoundInformation("-otn"));
+    @Override
+    public boolean afterPropertiesSet() {
+        if (null == this.clientId) {
+            throw new RuntimeException("Missing --client-id");
         }
-
-        if (null == bootstrapServer) {
-            throw new RuntimeException(config.getNotFoundInformation("-obs"));
+        if (null == this.topicName) {
+            throw new RuntimeException("Missing --topic");
         }
-        addTransactionMessages = config.isStatistics();
+        if (null == this.bootstrapServer) {
+            throw new RuntimeException("Missing --bootstrap-server");
+        }
+        return true;
     }
 
     /**

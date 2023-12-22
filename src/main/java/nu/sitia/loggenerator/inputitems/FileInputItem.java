@@ -25,10 +25,13 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Scanner;
+import java.util.logging.Logger;
 
 public class FileInputItem extends AbstractInputItem {
+    static final Logger logger = Logger.getLogger(FileInputItem.class.getName());
+
     /** The name of the file this item will read from */
-    protected final String fileName;
+    protected String fileName;
 
     /** The scanner to read from. Initialized in setup() */
     protected Scanner scanner = null;
@@ -41,17 +44,37 @@ public class FileInputItem extends AbstractInputItem {
 
     /**
      * Create a new FileInputItem
-     * @param config The command line arguments
      */
-    public FileInputItem(String fileName, Configuration config) {
+    public FileInputItem(Configuration config) {
         super(config);
-        this.fileName = fileName;
-        if (fileName == null) {
-            throw new RuntimeException(config.getNotFoundInformation("-ifn"));
+    }
+
+    @Override
+    public boolean setParameter(String key, String value) {
+        if (key != null && (key.equalsIgnoreCase("--help") || key.equalsIgnoreCase("-h"))) {
+            System.out.println("FileInputItem. Read a file\n" +
+                    "Parameters:\n" +
+                    "--name <name> (-n <name>)\n" +
+                    "  The name of the file to read\n");
+            System.exit(1);
         }
-        String statisticsParameter = config.getValue("-s");
-        this.isStatistics = statisticsParameter != null &&
-                        statisticsParameter.equalsIgnoreCase("true");
+        if(super.setParameter(key, value)) {
+            return true;
+        }
+        if (key != null && (key.equalsIgnoreCase("--name") || key.equalsIgnoreCase("-n"))) {
+            this.fileName = value;
+            logger.fine("fileName " + value);
+            return true;
+        }
+        return false;
+    }
+
+    @Override
+    public boolean afterPropertiesSet() {
+        if (fileName == null) {
+            throw new RuntimeException("Missing -name parameter");
+        }
+        return true;
     }
 
     /**

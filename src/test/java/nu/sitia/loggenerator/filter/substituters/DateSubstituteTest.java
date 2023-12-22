@@ -67,6 +67,27 @@ public class DateSubstituteTest
             fail(e.getMessage());
         }
     }
+
+    /**
+     * Test date patterns 3
+     */
+    public void testDatePatterns3() {
+        String template = "{date:epoch16}";
+        String dateStr = "2000-01-01";
+        String expected = "0946681200000000";
+        SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd", Locale.ENGLISH);
+        Date date;
+        try {
+            date = formatter.parse(dateStr);
+            DateSubstitute substitute = new DateSubstitute();
+            substitute.setDate(date);
+            String actual = substitute.substitute(template);
+            assertEquals(expected, actual);
+        } catch (ParseException e) {
+            fail(e.getMessage());
+        }
+    }
+
     /**
      * Test date patterns
      */

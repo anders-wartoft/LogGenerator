@@ -26,18 +26,20 @@ import java.nio.charset.StandardCharsets;
 import java.util.ConcurrentModificationException;
 import java.util.List;
 import java.util.logging.Logger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class UDPOutputItem extends AbstractOutputItem implements SendListener {
     static final Logger logger = Logger.getLogger(UDPOutputItem.class.getName());
     /** The InetAddress to connect to */
-    private final InetAddress address;
+    private InetAddress address;
     /** Port number to connect to */
-    private final int port;
+    private String port;
     /** The socket to use */
-    private final DatagramSocket socket;
+    private DatagramSocket socket;
 
     /** Used in toString() */
-    private final String hostName;
+    private String hostName;
 
     /**
      * Constructor. Add the callback method from this class.
@@ -45,17 +47,50 @@ public class UDPOutputItem extends AbstractOutputItem implements SendListener {
      */
     public UDPOutputItem(Configuration config) {
         super(config);
-        String hostName = config.getValue("-oh");
-        if (null == hostName) {
-            throw new RuntimeException(config.getNotFoundInformation("-oh"));
-        }
-        String portString = config.getValue("-op");
-        if (null == portString) {
-            throw new RuntimeException(config.getNotFoundInformation("-op"));
-        }
-        port = Integer.parseInt(portString);
-
         super.addListener(this);
+    }
+
+
+    @Override
+    public boolean setParameter(String key, String value) {
+        if (key != null && (key.equalsIgnoreCase("--help") || key.equalsIgnoreCase("-h"))) {
+            System.out.println("UDPOutputItem. Write to UDP socket\n" +
+                    "Parameters:\n" +
+                    "--hostname, -h <hostname> The hostname to connect to\n" +
+                    "--port, -p <port> The port to connect to\n");
+            System.exit(1);
+        }
+        if (super.setParameter(key, value)) {
+            return true;
+        }
+        if (key != null && (key.equalsIgnoreCase("--hostname") || key.equalsIgnoreCase("-h"))) {
+            this.hostName = value;
+            logger.fine("hostname " + value);
+            return true;
+        }
+        if (key != null && (key.equalsIgnoreCase("--port") || key.equalsIgnoreCase("-p"))) {
+            this.port = value;
+            logger.fine("port " + value);
+            return true;
+        }
+        return false;
+    }
+
+    @Override
+    public boolean afterPropertiesSet() {
+        if (null == this.hostName) {
+            throw new RuntimeException("Missing --hostname");
+        }
+        if (null == this.port) {
+            throw new RuntimeException("Missing --port");
+        }
+
+        final Pattern pattern = Pattern.compile("^\\d{1,5}$");
+        final Matcher matcher = pattern.matcher(this.port);
+        if (!matcher.matches()) {
+            throw new RuntimeException("Field port contains illegal characters: " + this.port);
+        }
+
         try {
             address = InetAddress.getByName(hostName);
         } catch (UnknownHostException e) {
@@ -66,8 +101,8 @@ public class UDPOutputItem extends AbstractOutputItem implements SendListener {
         } catch (SocketException e) {
             throw new RuntimeException("Socket exception", e);
         }
-        this.hostName = hostName;
-        addTransactionMessages = config.isStatistics();
+
+        return true;
     }
 
     /**
@@ -88,9 +123,10 @@ public class UDPOutputItem extends AbstractOutputItem implements SendListener {
     @Override
     public void send(List<String> toSend) {
         try {
+            int portNumber = Integer.parseInt(this.port);
             for (String data : toSend) {
                 byte[] buffer = data.getBytes(StandardCharsets.UTF_8);
-                DatagramPacket request = new DatagramPacket(buffer, buffer.length, address, port);
+                DatagramPacket request = new DatagramPacket(buffer, buffer.length, address, portNumber);
                 try {
                     logger.fine("Sending: " + toSend);
                     socket.send(request);

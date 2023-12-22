@@ -26,13 +26,15 @@ import java.io.PrintWriter;
 import java.net.*;
 import java.util.List;
 import java.util.logging.Logger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class TCPOutputItem extends AbstractOutputItem implements SendListener {
     static final Logger logger = Logger.getLogger(TCPOutputItem.class.getName());
     /** The address to use */
-    protected final String hostName;
+    protected String hostName;
     /** The port to connect to */
-    protected final int port;
+    protected String port;
     /** The socket to use */
     private Socket socket;
 
@@ -43,16 +45,48 @@ public class TCPOutputItem extends AbstractOutputItem implements SendListener {
     public TCPOutputItem(Configuration config) {
         super(config);
         super.addListener(this);
-        hostName = config.getValue("-oh");
-        if (null == hostName) {
-            throw new RuntimeException(config.getNotFoundInformation("-oh"));
+    }
+
+    @Override
+    public boolean setParameter(String key, String value) {
+        if (key != null && (key.equalsIgnoreCase("--help") || key.equalsIgnoreCase("-h"))) {
+            System.out.println("TCPOutputItem. Write to TCP socket\n" +
+                    "Parameters:\n" +
+                    "--hostname, -h <hostname> The hostname to connect to\n" +
+                    "--port, -p <port> The port to connect to\n");
+            System.exit(1);
         }
-        String portString = config.getValue("-op");
-        if (null == portString) {
-            throw new RuntimeException(config.getNotFoundInformation("-op"));
+        if (super.setParameter(key, value)) {
+            return true;
         }
-        port = Integer.parseInt(portString);
-        addTransactionMessages = config.isStatistics();
+        if (key != null && (key.equalsIgnoreCase("--hostname") || key.equalsIgnoreCase("-h"))) {
+            this.hostName = value;
+            logger.fine("hostname " + value);
+            return true;
+        }
+        if (key != null && (key.equalsIgnoreCase("--port") || key.equalsIgnoreCase("-p"))) {
+            this.port = value;
+            logger.fine("port " + value);
+            return true;
+        }
+        return false;
+    }
+
+    @Override
+    public boolean afterPropertiesSet() {
+        if (null == this.hostName) {
+            throw new RuntimeException("Missing --hostname");
+        }
+        if (null == this.port) {
+            throw new RuntimeException("Missing --port");
+        }
+
+        final Pattern pattern = Pattern.compile("^\\d{1,5}$");
+        final Matcher matcher = pattern.matcher(this.port);
+        if (!matcher.matches()) {
+            throw new RuntimeException("Field port contains illegal characters: " + this.port);
+        }
+        return true;
     }
 
     /**
@@ -88,7 +122,8 @@ public class TCPOutputItem extends AbstractOutputItem implements SendListener {
     public void setup() throws RuntimeException {
         super.setup();
         try {
-            socket = new Socket(hostName, port);
+            int portNumber = Integer.parseInt(this.port);
+            socket = new Socket(hostName, portNumber);
         } catch (IOException e) {
             throw new RuntimeException("Socket exception", e);
         }

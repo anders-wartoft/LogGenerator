@@ -17,9 +17,11 @@
 
 package nu.sitia.loggenerator.filter;
 
+import nu.sitia.loggenerator.ProcessItem;
+
 import java.util.List;
 
-public interface ProcessFilter {
+public interface ProcessFilter extends ProcessItem {
 
     /**
      * The alteration function implemented as a set of filters

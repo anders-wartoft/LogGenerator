@@ -34,6 +34,20 @@ public class NullOutputItem extends AbstractOutputItem implements SendListener {
         super.addListener(this);
     }
 
+    @Override
+    public boolean setParameter(String key, String value) {
+        if (key != null && (key.equalsIgnoreCase("--help") || key.equalsIgnoreCase("-h"))) {
+            System.out.println("NullOutputItem. Write to console\n" +
+                    "Parameters:\n" +
+                    "None\n");
+            System.exit(1);
+        }
+        if (super.setParameter(key, value)) {
+            return true;
+        }
+        return false;
+    }
+
     /**
      * Write to console
      * @param elements The element to write
@@ -61,5 +75,10 @@ public class NullOutputItem extends AbstractOutputItem implements SendListener {
     @Override
     public String toString() {
         return "NullOutputItem";
+    }
+
+    @Override
+    public boolean afterPropertiesSet() {
+        return true;
     }
 }

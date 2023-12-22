@@ -14,7 +14,7 @@ public class WrappedFileInputItem extends FileInputItem {
      * @param config The configuration that contains the filename
      */
     public WrappedFileInputItem(Configuration config) {
-        super(config.getValue("-ifn"), config);
+        super(config);
     }
 
     @Override

@@ -18,31 +18,57 @@
 package nu.sitia.loggenerator.filter;
 
 
+import nu.sitia.loggenerator.Configuration;
+import nu.sitia.loggenerator.inputitems.UDPInputItem;
+
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class SelectFilter implements ProcessFilter {
+public class SelectFilter extends AbstractProcessFilter  {
+    static final Logger logger = Logger.getLogger(SelectFilter.class.getName());
 
     /** Cached regex pattern */
-    private final Pattern pattern;
+    private Pattern pattern;
 
     /** for toString() */
-    private final String regex;
+    private String regex;
 
     /**
      * Create a RegexFilter and set all parameters
-     * @param regex The value to search for
+     * @param config The configuration
      */
-    public SelectFilter(String regex) {
-        this.regex = regex;
-        // What to look for
-        if (null == regex) {
-            throw new RuntimeException("regex is null");
+    public SelectFilter(Configuration config) {
+    }
+
+    @Override
+    public boolean setParameter(String key, String value) {
+        if (key != null && (key.equalsIgnoreCase("--help") || key.equalsIgnoreCase("-h"))) {
+            System.out.println("SelectFilter. Select all messages matching a regex\n" +
+                    "Parameters:\n" +
+                    "--regex <regex> (-r <regex>)\n" +
+                    "  The regex to match\n");
+            System.exit(1);
+        }
+        if (key != null && (key.equalsIgnoreCase("--regex") || key.equalsIgnoreCase("-r"))) {
+            this.regex = value;
+            logger.fine("regex " + value);
+            return true;
+        }
+        return false;
+    }
+
+    @Override
+    public boolean afterPropertiesSet() {
+        if (regex == null) {
+            throw new RuntimeException("Missing --regex parameter");
         }
         pattern = Pattern.compile(regex);
+        return true;
     }
+
 
     /**
      * Filter one string

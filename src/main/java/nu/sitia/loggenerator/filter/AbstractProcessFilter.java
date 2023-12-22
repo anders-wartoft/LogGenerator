@@ -15,25 +15,19 @@
  * OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-package nu.sitia.loggenerator.outputitems;
+package nu.sitia.loggenerator.filter;
 
-import nu.sitia.loggenerator.ProcessItem;
+import nu.sitia.loggenerator.ShutdownHandler;
 
-import java.util.List;
+public abstract class AbstractProcessFilter implements ProcessFilter, ShutdownHandler {
+    public void setup() throws RuntimeException {
 
-public interface OutputItem extends ProcessItem {
-    /**
-     * When constructing an OutputItem the AbstractOutputItem will
-     * call the "send()" method in SendListener when the cache
-     * is full.
-     * @param sl An object implementing the SendListener interface.
-     */
-    void addListener (SendListener sl);
+    }
+    public void teardown() {
 
-    /**
-     * Write elements batchSize elements at a time
-     * @param element The element to write
-     */
-    void write(List<String> element) throws RuntimeException;
+    }
 
+    public void shutdown() {
+
+    }
 }

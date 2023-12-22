@@ -18,19 +18,11 @@
 package nu.sitia.loggenerator.inputitems;
 
 
+import nu.sitia.loggenerator.ProcessItem;
+
 import java.util.List;
 
-public interface InputItem {
-
-    /**
-     * Let the item prepare for reading
-     */
-    void setup() throws RuntimeException;
-
-    /**
-     * Let the item teardown after reading
-     */
-    void teardown();
+public interface InputItem extends ProcessItem {
 
     /**
      * There are more messages to read

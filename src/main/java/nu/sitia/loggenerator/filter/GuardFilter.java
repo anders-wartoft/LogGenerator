@@ -19,17 +19,36 @@ package nu.sitia.loggenerator.filter;
 
 
 import nu.sitia.loggenerator.Configuration;
+import nu.sitia.loggenerator.inputitems.UDPInputItem;
 
 import java.util.LinkedList;
 import java.util.List;
+import java.util.logging.Logger;
 
-public class GuardFilter implements ProcessFilter {
+public class GuardFilter extends AbstractProcessFilter {
+    static final Logger logger = Logger.getLogger(GuardFilter.class.getName());
 
     /**
      * Create a guardFilter and set all parameters
      * @param ignoredConfig The configuration object to get parameters from
      */
     public GuardFilter(Configuration ignoredConfig) {
+    }
+
+    @Override
+    public boolean setParameter(String key, String value) {
+        if (key != null && (key.equalsIgnoreCase("--help") || key.equalsIgnoreCase("-h"))) {
+            System.out.println("GuardFilter. Remove all guards\n" +
+                    "Parameters:\n" +
+                    "  None\n");
+            System.exit(1);
+        }
+        return false;
+    }
+
+    @Override
+    public boolean afterPropertiesSet() {
+        return true;
     }
 
     /**

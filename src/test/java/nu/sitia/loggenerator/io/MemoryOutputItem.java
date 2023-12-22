@@ -19,7 +19,7 @@ public class MemoryOutputItem extends AbstractOutputItem implements SendListener
     }
 
     /**
-     * Write to console
+     * Write to memory
      * @param elements The element to write
      * @throws RuntimeException Not thrown here
      */
@@ -44,5 +44,10 @@ public class MemoryOutputItem extends AbstractOutputItem implements SendListener
      */
     public List<String> getData() {
         return receivedData;
+    }
+
+    @Override
+    public boolean afterPropertiesSet() {
+        return false;
     }
 }

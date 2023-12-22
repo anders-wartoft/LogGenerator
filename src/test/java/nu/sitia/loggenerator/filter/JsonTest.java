@@ -40,7 +40,9 @@ public class JsonTest
         String path = "query.query_string.query";
         String expected = "*";
 
-        JsonFilter jsonFilter = new JsonFilter(path);
+        JsonFilter jsonFilter = new JsonFilter(null);
+        jsonFilter.setParameter("--path", path);
+        jsonFilter.afterPropertiesSet();
 
         List<String> result = jsonFilter.filter(List.of(input));
 
@@ -55,7 +57,9 @@ public class JsonTest
         String input = "{\"cars\": { \"makes\": [\"Ford\", \"BMW\", \"Fiat\"] }}";
         String path = "cars.makes";
 
-        JsonFilter jsonFilter = new JsonFilter(path);
+        JsonFilter jsonFilter = new JsonFilter(null);
+        jsonFilter.setParameter("--path", path);
+        jsonFilter.afterPropertiesSet();
 
         List<String> result = jsonFilter.filter(List.of(input));
         assertEquals(3, result.size());

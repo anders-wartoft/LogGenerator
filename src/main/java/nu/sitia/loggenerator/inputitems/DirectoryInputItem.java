@@ -19,6 +19,7 @@ package nu.sitia.loggenerator.inputitems;
 
 import nu.sitia.loggenerator.Configuration;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
@@ -30,40 +31,69 @@ public class DirectoryInputItem extends AbstractInputItem {
     static final Logger logger = Logger.getLogger(DirectoryInputItem.class.getName());
 
     /** The name of the directory this item will read from */
-    private final String directoryName;
+    private String directoryName;
 
     /** The files in the directory to process */
     private final List<FileInputItem> fileList = new ArrayList<>();
 
     /** The file name glob to use */
-    private final String glob;
+    private String glob = "glob:**";
 
     /** The current file we are using */
     private FileInputItem fileItem = null;
 
     /**
      * Create a new FileInputItem
-     * @param config The command line arguments
      */
     public DirectoryInputItem(Configuration config) {
         super(config);
-        this.directoryName = config.getValue("-ifn");
-        if (directoryName == null) {
-            throw new RuntimeException(config.getNotFoundInformation("-ifn"));
+    }
+
+    @Override
+    public boolean setParameter(String key, String value) {
+        if (key != null && (key.equalsIgnoreCase("--help") || key.equalsIgnoreCase("-h"))) {
+            System.out.println("DirectoryInputItem. Read all files in a directory\n" +
+                    "Parameters:\n" +
+                    "--name <name> (-n <name>)\n" +
+                    "  The name of the directory to read\n" +
+                    "--glob <glob> (-g <glob>)\n" +
+                    "  The glob to use to select files\n");
+            super.setParameter(key, value);
+        }
+        if(super.setParameter(key, value)) {
+            return true;
+        }
+        if (key != null && (key.equalsIgnoreCase("--name") || key.equalsIgnoreCase("-n"))) {
+            this.directoryName = value;
+            logger.fine("directoryName " + glob);
+            return true;
+        }
+        if (key != null && (key.equalsIgnoreCase("--glob") || key.equalsIgnoreCase("-g"))) {
+            this.glob = "glob:" + value;
+            logger.fine("glob " + glob);
+            return true;
+        }
+        return false;
+
+    }
+
+    @Override
+    public boolean afterPropertiesSet() {
+        logger.fine("DirectoryInputItem afterPropertiesSet");
+        if (this.directoryName == null) {
+            throw new RuntimeException("Missing --name parameter");
+        }
+        File file = new File(this.directoryName);
+        if (file.exists() && !file.isDirectory()) {
+            logger.fine("Adding " + this.directoryName);
+            FileInputItem fi = new FileInputItem(config);
+            fi.setParameter("--name", this.directoryName);
+            fi.afterPropertiesSet();
+            fileList.add(fi);
+            return true;
         }
 
-        logger.fine("Creating DirectoryInputItem: " + directoryName);
-
-        String globString = config.getValue("-g");
-
-        if (null == globString) {
-            glob = "glob:**";
-        } else {
-            glob = "glob:" +globString;
-        }
-
-        logger.fine("setup " + glob);
-        final PathMatcher pathMatcher = FileSystems.getDefault().getPathMatcher(glob);
+        final PathMatcher pathMatcher = FileSystems.getDefault().getPathMatcher(this.glob);
         try {
             Files.walkFileTree(Paths.get(directoryName), new SimpleFileVisitor<>() {
                 @Override
@@ -71,7 +101,9 @@ public class DirectoryInputItem extends AbstractInputItem {
                                                  BasicFileAttributes attrs) {
                     if (pathMatcher.matches(path)) {
                         logger.fine("Adding " + path.toString());
-                        FileInputItem fi = new FileInputItem(path.toString(), config);
+                        FileInputItem fi = new FileInputItem(config);
+                        fi.setParameter("--name", path.toString());
+                        fi.afterPropertiesSet();
                         fileList.add(fi);
                     }
                     return FileVisitResult.CONTINUE;
@@ -80,7 +112,9 @@ public class DirectoryInputItem extends AbstractInputItem {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+        return true;
     }
+
 
     /**
      * Let the item prepare for reading

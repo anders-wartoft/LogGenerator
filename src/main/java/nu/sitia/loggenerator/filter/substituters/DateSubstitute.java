@@ -28,7 +28,7 @@ public class DateSubstitute extends AbstractSubstitute {
     private Date date;
 
     /** Regex for a date pattern */
-    private static final String dateRegex = "\\{date:(?<datepattern>[yYmMHhsz+-dD:\\d'T. ]+|epoch)(/(?<locale>[^}]+))?}";
+    private static final String dateRegex = "\\{date:(?<datepattern>[yYmMHhsz+-dD:\\d'T. ]+|epoch|epoch16)(/(?<locale>[^}]+))?}";
     /** Cached pattern for getting date format string */
     private static final Pattern datePattern = Pattern.compile(dateRegex);
 
@@ -49,7 +49,10 @@ public class DateSubstitute extends AbstractSubstitute {
 
         int endPos = getExpressionEnd(input, startPos);
         String part = input.substring(startPos, endPos);
-        if ("{date:epoch}".equalsIgnoreCase(part)) {
+        if ("{date:epoch16}".equalsIgnoreCase(part)) {
+            String formattedDateString = String.format("%013d", date.getTime()) + "000";
+            return input.substring(0, startPos) + formattedDateString + input.substring(endPos);
+        } else if ("{date:epoch}".equalsIgnoreCase(part)) {
             String formattedDateString = String.format("%013d", date.getTime());
             return input.substring(0, startPos) + formattedDateString + input.substring(endPos);
         } else {

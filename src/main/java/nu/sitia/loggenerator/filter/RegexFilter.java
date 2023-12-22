@@ -18,39 +18,94 @@
 package nu.sitia.loggenerator.filter;
 
 
+import nu.sitia.loggenerator.Configuration;
+import nu.sitia.loggenerator.filter.substituters.Substitution;
+import nu.sitia.loggenerator.inputitems.UDPInputItem;
+
 import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class RegexFilter implements ProcessFilter {
+public class RegexFilter extends AbstractProcessFilter  {
+    static final Logger logger = Logger.getLogger(RegexFilter.class.getName());
 
     /** What to write instead */
-    private final String value;
+    private String value;
 
     /** Cached regex pattern */
-    private final Pattern pattern;
+    private Pattern pattern;
 
     /** for toString() */
-    private final String regex;
+    private String regex;
+
+    /** The substitution object */
+    private final Substitution substitution = new Substitution();
+
+    /** Offset from the current time and date to use when evaluating variables */
+    private long timeOffset = 0;
+
+
+    /** Offset from the current time and date to use when evaluating variables */
+    private String offset = "0";
 
     /**
      * Create a RegexFilter and set all parameters
-     * @param regex The value to search for
-     * @param value The value to use instead
+     * @param config The configuration
      */
-    public RegexFilter(String regex, String value) {
-        this.value = value;
-        this.regex = regex;
-        // What to look for
-        if (null == regex) {
-            throw new RuntimeException("regex is null");
+    public RegexFilter(Configuration config) {
+    }
+
+    @Override
+    public boolean setParameter(String key, String value) {
+        if (key != null && (key.equalsIgnoreCase("--help") || key.equalsIgnoreCase("-h"))) {
+            System.out.println("RegexFilter. Replace all messages matching a regex\n" +
+                    "Parameters:\n" +
+                    "--regex <regex> (-r <regex>)\n" +
+                    "  The regex to match\n" +
+                    "--value <value> (-v <value>)\n" +
+                    "  The value to replace the regex with\n" +
+                    "--time-offset <long value> (-to <long value>)\n" +
+                    "  The offset in milliseconds to use when evaluating variables\n" +
+                    "  Example: --time-offset -10000 for setting the date to 10 seconds ago.\n");
+            System.exit(1);
         }
-        // What to replace it with
-        if (null == value) {
-            throw new RuntimeException("value is null");
+        if (key != null && (key.equalsIgnoreCase("--regex") || key.equalsIgnoreCase("-r"))) {
+            this.regex = value;
+            logger.fine("regex " + value);
+            return true;
+        }
+        if (key != null && (key.equalsIgnoreCase("--value") || key.equalsIgnoreCase("-v"))) {
+            this.value = value;
+            logger.fine("value " + value);
+            return true;
+        }
+        if (key != null && (key.equalsIgnoreCase("--time-offset") || key.equalsIgnoreCase("-to"))) {
+            this.offset = value;
+            logger.fine("timeOffset " + value);
+            return true;
+        }
+        return false;
+    }
+
+    @Override
+    public boolean afterPropertiesSet() {
+        if (regex == null) {
+            throw new RuntimeException("Missing --regex parameter");
+        }
+        if (value == null) {
+            throw new RuntimeException("Missing --value parameter");
         }
         pattern = Pattern.compile(regex);
+        try {
+            this.timeOffset = Long.parseLong(offset);
+        } catch (NumberFormatException e) {
+            throw new RuntimeException("Usage: --time-offset [long value]. Example: --time-offset -10000 for setting the date to 10 seconds ago.");
+        }
+        return true;
     }
 
     /**
@@ -62,7 +117,11 @@ public class RegexFilter implements ProcessFilter {
     private String filter(String toFilter) {
         Matcher matcher = pattern.matcher(toFilter);
         if (matcher.find()) {
-            return toFilter.replaceAll(matcher.group(), value);
+            // Create a new date that represents now. Then, add the
+            // offset provided by the user (positive for future and negative for in the past
+            final Date date = new Date(new Date().getTime() + this.timeOffset);
+            String newValue = substitution.substitute(value, new HashMap<>(), date);
+            return toFilter.replaceAll(matcher.group(), newValue);
         }
         return toFilter;
     }

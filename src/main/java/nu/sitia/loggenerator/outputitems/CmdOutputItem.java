@@ -33,6 +33,25 @@ public class CmdOutputItem extends AbstractOutputItem implements SendListener {
         super.addListener(this);
     }
 
+    @Override
+    public boolean setParameter(String key, String value) {
+        if (key != null && (key.equalsIgnoreCase("--help") || key.equalsIgnoreCase("-h"))) {
+            System.out.println("CmdOutputItem. Write to console\n" +
+                    "Parameters:\n" +
+                    "None\n");
+            System.exit(1);
+        }
+        if (super.setParameter(key, value)) {
+            return true;
+        }
+        return false;
+    }
+
+    @Override
+    public boolean afterPropertiesSet() {
+        return true;
+    }
+
     /**
      * Write to console
      * @param elements The element to write

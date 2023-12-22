@@ -32,9 +32,9 @@ import java.util.logging.Logger;
 public class KafkaInputItem extends AbstractInputItem {
     static final Logger logger = Logger.getLogger(KafkaInputItem.class.getName());
     /** The hostname:port to connect to */
-    private final String bootstrapServer;
+    private String bootstrapServer;
     /** The client id to use */
-    private final String clientId;
+    private String clientId;
 
     /** Connection properties */
     private final Properties properties = new Properties();
@@ -43,29 +43,64 @@ public class KafkaInputItem extends AbstractInputItem {
     private KafkaConsumer<Integer, String> consumer;
 
     /** The topic name */
-    private final String topicName;
+    private String topicName;
+
+    private final static int DEFAULT_KAFKA_BATCHSIZE = 200;
 
     /**
      * Create a new KafkaInputItem
-     * @param config The command line arguments
      */
     public KafkaInputItem(Configuration config) {
         super(config);
-        this.clientId = config.getValue("-icn");
-        this.topicName = config.getValue("-itn");
-        this.bootstrapServer = config.getValue("-ibs");
+        this.batchSize = DEFAULT_KAFKA_BATCHSIZE;
+    }
 
-        if (null == clientId) {
-            throw new RuntimeException(config.getNotFoundInformation("-icn"));
+    @Override
+    public boolean setParameter(String key, String value) {
+        if (key != null && (key.equalsIgnoreCase("--help") || key.equalsIgnoreCase("-h"))) {
+            System.out.println("KafkaInputItem. Read from a Kafka topic\n" +
+                    "Parameters:\n" +
+                    "--client-id <client-id> (-ci <client-id>)\n" +
+                    "  The client id to use\n" +
+                    "--topic <topic> (-t <topic>)\n" +
+                    "  The topic to read from\n" +
+                    "--bootstrap-server <hostname:port> (-b <hostname:port>)\n" +
+                    "  The hostname:port to connect to\n");
+            super.setParameter(key, value);
         }
+        if (super.setParameter(key, value)) {
+            return true;
+        }
+        if (key != null && (key.equalsIgnoreCase("--client-id") || key.equalsIgnoreCase("-ci"))) {
+            this.clientId = value;
+            logger.fine("clientId " + value);
+            return true;
+        }
+        if (key != null && (key.equalsIgnoreCase("--topic") || key.equalsIgnoreCase("-t"))) {
+            this.topicName = value;
+            logger.fine("topic " + value);
+            return true;
+        }
+        if (key != null && (key.equalsIgnoreCase("--bootstrap-server") || key.equalsIgnoreCase("-b"))) {
+            this.bootstrapServer = value;
+            logger.fine("bootstrapServer " + value);
+            return true;
+        }
+        return false;
+    }
 
-        if (null == topicName) {
-            throw new RuntimeException(config.getNotFoundInformation("-itn"));
+    @Override
+    public boolean afterPropertiesSet() {
+        if (null == this.clientId) {
+            throw new RuntimeException("Missing --client-id");
         }
-
-        if (null == bootstrapServer) {
-            throw new RuntimeException(config.getNotFoundInformation("-ibs"));
+        if (null == this.topicName) {
+            throw new RuntimeException("Missing --topic");
         }
+        if (null == this.bootstrapServer) {
+            throw new RuntimeException("Missing --bootstrap-server");
+        }
+        return true;
     }
 
     /**
@@ -76,6 +111,7 @@ public class KafkaInputItem extends AbstractInputItem {
         properties.put(ConsumerConfig.GROUP_ID_CONFIG, clientId);
         properties.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, "true");
         properties.put(ConsumerConfig.SESSION_TIMEOUT_MS_CONFIG, "30000");
+        properties.put(ConsumerConfig.MAX_POLL_RECORDS_CONFIG, String.valueOf(batchSize));
         properties.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.StringDeserializer");
         properties.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.StringDeserializer");
 
@@ -124,8 +160,9 @@ public class KafkaInputItem extends AbstractInputItem {
     @Override
     public String toString() {
         return "KafkaInputItem" + System.lineSeparator() +
-                bootstrapServer + System.lineSeparator() +
-                clientId + System.lineSeparator() +
-                topicName;
+                "Bootstrap-server: " + bootstrapServer + System.lineSeparator() +
+                "Client-id: " + clientId + System.lineSeparator() +
+                "Topic: " + topicName + System.lineSeparator() +
+                "Batch size: " + batchSize + System.lineSeparator();
     }
 }

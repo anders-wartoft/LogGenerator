@@ -19,6 +19,8 @@ package nu.sitia.loggenerator.filter;
 
 import junit.framework.TestCase;
 import nu.sitia.loggenerator.Configuration;
+import nu.sitia.loggenerator.ProcessItem;
+import nu.sitia.loggenerator.ProcessItemListFactory;
 
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
@@ -33,11 +35,18 @@ public class SubstitutionFilterTest extends TestCase {
     public void testCustomVariables()
     {
         String [] args = {
-                "-p", "src/test/data/config.properties"
+                "-pf", "src/test/data/config.properties"
         };
 
         Configuration config = new Configuration(args);
-        SubstitutionFilter filter = new SubstitutionFilter(config);
+        List<ProcessItem> itemList = new ProcessItemListFactory().create(config);
+        itemList.forEach(s -> s.afterPropertiesSet());
+        SubstitutionFilter filter = null;
+        for (ProcessItem item : itemList) {
+            if (item instanceof SubstitutionFilter) {
+                filter = (SubstitutionFilter) item;
+            }
+        }
         assertEquals("Sitia.nu", filter.getVariableMap().get("my-name"));
 
         assertEquals("Sitia.nu", filter.getVariableMap().get("my-name"));
@@ -65,7 +74,7 @@ public class SubstitutionFilterTest extends TestCase {
     public void testOverwriteStandardVariables()
     {
         String [] args = {
-                "-p", "src/test/data/overwrite.properties"
+                "-pf", "src/test/data/overwrite.properties"
         };
 
         Configuration config = new Configuration(args);
@@ -89,6 +98,8 @@ public class SubstitutionFilterTest extends TestCase {
 
         Configuration config = new Configuration(args);
         SubstitutionFilter filter = new SubstitutionFilter(config);
+        filter.setParameter("--time-offset", String.valueOf(msDay));
+        filter.afterPropertiesSet();
         List<String> result = filter.filter(data);
 
         assertFalse(today.equals(result.get(0)));
@@ -129,12 +140,19 @@ public class SubstitutionFilterTest extends TestCase {
         };
         String path = "_source._id";
 
-        JsonFilter jsonFilter = new JsonFilter(path);
+        JsonFilter jsonFilter = new JsonFilter(null);
+        jsonFilter.setParameter("--path", path);
+        jsonFilter.afterPropertiesSet();
+
         String regex = "test-(\\d+)$";
         boolean jsonReport = false;
         boolean doubleDetection = true;
-        GapDetectionFilter gapDetector = new GapDetectionFilter(regex, doubleDetection, jsonReport);
+        GapDetectionFilter gapDetector = new GapDetectionFilter(null);
+        gapDetector.setParameter("--regex", regex);
+        gapDetector.setParameter("--duplicate-detection", String.valueOf(doubleDetection));
+        gapDetector.setParameter("--json", String.valueOf(jsonReport));
         List<String> result1 = jsonFilter.filter(List.of(input));
+        gapDetector.afterPropertiesSet();
         gapDetector.filter(result1);
         String expected = "{\"gaps\":[{\"from\":3,\"to\":10},{\"from\":12,\"to\":21}],\"unique\":4,\"duplicates\":[{\"1\":2},{\"11\":2}],\"next\":23}";
         String result = gapDetector.toJson();

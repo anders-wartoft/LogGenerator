@@ -15,25 +15,32 @@
  * OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-package nu.sitia.loggenerator.outputitems;
+package nu.sitia.loggenerator;
 
-import nu.sitia.loggenerator.ProcessItem;
-
-import java.util.List;
-
-public interface OutputItem extends ProcessItem {
+public interface ProcessItem {
     /**
-     * When constructing an OutputItem the AbstractOutputItem will
-     * call the "send()" method in SendListener when the cache
-     * is full.
-     * @param sl An object implementing the SendListener interface.
+     * Set a parameter for the item
+     * @param key The key of the parameter
+     * @param value The value of the parameter
+     * @return true if the parameter was consumed, false otherwise
      */
-    void addListener (SendListener sl);
+    public boolean setParameter(String key, String value);
 
     /**
-     * Write elements batchSize elements at a time
-     * @param element The element to write
+     * Called after all parameters has been set.
+     * @return True if the component has been successfully initialized,
+     * false otherwise
      */
-    void write(List<String> element) throws RuntimeException;
+    public boolean afterPropertiesSet();
+
+    /**
+     * Let the item prepare for reading
+     */
+    void setup() throws RuntimeException;
+
+    /**
+     * Let the item teardown after reading
+     */
+    void teardown();
 
 }

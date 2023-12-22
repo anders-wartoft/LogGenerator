@@ -39,13 +39,22 @@ public class ItemProxyTest
     {
         String [] args = {
                 "-i", "file",
-                "-ifn", "src/test/data/test.txt"
+                "--name", "src/test/data/test.txt"
         };
         Configuration config = new Configuration(args);
 
         WrappedFileInputItem fii = new WrappedFileInputItem(config);
         MemoryOutputItem moi = new MemoryOutputItem(config);
-        ItemProxy proxy = new ItemProxy(fii, moi, new ArrayList<>(), config);
+        List<ProcessItem> itemList = new ArrayList<>();
+        itemList.add(fii);
+        itemList.add(moi);
+
+
+        fii.setParameter("--name", "src/test/data/test.txt");
+        fii.afterPropertiesSet();
+        moi.afterPropertiesSet();
+
+        ItemProxy proxy = new ItemProxy(itemList, config);
         proxy.pump();
         List<String> result = moi.getData();
         List<String> fileContents = fii.getData();
@@ -70,8 +79,8 @@ public class ItemProxyTest
         String batchSize = "3";
         String [] args = {
                 "-i", "file",
-                "-ifn", "src/test/data/test.txt",
-                "-ob", batchSize
+                "-n", "src/test/data/test.txt",
+                "--batch-size", batchSize
         };
 
         Configuration config = new Configuration(args);
@@ -80,7 +89,13 @@ public class ItemProxyTest
         WrappedFileInputItem fii = new WrappedFileInputItem(config);
         MemoryOutputItem moi = new MemoryOutputItem(config);
 
-        ItemProxy proxy = new ItemProxy(fii, moi, new ArrayList<>(), config);
+        List<ProcessItem> itemList = new ArrayList<>();
+        fii.setParameter("--name", "src/test/data/test.txt");
+        fii.setParameter("--batch-size", batchSize);
+        itemList.add(fii);
+        itemList.add(moi);
+
+        ItemProxy proxy = new ItemProxy(itemList, config);
         proxy.pump();
         List<String> result = moi.getData();
         List<String> fileContents = fii.getData();

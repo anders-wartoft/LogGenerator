@@ -17,38 +17,90 @@
 
 package nu.sitia.loggenerator.filter;
 
+import nu.sitia.loggenerator.Configuration;
 import nu.sitia.loggenerator.ShutdownHandler;
+import nu.sitia.loggenerator.inputitems.UDPInputItem;
 import nu.sitia.loggenerator.util.gapdetector.GapDetector;
 
 import java.util.List;
+import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class GapDetectionFilter implements ProcessFilter, ShutdownHandler {
+public class GapDetectionFilter extends AbstractProcessFilter {
+    static final Logger logger = Logger.getLogger(GapDetectionFilter.class.getName());
+
     /** The detector */
     private final GapDetector detector = new GapDetector();
 
     /** The pattern to get the next number from the log */
-    private final Pattern pattern;
+    private Pattern pattern;
 
     /** Used in toString() */
-    private final String regex;
+    private String regex;
 
     /** Printable or JSON report */
-    private final boolean jsonReport;
+    private boolean jsonReport;
+
+    /** Should we also detect duplicates? */
+    private boolean duplicatesDetection = false;
+
+    /** Should we report gaps continuously? */
+    private boolean isContinuousGapDetection;
 
     /**
      * Create a guardFilter and set all parameters
-     * @param regex The regex to use to identify the id number
+     * @param config The configuration
      */
-    public GapDetectionFilter(String regex, boolean doubleDetection, boolean json) {
-        if (null == regex) {
-            throw new RuntimeException("No gap regex detected");
+    public GapDetectionFilter(Configuration config) {
+    }
+
+    @Override
+    public boolean setParameter(String key, String value) {
+        if (key != null && (key.equalsIgnoreCase("--help") || key.equalsIgnoreCase("-h"))) {
+            System.out.println("GapDetectionFilter. Detect gaps in a sequence of numbers\n" +
+                    "Parameters:\n" +
+                    "--regex <regex> (-r <regex>)\n" +
+                    "  The regex to match\n" +
+                    "--duplicate-detection <true|false> (-dd <true|false>)\n" +
+                    "  Should we also detect duplicates?\n" +
+                    "--json <true|false> (-j <true|false>)\n" +
+                    "  Should we print the result in JSON format?\n" +
+                    "--continuous <true|false> (-c <true|false>)\n" +
+                    "  Should we report gaps continuously?\n");
+            System.exit(1);
         }
-        jsonReport = json;
+        if (key != null && (key.equalsIgnoreCase("--regex") || key.equalsIgnoreCase("-r"))) {
+            this.regex = value;
+            logger.fine("regex " + value);
+            return true;
+        }
+        if (key != null && (key.equalsIgnoreCase("--duplicate-detection") || key.equalsIgnoreCase("-dd"))) {
+            this.duplicatesDetection = value.equalsIgnoreCase("true");
+            logger.fine("duplicatesDetection " + value);
+            return true;
+        }
+        if (key != null && (key.equalsIgnoreCase("--json") || key.equalsIgnoreCase("-j"))) {
+            this.jsonReport = value.equalsIgnoreCase("true");
+            logger.fine("json " + value);
+            return true;
+        }
+        if (key != null && (key.equalsIgnoreCase("--continuous") || key.equalsIgnoreCase("-c"))) {
+            this.isContinuousGapDetection = value.equalsIgnoreCase("true");
+            logger.fine("isContinuousGapDetection " + value);
+            return true;
+        }
+        return false;
+    }
+
+    @Override
+    public boolean afterPropertiesSet() {
+        if (regex == null) {
+            throw new RuntimeException("Missing --regex parameter");
+        }
         pattern = Pattern.compile(regex);
-        detector.setDuplicateDetection(doubleDetection);
-        this.regex = regex;
+        detector.setDuplicateDetection(duplicatesDetection);
+        return true;
     }
 
     /**
@@ -116,4 +168,5 @@ public class GapDetectionFilter implements ProcessFilter, ShutdownHandler {
     public String toJson() {
         return detector.toJson();
     }
+
 }

@@ -19,10 +19,14 @@ package nu.sitia.loggenerator.filter;
 
 import nu.sitia.loggenerator.Configuration;
 import nu.sitia.loggenerator.filter.substituters.Substitution;
+import nu.sitia.loggenerator.inputitems.UDPInputItem;
 
 import java.util.*;
+import java.util.logging.Logger;
+import java.util.regex.Pattern;
 
-public class SubstitutionFilter implements ProcessFilter {
+public class SubstitutionFilter extends AbstractProcessFilter  {
+    static final Logger logger = Logger.getLogger(SubstitutionFilter.class.getName());
 
     /** Other variables we want to change. Name, Value */
     private final Map<String, String> variableMap;
@@ -33,20 +37,44 @@ public class SubstitutionFilter implements ProcessFilter {
     /** Offset from the current time and date to use when evaluating variables */
     private long timeOffset = 0;
 
+    /** The offset as a String */
+    private String offset = "0";
+
     /**
      * Create a filter and set all parameters
      */
     public SubstitutionFilter(Configuration config) {
         variableMap = config.getVariableMap();
-        String offset = config.getValue("-to");
-        if (offset != null) {
-            try {
-                this.timeOffset = Long.parseLong(offset);
-            } catch (NumberFormatException e) {
-                throw new RuntimeException("Usage: -to [long value]. Example: -to -10000 for setting the date to 10 seconds ago.");
-            }
-        }
     }
+
+    @Override
+    public boolean setParameter(String key, String value) {
+        if (key != null && (key.equalsIgnoreCase("--help") || key.equalsIgnoreCase("-h"))) {
+            System.out.println("SubstitutionFilter. Substitute variables in the message\n" +
+                    "Parameters:\n" +
+                    "--time-offset <long value> (-to <long value>)\n" +
+                    "  The offset in milliseconds to use when evaluating variables\n" +
+                    "  Example: --time-offset -10000 for setting the date to 10 seconds ago.\n");
+            System.exit(1);
+        }
+        if (key != null && (key.equalsIgnoreCase("--time-offset") || key.equalsIgnoreCase("-to"))) {
+            this.offset = value;
+            logger.fine("timeOffset " + value);
+            return true;
+        }
+        return false;
+    }
+
+    @Override
+    public boolean afterPropertiesSet() {
+        try {
+            this.timeOffset = Long.parseLong(offset);
+        } catch (NumberFormatException e) {
+            throw new RuntimeException("Usage: --time-offset [long value]. Example: --time-offset -10000 for setting the date to 10 seconds ago.");
+        }
+        return true;
+    }
+
 
     /**
      * Change all variables to values

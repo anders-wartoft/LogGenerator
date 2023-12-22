@@ -19,22 +19,45 @@ package nu.sitia.loggenerator.inputitems;
 
 
 import nu.sitia.loggenerator.Configuration;
+import nu.sitia.loggenerator.ShutdownHandler;
 
-public abstract class AbstractInputItem implements InputItem {
+public abstract class AbstractInputItem implements InputItem, ShutdownHandler {
     /** How many lines will be returned in one batch? */
     protected int batchSize;
 
+    /** The configuration */
+    protected Configuration config;
+
+
     /**
      * Set the input batch size
-     * @param config The command line configuration object to use
      */
     public AbstractInputItem(Configuration config) {
-        String batchString = config.getValue("-ib");
-        if (null != batchString) {
-            batchSize = Integer.parseInt(batchString);
+        this.config = config;
+    }
+
+    /**
+     * Set a parameter for the item
+     * @param key The key of the parameter
+     * @param value The value of the parameter
+     * @return true if the parameter was consumed, false otherwise
+     */
+    public boolean setParameter(String key, String value) {
+        if (key != null && (key.equalsIgnoreCase("--help") || key.equalsIgnoreCase("-h"))) {
+            System.out.println(
+                    "--batch-size <batch-size> (-bs <batch-size>)\n");
+            System.exit(1);
+        }
+        if (key != null && (key.equalsIgnoreCase("--batch-size") || key.equalsIgnoreCase("-bs"))) {
+            batchSize = Integer.parseInt(value);
+            return true;
         } else {
             batchSize = 1; // Default value
         }
+        return false;
     }
 
+    public void shutdown() {
+
+    }
 }

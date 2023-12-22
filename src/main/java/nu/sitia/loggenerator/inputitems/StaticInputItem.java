@@ -20,26 +20,50 @@ package nu.sitia.loggenerator.inputitems;
 import nu.sitia.loggenerator.Configuration;
 
 import java.util.*;
+import java.util.logging.Logger;
 
 /**
  * A StaticInputItem always return the same string. It's intended to
  * measure the performance of a system.
  */
 public class StaticInputItem extends AbstractInputItem {
+    static final Logger logger = Logger.getLogger(StaticInputItem.class.getName());
+
     /** The string to return */
-    private final List<String> strings;
+    private List<String> strings;
 
     /**
      * Create a new StaticInputItem
-     * @param config The command line arguments
      */
     public StaticInputItem(Configuration config) {
         super(config);
-        String string = config.getValue("-string");
-        if (null == string) {
-            throw new RuntimeException(config.getNotFoundInformation("-string"));
+    }
+    @Override
+    public boolean setParameter(String key, String value) {
+        if (key != null && (key.equalsIgnoreCase("--help") || key.equalsIgnoreCase("-h"))) {
+            System.out.println("StaticInputItem. Return a string\n" +
+                    "Parameters:\n" +
+                    "--string <string> (-st <string>)\n" +
+                    "  The string to return\n");
+            System.exit(1);
         }
-        strings = List.of(string);
+        if (super.setParameter(key, value)) {
+            return true;
+        }
+        if (key != null && (key.equalsIgnoreCase("--string") || key.equalsIgnoreCase("-st"))) {
+            this.strings = List.of(value);
+            logger.fine("string " + value);
+            return true;
+        }
+        return false;
+    }
+
+    @Override
+    public boolean afterPropertiesSet() {
+        if (strings == null) {
+            throw new RuntimeException("Missing --string parameter");
+        }
+        return true;
     }
 
     /**

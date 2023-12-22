@@ -25,42 +25,79 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class UDPInputItem extends AbstractInputItem {
     private static final int MAX_DATAGRAM_SIZE = 65507;
     static final Logger logger = Logger.getLogger(UDPInputItem.class.getName());
     /** The name to bind to */
-    private final String hostName;
+    private String hostName;
     /** The port to listen on */
-    private final int port;
+    private String port;
     /** The socket to use */
     private DatagramSocket socket;
 
     /**
      * Create a new UDPInputItem
-     * @param config The command line arguments
      */
     public UDPInputItem(Configuration config) {
         super(config);
-        hostName = config.getValue("-ih");
-        String portString = config.getValue("-ip");
-        if (null == portString) {
-            throw new RuntimeException(config.getNotFoundInformation("-ip"));
-        }
-        port = Integer.parseInt(portString);
     }
 
+    @Override
+    public boolean setParameter(String key, String value) {
+        if (key != null && (key.equalsIgnoreCase("--help") || key.equalsIgnoreCase("-h"))) {
+            System.out.println("UDPInputItem. Read from a UDP socket\n" +
+                    "Parameters:\n" +
+                    "--hostname <hostname> (-h <hostname>)\n" +
+                    "  The hostname to bind to. If not specified, bind to all interfaces\n" +
+                    "--port <port> (-p <port>)\n" +
+                    "  The port to listen on\n");
+            System.exit(1);
+        }
+        if (super.setParameter(key, value)) {
+            return true;
+        }
+        if (key != null && (key.equalsIgnoreCase("--hostname") || key.equalsIgnoreCase("-h"))) {
+            this.hostName = value;
+            logger.fine("hostname " + value);
+            return true;
+        }
+        if (key != null && (key.equalsIgnoreCase("--port") || key.equalsIgnoreCase("-p"))) {
+            this.port = value;
+            logger.fine("port " + value);
+            return true;
+        }
+        return false;
+    }
+
+    @Override
+    public boolean afterPropertiesSet() {
+        if (null == this.port) {
+            throw new RuntimeException("Missing --port");
+        }
+
+        final Pattern pattern = Pattern.compile("^\\d{1,5}$");
+        final Matcher matcher = pattern.matcher(this.port);
+        if (!matcher.matches()) {
+            throw new RuntimeException("Field port contains illegal characters: " + this.port);
+        }
+        return true;
+
+    }
     /**
      * Let the item prepare for reading
      */
     public void setup() throws RuntimeException {
         try {
+            int portNumber = Integer.parseInt(this.port);
             if (hostName != null) {
                 // Listen on a specified address
-                socket = new DatagramSocket(new InetSocketAddress(hostName, port));
+                socket = new DatagramSocket(new InetSocketAddress(hostName, portNumber));
             } else {
                 // Listen to broadcast
-                socket = new DatagramSocket(new InetSocketAddress(port));
+                socket = new DatagramSocket(new InetSocketAddress(portNumber));
             }
         } catch (SocketException e) {
             throw new RuntimeException("Socket exception for " + hostName + ": " + port, e);

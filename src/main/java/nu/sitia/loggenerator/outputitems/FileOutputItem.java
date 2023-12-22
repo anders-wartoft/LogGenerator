@@ -24,11 +24,17 @@ import nu.sitia.loggenerator.ShutdownHandler;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.List;
+import java.util.logging.Logger;
 
 
 public class FileOutputItem extends AbstractOutputItem implements SendListener, ShutdownHandler {
+    static final Logger logger = Logger.getLogger(FileOutputItem.class.getName());
+
+    /** Add message for each file */
+    private boolean addTransactionMessages;
+
     /** The name of the file this item will write to */
-    private final String fileName;
+    private String fileName;
 
     /**
      * Constructor. Add the callback method from this class.
@@ -37,13 +43,36 @@ public class FileOutputItem extends AbstractOutputItem implements SendListener, 
     public FileOutputItem(Configuration config) {
         super(config);
         super.addListener(this);
-
-        fileName = config.getValue("-ofn");
-        if (null == fileName) {
-            throw new RuntimeException(config.getNotFoundInformation("-ofn"));
-        }
         addTransactionMessages = config.isStatistics();
     }
+
+    @Override
+    public boolean setParameter(String key, String value) {
+        if (key != null && (key.equalsIgnoreCase("--help") || key.equalsIgnoreCase("-h"))) {
+            System.out.println("FileOutputItem. Write to file\n" +
+                    "Parameters:\n" +
+                    "--name, -n <filename> The name of the file to write to\n");
+            System.exit(1);
+        }
+        if (super.setParameter(key, value)) {
+            return true;
+        }
+        if (key != null && (key.equalsIgnoreCase("--name") || key.equalsIgnoreCase("-n"))) {
+            this.fileName = value;
+            logger.fine("name " + value);
+            return true;
+        }
+        return false;
+    }
+
+    @Override
+    public boolean afterPropertiesSet() {
+        if (fileName == null) {
+            throw new RuntimeException("Missing --name parameter");
+        }
+        return true;
+    }
+
 
     /**
      * Write to console

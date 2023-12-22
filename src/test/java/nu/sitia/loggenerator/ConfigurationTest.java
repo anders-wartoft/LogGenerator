@@ -46,23 +46,7 @@ public class ConfigurationTest
     }
 
 
-    /**
-     * Replaced by tests of the components
-     */
-    public void testFileConfiguration()
-    {
-        String [] args = {
-                "-p", "src/test/data/config.properties"
-        };
 
-        Configuration config = new Configuration(args);
-
-        assertEquals( "file", config.getValue("-i" ));
-        assertEquals( "src/test/data/test.txt", config.getValue("-ifn" ));
-        assertEquals( "src/test/data/out.txt", config.getValue("-ofn" ));
-        assertEquals( "file", config.getValue("-o" ));
-        assertEquals("-(\\d+)$", config.getValue("-gd"));
-    }
 
 
 }

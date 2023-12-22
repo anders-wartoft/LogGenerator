@@ -41,12 +41,33 @@ public class JsonFileInputItem extends FileInputItem {
 
     /**
      * Create a new JsonFileInputItem
-     * @param config The command line arguments
      */
-    public JsonFileInputItem(String fileName, Configuration config) {
-        super(fileName, config);
-        this.path = config.getValue("-jfp");
+    public JsonFileInputItem(Configuration config) {
+        super(config);
     }
+
+    @Override
+    public boolean setParameter(String key, String value) {
+        if (key != null && (key.equalsIgnoreCase("--help") || key.equalsIgnoreCase("-h"))) {
+            System.out.println("JsonFileInputItem. Read a JSON file\n" +
+                    "Parameters:\n" +
+                    "--name <name> (-n <name>)\n" +
+                    "  The name of the file to read\n" +
+                    "--path <path> (-p <path>)\n" +
+                    "  The JSON path to the field to extract\n");
+            System.exit(1);
+        }
+        if(super.setParameter(key, value)) {
+            return true;
+        }
+        if (key != null && (key.equalsIgnoreCase("--path") || key.equalsIgnoreCase("-p"))) {
+            this.path = value;
+            logger.fine("path " + value);
+            return true;
+        }
+        return false;
+    }
+
 
     /**
      * Let the item prepare for reading

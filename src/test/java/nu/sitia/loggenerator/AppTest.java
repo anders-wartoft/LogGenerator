@@ -43,10 +43,12 @@ public class AppTest
     {
         String [] args = {
                 "-i", "counter",
-                "-string", "Test:",
-                "-o", "cmd",
+                "--string", "Test:",
                 "--limit", "10",
-                "-gd", ":(\\d+)$",
+                "-o", "cmd",
+                "-f", "gap",
+                "-r", ":(\\d+)$",
+                "-o", "cmd",
                 "-s", "true"
         };
         App app = new App();

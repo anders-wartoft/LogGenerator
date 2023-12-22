@@ -48,25 +48,25 @@ import java.util.regex.Pattern;
 public class ElasticOutputItem extends AbstractOutputItem implements SendListener {
     static final Logger logger = Logger.getLogger(ElasticOutputItem.class.getName());
     /** The url to connect to */
-    private final String host;
+    private String host;
 
-    private final int port;
+    private String port;
 
     /** The API key to use */
-    private final String apiKey;
+    private String apiKey;
 
-    private final String index;
+    private String index;
 
-    private final Pattern pattern;
+    private Pattern pattern;
 
     /** The client to use in the communication */
     private RestClient restClient;
 
-    private final String idRegex;
+    private String idRegex;
 
-    private final String id;
+    private String id;
 
-    private final String certificatePath;
+    private String certificatePath;
 
     private static RequestOptions COMMON_OPTIONS;
 
@@ -80,17 +80,104 @@ public class ElasticOutputItem extends AbstractOutputItem implements SendListene
     public ElasticOutputItem(Configuration config) {
         super(config);
         super.addListener(this);
-        addTransactionMessages = config.isStatistics();
-        this.host = config.getValue("-eoh");
-        this.port = Integer.parseInt(config.getValue("-eop"));
-        this.index = config.getValue("-eoi");
-        this.id = config.getValue("-eoid");
-        this.idRegex = config.getValue("-eoidre");
-        this.apiKey = config.getValue("-eoak");
-        this.certificatePath = config.getValue("-eoc");
+    }
 
+    @Override
+    public boolean setParameter(String key, String value) {
+        if (key != null && (key.equalsIgnoreCase("--help") || key.equalsIgnoreCase("-h"))) {
+            System.out.println("ElasticOutputItem. Write events to an Elastic instance\n" +
+                    "Parameters:\n" +
+                    "--hostname <hostname> (-h <hostname>)\n" +
+                    "  The hostname of the Elastic server\n" +
+                    "--port <port> (-p <port>)\n" +
+                    "  The port of the Elastic server\n" +
+                    "--index <index> (-i <index>)\n" +
+                    "  The index to read from\n" +
+                    "--api-key <api-key> (-ak <api-key>)\n" +
+                    "  The API key to use\n" +
+                    "--certificate-path <certificate-path> (-cp <certificate-path>)\n" +
+                    "  The path to the certificate to use\n" +
+                    "--id <id> (-id <id>)\n" +
+                    "  The id to use when writing to Elastic. " +
+                    "--regex <regex> (-r <regex>)\n" +
+                    "  Regex to use to find the event id from the incoming logs. " +
+                    "Used as the variable ${id} in the --id variable above\n");
+            System.exit(1);
+        }
+        if (super.setParameter(key, value)) {
+            return true;
+        }
+        if (key != null && (key.equalsIgnoreCase("--hostname") || key.equalsIgnoreCase("-h"))) {
+            this.host = value;
+            logger.fine("host " + value);
+            return true;
+        }
+        if (key != null && (key.equalsIgnoreCase("--port") || key.equalsIgnoreCase("-p"))) {
+            this.port = value;
+            logger.fine("port " + value);
+            return true;
+        }
+        if (key != null && (key.equalsIgnoreCase("--index") || key.equalsIgnoreCase("-i"))) {
+            this.index = value;
+            logger.fine("index " + value);
+            return true;
+        }
+        if (key != null && (key.equalsIgnoreCase("--api-key") || key.equalsIgnoreCase("-ak"))) {
+            this.apiKey = value;
+            logger.fine("apiKey " + value);
+            return true;
+        }
+        if (key != null && (key.equalsIgnoreCase("--certificate-path") || key.equalsIgnoreCase("-cp"))) {
+            this.certificatePath = value;
+            logger.fine("certificatePath " + value);
+            return true;
+        }
+        if (key != null && (key.equalsIgnoreCase("--id") || key.equalsIgnoreCase("-id"))) {
+            this.id = value;
+            logger.fine("id " + value);
+            return true;
+        }
+        if (key != null && (key.equalsIgnoreCase("--regex") || key.equalsIgnoreCase("-r"))) {
+            this.idRegex = value;
+            logger.fine("idRegex " + value);
+            return true;
+        }
+        return false;
+    }
 
-        this.pattern = Pattern.compile(idRegex);
+    @Override
+    public boolean afterPropertiesSet() {
+        if (null == this.host) {
+            throw new RuntimeException("Missing --hostname");
+        }
+        if (null == this.port) {
+            throw new RuntimeException("Missing --port");
+        }
+        if (null == this.index) {
+            throw new RuntimeException("Missing --index");
+        }
+        if (null == this.apiKey) {
+            throw new RuntimeException("Missing --api-key");
+        }
+        if (null == this.certificatePath) {
+            throw new RuntimeException("Missing --certificate-path");
+        }
+        if (null == this.id) {
+            throw new RuntimeException("Missing --id");
+        }
+        if (null == this.idRegex) {
+            throw new RuntimeException("Missing --regex");
+        }
+
+        final Pattern check = Pattern.compile("^\\d{1,5}$");
+        final Matcher matcher = check.matcher(this.port);
+        if (!matcher.matches()) {
+            throw new RuntimeException("Field port contains illegal characters: " + this.port);
+        }
+
+        // Create the pattern to use to find the id
+        this.pattern = Pattern.compile(this.idRegex);
+
         RequestOptions.Builder builder = RequestOptions.DEFAULT.toBuilder();
         builder.addHeader("Authorization", "ApiKey " + apiKey);
         builder.addHeader("Content-Type", "application/json");
@@ -98,6 +185,7 @@ public class ElasticOutputItem extends AbstractOutputItem implements SendListene
                 new HttpAsyncResponseConsumerFactory
                         .HeapBufferedResponseConsumerFactory(1024 * 1024 * 1024));
         COMMON_OPTIONS = builder.build();
+        return true;
     }
 
     /**
@@ -173,6 +261,7 @@ public class ElasticOutputItem extends AbstractOutputItem implements SendListene
     public void setup() throws RuntimeException {
         super.setup();
         try {
+            int portNumber = Integer.parseInt(this.port);
             Path caCertificatePath = Paths.get(this.certificatePath);
             CertificateFactory factory = CertificateFactory.getInstance("X.509");
             Certificate trustedCa;
@@ -186,7 +275,7 @@ public class ElasticOutputItem extends AbstractOutputItem implements SendListene
                     .loadTrustMaterial(trustStore, null);
             final SSLContext sslContext = sslContextBuilder.build();
             this.restClient = RestClient.builder(
-                            new HttpHost(this.host, this.port, "https"))
+                            new HttpHost(this.host, portNumber, "https"))
                     .setHttpClientConfigCallback(httpClientBuilder -> httpClientBuilder.setSSLContext(sslContext).setSSLHostnameVerifier(HOSTNAME_VERIFIER))
                     .setDefaultHeaders(new Header[]{
                             new BasicHeader("Authorization", "ApiKey " + apiKey)
@@ -219,6 +308,6 @@ public class ElasticOutputItem extends AbstractOutputItem implements SendListene
      */
     @Override
     public String toString() {
-        return String.format("ElasticOutputItem %s:%d/%s", this.host, this.port, this.index);
+        return String.format("ElasticOutputItem %s:%s/%s", this.host, this.port, this.index);
     }
 }

@@ -35,28 +35,29 @@ public class SSLTCPInputItem extends TCPInputItem {
 
     /**
      * Create a new SSLTCPInputItem
-     * @param config The command line arguments
      */
     public SSLTCPInputItem(Configuration config) {
         super(config);
     }
+
 
     /**
      * Let the item prepare for reading
      */
     public void setup() throws RuntimeException {
         try {
+            int portNumber = Integer.parseInt(this.port);
             ServerSocketFactory sslSf = SSLServerSocketFactory.getDefault();
 
             if (hostName != null) {
                 // Listen on a specified address
                 serverSocket = (SSLServerSocket) sslSf.createServerSocket();
-                SocketAddress socketAddress = new InetSocketAddress(hostName, port);
+                SocketAddress socketAddress = new InetSocketAddress(hostName, portNumber);
                 serverSocket.bind(socketAddress);
 
             } else {
                 // Listen to broadcast in a separate thread
-                serverSocket = (SSLServerSocket) sslSf.createServerSocket(port);
+                serverSocket = (SSLServerSocket) sslSf.createServerSocket(portNumber);
             }
             new TCPInputHandler(serverSocket, result).start();
 

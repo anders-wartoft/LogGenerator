@@ -15,30 +15,31 @@
  * OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-package nu.sitia.loggenerator.outputitems;
+package nu.sitia.loggenerator.filter;
 
 import nu.sitia.loggenerator.Configuration;
 
-
-public class OutputItemFactory {
+public class FilterItemFactory {
 
     /**
-     * Create an OutputItem depending on the configuration
-     * @param config The command line arguments to use to create an OutputItem
-     * @return An OutputItem to use
+     * Get all filters suitable for this set of conditions
+     * @param config The command line arguments to parse
+     * @return A list of filters to apply to the events
      */
-    public static OutputItem create(Configuration config, String name) {
-        if (null == name) {
-            throw new RuntimeException("Null name to OutputItemFactory");
+    public static ProcessFilter create(Configuration config, String name) {
+        if (name == null) {
+            throw new RuntimeException("Null name. Can't create process filter");
         }
-        if (name.equalsIgnoreCase("cmd")) return new CmdOutputItem(config);
-        if (name.equalsIgnoreCase("udp")) return new UDPOutputItem(config);
-        if (name.equalsIgnoreCase("tcp-ssl")) return new SSLTCPOutputItem(config);
-        if (name.equalsIgnoreCase("kafka")) return new KafkaOutputItem(config);
-        if (name.equalsIgnoreCase("elastic")) return new ElasticOutputItem(config);
-        if (name.equalsIgnoreCase("null")) return new NullOutputItem(config);
-        if (name.equalsIgnoreCase("tcp")) return new TCPOutputItem(config);
-        if (name.equalsIgnoreCase("file")) return new FileOutputItem(config);
-        throw new RuntimeException("Illegal output type: " + name);
+
+        if (name.equalsIgnoreCase("drop")) return new DropFilter(config);
+        if (name.equalsIgnoreCase("gap")) return new GapDetectionFilter(config);
+        if (name.equalsIgnoreCase("guard")) return new GuardFilter(config);
+        if (name.equalsIgnoreCase("header")) return new HeaderFilter(config);
+        if (name.equalsIgnoreCase("json")) return new JsonFilter(config);
+        if (name.equalsIgnoreCase("regex")) return new RegexFilter(config);
+        if (name.equalsIgnoreCase("select")) return new SelectFilter(config);
+        if (name.equalsIgnoreCase("substitute")) return new SubstitutionFilter(config);
+
+        throw new RuntimeException("Illegal filter name: " + name);
     }
 }

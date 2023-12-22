@@ -19,26 +19,19 @@ package nu.sitia.loggenerator.outputitems;
 
 
 import nu.sitia.loggenerator.Configuration;
+import nu.sitia.loggenerator.ShutdownHandler;
 
 import java.util.*;
 
-public abstract class AbstractOutputItem implements OutputItem {
+public abstract class AbstractOutputItem implements OutputItem, ShutdownHandler {
     /** How many lines will be returned in one batch? */
-    protected int batchSize;
+    protected int batchSize = 0;
 
     /** Callback method for sending the cache */
     private SendListener sl = null;
 
     /** If batchSize > 1, then store the elements in a cache until they can be written */
     private final List<String> cache = new ArrayList<>();
-
-    /** Should this output item add transaction messages? */
-    protected boolean addTransactionMessages = false;
-
-    /** Print transaction messages? */
-    public boolean printTransactionMessages() {
-        return addTransactionMessages;
-    }
 
     /**
      * When the cache reaches batchSize numbers, or when the teardown is called,
@@ -55,13 +48,24 @@ public abstract class AbstractOutputItem implements OutputItem {
      * @param config The command line arguments
      */
     public AbstractOutputItem(Configuration config) {
-        String batchString = config.getValue("-ob");
-        if (null != batchString) {
-            batchSize = Integer.parseInt(batchString);
-        } else {
-            batchSize = 0; // Default value
-        }
     }
+
+    /**
+     * Set a parameter for the item
+     * @param key The key of the parameter
+     * @param value The value of the parameter
+     * @return true if the parameter was consumed, false otherwise
+     */
+    public boolean setParameter(String key, String value) {
+        if (key != null && (key.equalsIgnoreCase("--batch-size") || key.equalsIgnoreCase("-bs"))) {
+            batchSize = Integer.parseInt(value);
+            return true;
+        } else {
+            batchSize = 1; // Default value
+        }
+        return false;
+    }
+
 
     /**
      * How many elements should be read at a time?
@@ -133,4 +137,7 @@ public abstract class AbstractOutputItem implements OutputItem {
         }
     }
 
+    public void shutdown() {
+
+    }
 }

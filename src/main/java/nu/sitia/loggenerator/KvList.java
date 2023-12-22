@@ -17,36 +17,56 @@
 
 package nu.sitia.loggenerator;
 
-
+import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
-import java.util.logging.Logger;
 
-/**
- * Command line interface to the log generator
- *
- */
-public class App 
-{
-    static final Logger logger = Logger.getLogger(App.class.getName());
+public class KvList {
+    List<KV> list = new ArrayList<>();
 
-    public static void main( String[] args )
-    {
-        // The config knows how to get parameters from the user
-        Configuration config = new Configuration(args);
+    public class KV {
+        public KV(String k, String v) {
+            this.key = k;
+            this.value = v;
+        }
+        private String key;
+        private String value;
 
-        // Print the parameters
-        logger.config(config.toString());
+        public String getKey() {
+            return key;
+        }
 
-        // Create a list of items
-        List<ProcessItem> itemList = new ProcessItemListFactory().create(config);
+        public void setKey(String key) {
+            this.key = key;
+        }
 
-        // And the proxy that mediates the flow
-        ItemProxy proxy = new ItemProxy(itemList, config);
+        public String getValue() {
+            return value;
+        }
 
-        // Print the configuration for every object
-//        itemList.forEach(s -> logger.config(s.toString()));
+        public void setValue(String value) {
+            this.value = value;
+        }
+    }
+    public void add(String k, String v) {
+        list.add(new KV(k, v));
+    }
+    public Iterator iterator() {
+        return list.iterator();
+    }
+    public String get(String k) {
+        KV result = list.stream().reduce(null, (a, s) -> s.getKey().equalsIgnoreCase(k) ? s : a);
+        if (result != null) {
+            return result.getValue();
+        }
+        return null;
+    }
 
-        // Start pumping messages
-        proxy.pump();
+    public void putAll(KvList other) {
+        other.list.forEach(item -> list.add(item));
+    }
+
+    public int size() {
+        return list.size();
     }
 }

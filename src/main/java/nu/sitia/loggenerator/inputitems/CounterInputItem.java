@@ -19,6 +19,7 @@ package nu.sitia.loggenerator.inputitems;
 
 import nu.sitia.loggenerator.Configuration;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -27,22 +28,40 @@ import java.util.List;
  */
 public class CounterInputItem extends AbstractInputItem {
     /** The string to return */
-    private final String string;
+    private String string = null;
 
     /** The number to send */
     private long number = 1;
 
     /**
      * Create a new StaticInputItem
-     * @param config The Configuration object
      */
     public CounterInputItem(Configuration config) {
         super(config);
-        this.string = config.getValue("-string");
-        if (string == null) {
-            throw new RuntimeException(config.getNotFoundInformation("-string"));
-        }
+    }
 
+    @Override
+    public boolean setParameter(String key, String value) {
+        if (key != null && (key.equalsIgnoreCase("--help") || key.equalsIgnoreCase("-h"))) {
+            System.out.println("CounterInputItem. Return a string with an ever-increasing number\n" +
+                    "Parameters:\n" +
+                    "--string <string> (-st <string>)\n" +
+                    "  The string to return\n");
+            super.setParameter(key, value);
+        }
+        if(super.setParameter(key, value)) {
+            return true;
+        }
+        if (key != null && (key.equalsIgnoreCase("--string") || key.equalsIgnoreCase("-st"))) {
+            this.string = value;
+            return true;
+        }
+        return false;
+    }
+
+    @Override
+    public boolean afterPropertiesSet() {
+        return this.string != null;
     }
 
     /**
@@ -65,7 +84,11 @@ public class CounterInputItem extends AbstractInputItem {
      * @return The read input
      */
     public List<String> next() {
-        return List.of(string + number++);
+        List<String> result = new ArrayList<>();
+        for (int i=0; i<batchSize; i++) {
+            result.add(string + number++);
+        }
+        return result;
     }
 
     /**

@@ -20,6 +20,7 @@ package nu.sitia.loggenerator;
 import nu.sitia.loggenerator.filter.GapDetectionFilter;
 import nu.sitia.loggenerator.filter.ProcessFilter;
 import nu.sitia.loggenerator.inputitems.InputItem;
+import nu.sitia.loggenerator.inputitems.TemplateFileInputItem;
 import nu.sitia.loggenerator.outputitems.OutputItem;
 import nu.sitia.loggenerator.templates.Template;
 import nu.sitia.loggenerator.templates.TemplateFactory;
@@ -27,10 +28,9 @@ import nu.sitia.loggenerator.templates.TimeTemplate;
 import nu.sitia.loggenerator.util.LogStatistics;
 import sun.misc.Signal;
 
-import java.util.Date;
-import java.util.LinkedList;
-import java.util.List;
+import java.util.*;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 /**
  * This is the moderator that takes input, modifies the input and writes to the output.
@@ -39,13 +39,8 @@ import java.util.logging.Logger;
 public class ItemProxy {
     static final Logger logger = Logger.getLogger(ItemProxy.class.getName());
 
-    /** The input item */
-    private final InputItem input;
-    /** The output item */
-    private final OutputItem output;
-
     /** Filters to apply to each element processed */
-    private final List<ProcessFilter> filterList;
+    private final List<ProcessItem> itemList;
 
     /** Preferred eps */
     private final double eps;
@@ -68,65 +63,60 @@ public class ItemProxy {
     /** If we have a gapDetector and the flag -cgd is true, then show
      * gaps every time the statistics has been printed.
      */
-    private ProcessFilter gapDetector = null;
+    private List<ProcessItem> gapDetectors;
+
+    /** The configuration object */
+    private Configuration config;
+
+    private void emitMessage(String message) {
+        List<String> result = Arrays.asList(message);
+        for (ProcessItem item : itemList) {
+            if (ProcessFilter.class.isInstance(item)) {
+                ProcessFilter filter = (ProcessFilter) item;
+                result = filter.filter(result);
+            } else if (OutputItem.class.isInstance(item)) {
+                OutputItem output = (OutputItem) item;
+                output.write(result);
+            }
+        }
+    }
 
     /**
      * Default constructor
-     * @param input Input to use
-     * @param output Output to use
+     * @param itemList A list of inputs, filters and outputs
      * @param config The configuration
      */
-    public ItemProxy(InputItem input, OutputItem output, List<ProcessFilter> filterList, Configuration config) {
-        this.input = input;
-        this.output = output;
-        this.filterList = filterList;
-        String isStatisticsString = config.getValue("-s");
-        if (isStatisticsString != null && isStatisticsString.equalsIgnoreCase("true")) {
+    public ItemProxy(List<ProcessItem> itemList, Configuration config) {
+        this.config = config;
+        this.itemList = itemList;
+        if (config.isStatistics()) {
             statistics = new LogStatistics(config);
         } else {
             statistics = null;
         }
 
-        String epsString = config.getValue("-e");
-        if (null != epsString) {
-            this.eps = Double.parseDouble(epsString);
-        } else {
-            this.eps = 0;
-        }
+        this.eps = config.getEps();
 
-        String limitString = config.getValue("-l");
-        if (null != limitString) {
-            this.limit = Long.parseLong(limitString);
-        } else {
-            this.limit = 0;
-        }
+        this.limit = config.getLimit();
 
-        String templateString = config.getValue("-t");
-
-        if (templateString != null) {
-            Template template = TemplateFactory.getTemplate(templateString);
+        List<ProcessItem> templates =
+                itemList.stream().filter(item -> TemplateFileInputItem.class.isInstance(item)).collect(Collectors.toList());
+        long tempTime = -1;
+        for (ProcessItem item : templates) {
+            TemplateFileInputItem templateFileInputItem = (TemplateFileInputItem) item;
+            Template template = templateFileInputItem.getTemplate();
             if (TimeTemplate.class.isInstance(template)) {
-                endTime = ((TimeTemplate)template).getTime();
+                TimeTemplate tt = (TimeTemplate) template;
+                tempTime = tempTime > tt.getTime() || tempTime == -1 ? tt.getTime() : tempTime;
             }
         }
-
-        // order might be important
-        if (ShutdownHandler.class.isInstance(input)) {
-            shutdownHandlers.add((ShutdownHandler) input);
-        }
-        shutdownHandlers.addAll(getShutdownHandlers(filterList));
-        if (ShutdownHandler.class.isInstance(output)) {
-            shutdownHandlers.add((ShutdownHandler) output);
+        if (tempTime != -1) {
+            endTime = tempTime;
         }
 
-        String isContinuousGapDetectionString = config.getValue("-cgd");
-        if (isContinuousGapDetectionString != null && isContinuousGapDetectionString.equalsIgnoreCase("true")) {
-            gapDetector = getGapDetector(filterList);
-            if (null == gapDetector) {
-                throw new RuntimeException("The flag -cgd cannot be used without a GapDetector (-gd)");
-            }
-        }
+        itemList.forEach(item -> shutdownHandlers.add((ShutdownHandler) item));
 
+        gapDetectors = getGapDetectors(itemList);
 
         this.sentEvents = 0;
 
@@ -134,14 +124,12 @@ public class ItemProxy {
         Signal.handle(new Signal("INT"),  // SIGINT
                 signal -> {
                     System.out.println("Sigint");
-                    if (statistics != null) {
+                    if (this.statistics != null) {
                         statistics.calculateStatistics(Configuration.END_TRANSACTION);
+                        // Send end message (maybe filtered)
+                        emitMessage(Configuration.END_TRANSACTION_TEXT);
                     }
-                    if (output.printTransactionMessages()) {
-                        output.write(filterOutput(Configuration.END_TRANSACTION));
-                    }
-                    input.teardown();
-                    output.teardown();
+                    itemList.forEach(item -> item.teardown());
                     shutdownHandlers.forEach(ShutdownHandler::shutdown);
                     System.exit(-1);
                 });
@@ -154,10 +142,14 @@ public class ItemProxy {
      * @param filterList a List<filter> to search
      * @return GapDetectionFilter or null
      */
-    private ProcessFilter getGapDetector(List<ProcessFilter>filterList) {
-        return filterList.stream().reduce(null, (_sofar, element) ->
-                element instanceof GapDetectionFilter ? element: null
-        );
+    private List<ProcessItem> getGapDetectors(List<ProcessItem>filterList) {
+        List<ProcessItem> result = new ArrayList<>();
+        filterList.stream().forEach(f -> {
+            if (GapDetectionFilter.class.isInstance(f)) {
+                result.add(f);
+            }
+        });
+        return result;
     }
 
     /**
@@ -169,64 +161,66 @@ public class ItemProxy {
      */
     public void pump() {
         logger.fine("ItemProxy starting up...");
-        input.setup();
-        output.setup();
+        itemList.forEach(item -> item.setup());
 
         if (statistics != null) {
             statistics.setTransactionStart(new Date().getTime());
+            logger.finest("Transaction start: " + statistics.getTransactionStart());
         }
-        if (output.printTransactionMessages()) {
-            output.write(filterOutput(Configuration.BEGIN_TRANSACTION));
-        }
+        List<String> messages = new ArrayList<>();
 
+        // When we don't have any more input items that report hasNext true,
+        // then we are done.
+        boolean hasNext = true;
+        // If we have a statistics object, then we want to send a start message
+        boolean firstTime = true;
         logger.finer("ItemProxy pumping messages...");
         // Grab inputs as long as we have input and the limit is not reached and the time limit has not been reached
-        while (input.hasNext() && (limit == 0 || sentEvents < limit) && (endTime == 0 || new Date().getTime() < endTime)) {
-            // Assume we have no filters
-            List<String> filtered = input.next();
-            List<String> toSend = filterOutput(filtered);
-            // in case of a batch of logs that will become more than the limit of logs
-            while (limit != 0 && sentEvents + toSend.size() > limit) {
-                toSend.remove(toSend.size()-1); // remove last entry
+        while (hasNext && (limit == 0 || sentEvents < limit) && (endTime == 0 || new Date().getTime() < endTime)) {
+            hasNext = false;
+            for (ProcessItem item : itemList) {
+                if (InputItem.class.isInstance(item)) {
+                    InputItem input = (InputItem) item;
+                    if (input.hasNext()) {
+                        hasNext = true;
+                        List<String> next = input.next();
+                        messages.addAll(next);
+                    }
+                } else if (OutputItem.class.isInstance(item)) {
+                    OutputItem output = (OutputItem) item;
+                    output.write(messages);
+                } else if (ProcessFilter.class.isInstance(item)) {
+                    ProcessFilter filter = (ProcessFilter) item;
+                    messages = filter.filter(messages);
+                }
+                if (firstTime && statistics != null && messages.size() > 0) {
+                    // Send start message (maybe filtered)
+                    emitMessage(Configuration.BEGIN_TRANSACTION_TEXT);
+                    firstTime = false;
+                }
             }
-            output.write(toSend);
-            sentEvents += toSend.size();
-
+            sentEvents += messages.size();
             if (statistics != null) {
-                boolean hasPrinted = statistics.calculateStatistics(filtered);
-                if (hasPrinted && null != gapDetector) {
+                boolean hasPrinted = statistics.calculateStatistics(messages);
+                if (hasPrinted && gapDetectors.size() > 0) {
                     // Also, print the gapDetection periodically
-                    System.out.println(((GapDetectionFilter)gapDetector).getDetector().toString());
+                    gapDetectors.forEach(gapDetector -> {
+                        System.out.println(((GapDetectionFilter)gapDetector).getDetector().toString());
+                    });
                 }
             }
             // Should we throttle the output to lower the eps?
             throttle(statistics);
+            messages.clear();
         }
         if (statistics != null) {
+            emitMessage(Configuration.END_TRANSACTION_TEXT);
             statistics.calculateStatistics(Configuration.END_TRANSACTION);
         }
-        if (output.printTransactionMessages()) {
-            output.write(filterOutput(Configuration.END_TRANSACTION));
-        }
-        input.teardown();
-        output.teardown();
+        itemList.forEach(item -> item.teardown());
         shutdownHandlers.forEach(ShutdownHandler::shutdown);
     }
 
-    /**
-     * ItemProxy want's to write transaction messages to the stream, but
-     * the user might have added a filter for that. Run all filters
-     * on that data
-     * @param toFilter the data to filter
-     * @return the filtered data (empty list or the argument)
-     */
-    private List<String> filterOutput(List<String> toFilter) {
-        for (ProcessFilter filter : filterList) {
-            // We had at least one filter. Process:
-            toFilter = filter.filter(toFilter);
-        }
-        return toFilter;
-    }
 
     /**
      * When eps is limited, throttle by using Thread.sleep()

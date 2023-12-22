@@ -42,31 +42,30 @@ import java.security.cert.CertificateFactory;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 
 public class ElasticInputItem extends AbstractInputItem {
     static final Logger logger = Logger.getLogger(ElasticInputItem.class.getName());
     /** The url to connect to */
-    private final String host;
+    private String host;
 
-    private final int port;
+    private String port;
 
     /** The API key to use */
-    private final String apiKey;
+    private String apiKey;
 
-    private final String index;
+    private String index;
 
     /** A JSON formatted query */
     private String query= "{\"query\": { \"query_string\": { \"query\": \"*\" }}, \"_source\": [\"_id\"]}";
-    private final String field;
+    private String field;
 
     /** The client to use in the communication */
     private RestClient restClient;
 
-    /** The higher lever api */
-//    private ElasticsearchClient esClient;
-
-    private final String certificatePath;
+    private String certificatePath;
 
     private static RequestOptions COMMON_OPTIONS;
 
@@ -74,23 +73,110 @@ public class ElasticInputItem extends AbstractInputItem {
 
     private long readPosition = 0;
 
+    private final static int DEFAULT_BATCHSIZE = 100;
+
     /** Trust all hostnames even if they differ from the hostname in the certificate */
     private static final HostnameVerifier HOSTNAME_VERIFIER = (hostname, session) -> true;
 
     /**
      * Create a new ElasticInputItem
-     * @param config The command line arguments
      */
     public ElasticInputItem(Configuration config) {
         super(config);
-        this.host = config.getValue("-eih");
-        this.port = Integer.parseInt(config.getValue("-eip"));
-        this.index = config.getValue("-eii");
-        this.apiKey = config.getValue("-eiak");
-        this.certificatePath = config.getValue("-eic");
-        this.field = config.getValue("-eif");
-        if (config.getValue("-eiq") != null) {
-            this.query = config.getValue("-eiq");
+        this.batchSize = DEFAULT_BATCHSIZE;
+    }
+
+    @Override
+    public boolean setParameter(String key, String value) {
+        if (key != null && (key.equalsIgnoreCase("--help") || key.equalsIgnoreCase("-h"))) {
+            System.out.println("ElasticInputItem. Read events from an Elastic query\n" +
+                    "Parameters:\n" +
+                    "--hostname <hostname> (-h <hostname>)\n" +
+                    "  The hostname of the Elastic server\n" +
+                    "--port <port> (-p <port>)\n" +
+                    "  The port of the Elastic server\n" +
+                    "--index <index> (-i <index>)\n" +
+                    "  The index to read from\n" +
+                    "--api-key <api-key> (-ak <api-key>)\n" +
+                    "  The API key to use\n" +
+                    "--certificate-path <certificate-path> (-cp <certificate-path>)\n" +
+                    "  The path to the certificate to use\n" +
+                    "--field <field> (-f <field>)\n" +
+                    "  The field to read from\n" +
+                    "--query <query> (-q <query>)\n" +
+                    "  The query to use\n");
+            super.setParameter(key, value);
+        }
+        if (super.setParameter(key, value)) {
+            return true;
+        }
+        if (key != null && (key.equalsIgnoreCase("--hostname") || key.equalsIgnoreCase("-h"))) {
+            this.host = value;
+            logger.fine("host " + value);
+            return true;
+        }
+        if (key != null && (key.equalsIgnoreCase("--port") || key.equalsIgnoreCase("-p"))) {
+            this.port = value;
+            logger.fine("port " + value);
+            return true;
+        }
+        if (key != null && (key.equalsIgnoreCase("--index") || key.equalsIgnoreCase("-i"))) {
+            this.index = value;
+            logger.fine("index " + value);
+            return true;
+        }
+        if (key != null && (key.equalsIgnoreCase("--api-key") || key.equalsIgnoreCase("-ak"))) {
+            this.apiKey = value;
+            logger.fine("apiKey " + value);
+            return true;
+        }
+        if (key != null && (key.equalsIgnoreCase("--certificate-path") || key.equalsIgnoreCase("-cp"))) {
+            this.certificatePath = value;
+            logger.fine("certificatePath " + value);
+            return true;
+        }
+        if (key != null && (key.equalsIgnoreCase("--field") || key.equalsIgnoreCase("-f"))) {
+            this.field = value;
+            logger.fine("field " + value);
+            return true;
+        }
+        if (key != null && (key.equalsIgnoreCase("--query") || key.equalsIgnoreCase("-q"))) {
+            this.query = value;
+            logger.fine("query " + value);
+            return true;
+        }
+
+        return false;
+    }
+
+    @Override
+    public boolean afterPropertiesSet() {
+        if (null == this.host) {
+            throw new RuntimeException("Missing --hostname");
+        }
+        if (null == this.port) {
+            throw new RuntimeException("Missing --port");
+        }
+        if (null == this.index) {
+            throw new RuntimeException("Missing --index");
+        }
+        if (null == this.apiKey) {
+            throw new RuntimeException("Missing --api-key");
+        }
+        if (null == this.certificatePath) {
+            throw new RuntimeException("Missing --certificate-path");
+        }
+        if (null == this.field) {
+            throw new RuntimeException("Missing --field");
+        }
+        if (null == this.query) {
+            throw new RuntimeException("Missing --query");
+        }
+
+        final Pattern pattern = Pattern.compile("^\\d{1,5}$");
+        final Matcher matcher = pattern.matcher(this.port);
+        if (!matcher.matches()) {
+            throw new RuntimeException("Field port contains illegal characters: " + this.port);
         }
 
         RequestOptions.Builder builder = RequestOptions.DEFAULT.toBuilder();
@@ -100,7 +186,7 @@ public class ElasticInputItem extends AbstractInputItem {
                 new HttpAsyncResponseConsumerFactory
                         .HeapBufferedResponseConsumerFactory(1024 * 1024 * 1024));
         COMMON_OPTIONS = builder.build();
-
+        return true;
     }
 
     /**
@@ -108,6 +194,7 @@ public class ElasticInputItem extends AbstractInputItem {
      */
     public void setup() throws RuntimeException {
         try {
+            int portNumber = Integer.parseInt(this.port);
             Path caCertificatePath = Paths.get(this.certificatePath);
             CertificateFactory factory = CertificateFactory.getInstance("X.509");
             Certificate trustedCa;
@@ -121,7 +208,7 @@ public class ElasticInputItem extends AbstractInputItem {
                     .loadTrustMaterial(trustStore, null);
             final SSLContext sslContext = sslContextBuilder.build();
             this.restClient = RestClient.builder(
-                            new HttpHost(this.host, this.port, "https"))
+                            new HttpHost(this.host, portNumber, "https"))
                     .setHttpClientConfigCallback(httpClientBuilder -> httpClientBuilder.setSSLContext(sslContext).setSSLHostnameVerifier(HOSTNAME_VERIFIER))
                     .setDefaultHeaders(new Header[]{
                             new BasicHeader("Authorization", "ApiKey " + apiKey)
@@ -233,6 +320,6 @@ public class ElasticInputItem extends AbstractInputItem {
      */
     @Override
     public String toString() {
-        return String.format("ElasticInputItem %s:%d/%s", this.host, this.port, this.index);
+        return String.format("ElasticInputItem %s:%s/%s, %d", this.host, this.port, this.index, this.batchSize);
     }
 }

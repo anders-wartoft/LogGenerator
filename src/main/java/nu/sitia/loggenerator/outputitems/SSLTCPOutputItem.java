@@ -55,9 +55,11 @@ public class SSLTCPOutputItem extends TCPOutputItem {
         // do NOT call super.setup() here. If so, another socket will be created to
         // hostName:port, but not with SSL. That will ruin this connection...
         try {
+            int portNumber = Integer.parseInt(this.port);
+
             SSLSocketFactory sslSf = (SSLSocketFactory) SSLSocketFactory.getDefault();
             sslSocket = sslSf
-                    .createSocket(hostName, port);
+                    .createSocket(hostName, portNumber);
         } catch (Exception e) {
             throw new RuntimeException("Exception trying to create client ssl socket to: " + hostName + ":" + port, e);
         }

@@ -40,7 +40,10 @@ public class RegexTest
         String regex = "\\d{4}-\\d\\d-\\d\\dT\\d\\d:\\d\\d:\\d\\d.\\d{6}Z";
         String value = "{date:yyyy-MM-dd/sv:SE}";
 
-        RegexFilter regexFilter = new RegexFilter(regex, value);
+        RegexFilter regexFilter = new RegexFilter(null);
+        regexFilter.setParameter("--regex", regex);
+        regexFilter.setParameter("--value", value);
+        regexFilter.afterPropertiesSet();
 
         List<String> result = regexFilter.filter(List.of(template));
 

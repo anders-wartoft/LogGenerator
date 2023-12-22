@@ -23,47 +23,85 @@ import java.io.*;
 import java.net.*;
 import java.util.*;
 import java.util.logging.Logger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class TCPInputItem extends AbstractInputItem {
     static final Logger logger = Logger.getLogger(TCPInputItem.class.getName());
     /** The address to bind to. If not specified, bind to all interfaces */
-    protected final String hostName;
+    protected String hostName;
 
     /** The port to listen on */
-    protected final int port;
+    protected String port;
 
     protected final Queue<String> result = new PriorityQueue<>();
 
 
     /**
      * Create a new TCPInputItem
-     * @param config The command line arguments
      */
     public TCPInputItem(Configuration config) {
         super(config);
-        hostName = config.getValue("-ih");
-        String portString = config.getValue("-ip");
-        if (null == portString) {
-            throw new RuntimeException(config.getValue("-ip"));
-        }
-        port = Integer.parseInt(portString);
     }
+
+    @Override
+    public boolean setParameter(String key, String value) {
+        if (key != null && (key.equalsIgnoreCase("--help") || key.equalsIgnoreCase("-h"))) {
+            System.out.println("TCPInputItem. Read from a TCP socket\n" +
+                    "Parameters:\n" +
+                    "--hostname <hostname> (-h <hostname>)\n" +
+                    "  The hostname to bind to. If not specified, bind to all interfaces\n" +
+                    "--port <port> (-p <port>)\n" +
+                    "  The port to listen on\n");
+            System.exit(1);
+        }
+        if (super.setParameter(key, value)) {
+            return true;
+        }
+        if (key != null && (key.equalsIgnoreCase("--hostname") || key.equalsIgnoreCase("-h"))) {
+            this.hostName = value;
+            logger.fine("hostname " + value);
+            return true;
+        }
+        if (key != null && (key.equalsIgnoreCase("--port") || key.equalsIgnoreCase("-p"))) {
+            this.port = value;
+            logger.fine("port " + value);
+            return true;
+        }
+        return false;
+    }
+
+    @Override
+    public boolean afterPropertiesSet() {
+        if (null == this.port) {
+            throw new RuntimeException("Missing --port");
+        }
+
+        final Pattern pattern = Pattern.compile("^\\d{1,5}$");
+        final Matcher matcher = pattern.matcher(this.port);
+        if (!matcher.matches()) {
+            throw new RuntimeException("Field port contains illegal characters: " + this.port);
+        }
+        return true;
+    }
+
 
     /**
      * Let the item prepare for reading
      */
     public void setup() throws RuntimeException {
         try {
+            int portNumber = Integer.parseInt(this.port);
             ServerSocket serverSocket;
             if (hostName != null) {
                 // Listen on a specified address
                 serverSocket = new ServerSocket();
-                SocketAddress socketAddress = new InetSocketAddress(hostName, port);
+                SocketAddress socketAddress = new InetSocketAddress(hostName, portNumber);
                 serverSocket.bind(socketAddress);
 
             } else {
                 // Listen to broadcast in a separate thread
-                serverSocket = new ServerSocket(port);
+                serverSocket = new ServerSocket(portNumber);
             }
             new TCPInputHandler(serverSocket, result).start();
         } catch (SocketException e) {

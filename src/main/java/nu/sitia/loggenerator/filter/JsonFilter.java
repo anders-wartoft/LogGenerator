@@ -20,27 +20,51 @@ package nu.sitia.loggenerator.filter;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import nu.sitia.loggenerator.Configuration;
+import nu.sitia.loggenerator.inputitems.UDPInputItem;
 import nu.sitia.loggenerator.util.JsonUtil;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Logger;
 
-public class JsonFilter implements ProcessFilter {
+public class JsonFilter extends AbstractProcessFilter  {
+    static final Logger logger = Logger.getLogger(JsonFilter.class.getName());
 
     /** path to the json object we will retrieve */
-    private final String path;
+    private String path;
 
     /**
      * Create a RegexFilter and set all parameters
-     * @param path The json path to retrieve
+     * @param config The configuration
      */
-    public JsonFilter(String path) {
-        this.path = path;
-        if (null == path) {
-            throw new RuntimeException("path is null");
-        }
+    public JsonFilter(Configuration config) {
     }
 
+    @Override
+    public boolean setParameter(String key, String value) {
+        if (key != null && (key.equalsIgnoreCase("--help") || key.equalsIgnoreCase("-h"))) {
+            System.out.println("JsonFilter. Filter out all messages not matching a json path\n" +
+                    "Parameters:\n" +
+                    "--path <path> (-p <path>)\n" +
+                    "  The path to the json object to retrieve\n");
+            System.exit(1);
+        }
+        if (key != null && (key.equalsIgnoreCase("--path") || key.equalsIgnoreCase("-p"))) {
+            this.path = value;
+            logger.fine("path " + value);
+            return true;
+        }
+        return false;
+    }
+
+    @Override
+    public boolean afterPropertiesSet() {
+        if (path == null) {
+            throw new RuntimeException("Missing --path parameter");
+        }
+        return true;
+    }
 
     /**
      * Filter one string
