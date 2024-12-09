@@ -16,10 +16,6 @@ java -jar target/LogGenerator-with-dependencies.jar -i kafka -icn test2 -itn tes
 When running the last command, press Ctrl-C to see the gaps in the received data. Since we started the counter on 100, there should at least be one gap: 1-99.
 
 ### Latest Release notes
-#### 1.1-1
-1.1-1 Updated kafka-clients dependency due to security vulnerability in earlier versions of the Kafka-client library used.
-
-CVE-2024-31141 Moderate severity.
 #### 1.06-SNAPSHOT
 - DropFilter added. Use a regular expression to specify events to drop
 - DateSubstitute now supports epoch format

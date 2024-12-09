@@ -18,6 +18,11 @@ java -jar target/LogGenerator{version}.jar -i kafka -ci test3 -t OUTPUT -b 192.1
 When running the last command, press Ctrl-C to see the gaps in the received data. Since we started the counter on 100, there should at least be one gap: 1-99.
 
 ### Latest Release Notes
+#### 1.1-1
+1.1-1 Updated kafka-clients dependency due to security vulnerability in earlier versions of the Kafka-client library used.
+
+CVE-2024-31141 Moderate severity.
+
 #### 1.1-SNAPSHOT
 - Major refactoring of the configuration system. 
   The main method now only accepts the following parameters:
