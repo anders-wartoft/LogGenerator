@@ -164,7 +164,7 @@ Connect to an Elasticsearch instance and read from an index:
 
 The main use case is to get one field from an index and send to a receiver, for example a gap detector to be able to see if there are missing events (or duplicates) in the index.
 
-Parameters: `-i elastic -h {hostname or ip} -p {port number} -i {index name} -f {field to get} -ak {API key} -c {x.509 certificate in cer format} -q {query string in query dsl format}`
+Parameters: `-i elastic --hostname {hostname or ip} -p {port number} -i {index name} -f {field to get} -ak {API key} -c {x.509 certificate in cer format} -q {query string in query dsl format}`
 
 Example:
 ``` properties
@@ -259,7 +259,7 @@ Send events with UDP.
 Parameters: `-o udp --hostname hostname --port port`
 
 Example `-o udp --hostname localhost --port 5999`
-Example `-o udp -h localhost -p 5999`
+Example `-o udp --hostname localhost -p 5999`
 
 #### Write to TCP
 Send events with TCP.
