@@ -21,6 +21,8 @@ When running the last command, press Ctrl-C to see the gaps in the received data
 #### 1.1-2
 Update of documentation. E.g., -h is no longer valid as --hostname shorthand. Also, update of `-f guard`. In 1.1-1, the `-f guard` command removed all content in the event but not the event itself, so if the event was written to file, an empty line would be the result. In 1.1-2, the event is correctly removed.
 
+New Input: StringInputItem. This works like Template but you don't need to create a file with the template, you can just add it on the command line.
+
 #### 1.1-1
 1.1-1 Updated kafka-clients dependency due to security vulnerability in earlier versions of the Kafka-client library used.
 
