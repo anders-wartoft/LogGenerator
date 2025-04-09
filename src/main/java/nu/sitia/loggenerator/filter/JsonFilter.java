@@ -21,7 +21,6 @@ package nu.sitia.loggenerator.filter;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import nu.sitia.loggenerator.Configuration;
-import nu.sitia.loggenerator.inputitems.UDPInputItem;
 import nu.sitia.loggenerator.util.JsonUtil;
 
 import java.util.ArrayList;

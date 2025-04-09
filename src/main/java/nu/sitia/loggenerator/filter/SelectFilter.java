@@ -19,7 +19,6 @@ package nu.sitia.loggenerator.filter;
 
 
 import nu.sitia.loggenerator.Configuration;
-import nu.sitia.loggenerator.inputitems.UDPInputItem;
 
 import java.util.ArrayList;
 import java.util.List;

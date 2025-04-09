@@ -18,6 +18,9 @@ java -jar target/LogGenerator{version}.jar -i kafka -ci test3 -t OUTPUT -b 192.1
 When running the last command, press Ctrl-C to see the gaps in the received data. Since we started the counter on 100, there should at least be one gap: 1-99.
 
 ### Latest Release Notes
+#### 1.1-2
+Update of documentation. E.g., -h is no longer valid as --hostname shorthand. Also, update of `-f guard`. In 1.1-1, the `-f guard` command removed all content in the event but not the event itself, so if the event was written to file, an empty line would be the result. In 1.1-2, the event is correctly removed.
+
 #### 1.1-1
 1.1-1 Updated kafka-clients dependency due to security vulnerability in earlier versions of the Kafka-client library used.
 
@@ -61,6 +64,7 @@ There are input module for the following tasks:
 - Fetch from Elasticsearch
 - Static string
 - Static string ending with a counter starting from 1
+- Dynamic string with variable substitution
 
 #### Read files
 Read a local file. (For Template files, see below)
@@ -128,14 +132,14 @@ The command line will then become:
 #### Receive UDP
 Set up a UDP server. 
 
-Parameters: `-i udp [-h {host}][ -p portnumber`
+Parameters: `-i udp [--name {host}][ -p portnumber`
 
 Example: `-i udp --hostname localhost --port 5999` or `-i udp -p 5999`
 
 #### Receive TCP
 Set up a TCP server. 
 
-Parameters: `-i tcp [-ih {host}] -ip portnumber`
+Parameters: `-i tcp [--name {host}] -ip portnumber`
 
 Example: `-i tcp --hostname localhost --port 5999` or `-i tcp -p 5999`
 
@@ -210,6 +214,18 @@ Example: `-i counter --string "Test string number:"`
 
 If you want to test the generation speed, use the `null` output since that is faster than writing to the console. Add `-s true` for measurements: `java -jar target/LogGenerator-{version}.jar -i counter --string "Test:" --limit 1000000 -o null -s true`
 
+#### Dynamic string with variable substitution
+This input item works approximately like the Template item, but you can specify a string from the command line instead of a file.
+
+Parameters: `--from {the string to send, with variables} --template continuous --time-offset -10000`
+```
+--from, -fr - The string to use as a template
+--template, -t - [continuous, once, time:{time in ms}]
+--time-offset, -to - Time in ms to add or subtract from the current date, if used as a variable
+```
+
+Example: `java -jar target/LogGenerator-1.1-1.jar -i string -t once -fr "{oneOf:A,B,C,D}" -o cmd`
+
 ### Output modules
 These are the output modules available:
 - Write to file
@@ -248,7 +264,7 @@ Send events with TCP.
 
 Parameters: `-o tcp --hostname hostname --port port`
 
-Example `-o tcp -h localhost -p 5999`
+Example `-o tcp --name localhost -p 5999`
 
 ### Write to TCP SSL
 Send events with encrypted TCP.
@@ -589,10 +605,9 @@ Syntax: `{pri:}`
 Example: `{pri:}` might be substituted by `165`
 
 #### MemorySet, MemoryRecall
-The MemorySet will not create any output, but only save the value in the internal cache. After an expression has been
-evaluated, the value can be retrieved with the MemoryRecall variable.
+The MemorySet will not create any output, but only save the value in the internal cache. The payload of the MemorySet command will create a payload as usual. After an expression has been evaluated, the value can be retrieved with the MemoryRecall variable.
 
-Syntax: `\{ms(:(?<name>[a-zA-Z0-9\-_]+))?/(?<value>.*)}`
+Syntax: `{ms(:(?<name>[a-zA-Z0-9\-_]+))?/(?<value>.*)}`
 Syntax: 
 
 Example:
@@ -623,7 +638,7 @@ Example: `{oneOf:{ipv4:192.168.0.0/16},{ipv4:172.16.0.0/12},{ipv4:10.0.0.0/8}}` 
 ### Read a file, add a syslog header and send the output to the console
 This will add a syslog header to each line in the file before printing the line.
 
-`java -jar LogGenerator-{version}.jar -i file --name test.txt -f header "<{pri:}>{date:MMM dd HH:mm:ss} {oneOf:mymachine,yourmachine,localhost,{ipv4:192.168.0.0/16}} {string:a-z0-9/9}[{random:1-65535}]: " -o cmd`
+`java -jar LogGenerator-{version}.jar -i file --name test.txt -f header -st "<{pri:}>{date:MMM dd HH:mm:ss} {oneOf:mymachine,yourmachine,localhost,{ipv4:192.168.0.0/16}} {string:a-z0-9/9}[{random:1-65535}]: " -o cmd`
 
 Example: 
 - `<25>Dec 10 15:27:38 192.168.169.209 liiblhukp[38946]: Test row 1`

@@ -18,7 +18,6 @@
 package nu.sitia.loggenerator;
 
 import nu.sitia.loggenerator.filter.FilterItemFactory;
-import nu.sitia.loggenerator.filter.GapDetectionFilter;
 import nu.sitia.loggenerator.inputitems.InputItemFactory;
 import nu.sitia.loggenerator.outputitems.OutputItemFactory;
 
@@ -37,7 +36,7 @@ public class ProcessItemListFactory {
     public List<ProcessItem> create(Configuration config) {
         List<ProcessItem> items = new LinkedList<>();
         ProcessItem lastItem = null;
-        for (Iterator iterator = config.getParameters().iterator(); iterator.hasNext(); ) {
+        for (Iterator<KvList.KV> iterator = config.getParameters().iterator(); iterator.hasNext(); ) {
             KvList.KV kv = (KvList.KV) iterator.next();
             String key = kv.getKey();
             String value = kv.getValue();
@@ -58,7 +57,7 @@ public class ProcessItemListFactory {
                 logger.fine("Adding: " + value);
             } else {
                 // Push this config to the last added item
-                if (!lastItem.setParameter(key, value)) {
+                if (lastItem != null && !lastItem.setParameter(key, value)) {
                     // The item didn't accept the parameter
                     logger.finest("Pushing: " + key + " = " + value + " to " + lastItem.getClass().getSimpleName());
                     throw new RuntimeException("Invalid parameter: " + key + " - " + value + " " + lastItem.getClass().getSimpleName());

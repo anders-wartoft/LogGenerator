@@ -51,8 +51,7 @@ public class AppTest
                 "-o", "cmd",
                 "-s", "true"
         };
-        App app = new App();
-        app.main(args);
+        App.main(args);
     }
 
     /**

@@ -47,10 +47,12 @@ public class SubstitutionFilterTest extends TestCase {
                 filter = (SubstitutionFilter) item;
             }
         }
-        assertEquals("Sitia.nu", filter.getVariableMap().get("my-name"));
-
-        assertEquals("Sitia.nu", filter.getVariableMap().get("my-name"));
-        assertEquals("{ip}", filter.getVariableMap().get("new-variable"));
+        assertNotNull("Filter should not be null", filter);
+        if (filter != null) {
+            assertEquals("Sitia.nu", filter.getVariableMap().get("my-name"));
+            assertEquals("Sitia.nu", filter.getVariableMap().get("my-name"));
+            assertEquals("{ip}", filter.getVariableMap().get("new-variable"));
+        }
     }
 
     /**
@@ -113,9 +115,6 @@ public class SubstitutionFilterTest extends TestCase {
         String [] args = {
         };
         List<String> data = Arrays.asList("{ipv6}");
-        SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd");
-        String today = sdf.format(new Date());
-
         Configuration config = new Configuration(args);
         SubstitutionFilter filter = new SubstitutionFilter(config);
         List<String> result = filter.filter(data);

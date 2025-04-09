@@ -19,7 +19,6 @@ package nu.sitia.loggenerator.outputitems;
 
 
 import nu.sitia.loggenerator.Configuration;
-import nu.sitia.loggenerator.ShutdownHandler;
 
 import java.io.FileWriter;
 import java.io.IOException;
@@ -27,11 +26,8 @@ import java.util.List;
 import java.util.logging.Logger;
 
 
-public class FileOutputItem extends AbstractOutputItem implements SendListener, ShutdownHandler {
+public class FileOutputItem extends AbstractOutputItem implements SendListener {
     static final Logger logger = Logger.getLogger(FileOutputItem.class.getName());
-
-    /** Add message for each file */
-    private boolean addTransactionMessages;
 
     /** The name of the file this item will write to */
     private String fileName;
@@ -43,7 +39,6 @@ public class FileOutputItem extends AbstractOutputItem implements SendListener, 
     public FileOutputItem(Configuration config) {
         super(config);
         super.addListener(this);
-        addTransactionMessages = config.isStatistics();
     }
 
     @Override

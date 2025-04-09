@@ -170,7 +170,7 @@ public class Configuration {
                                 setEps(value);
                         } else if (key != null && (key.equalsIgnoreCase("--statistics") || key.equalsIgnoreCase("-s"))) {
                                 // Read variables from the property file
-                                statistics = value.equalsIgnoreCase("true");
+                                statistics = value != null && value.equalsIgnoreCase("true");
                         } else {
                                 parameters.add(key, value);
                         }
@@ -213,28 +213,29 @@ public class Configuration {
                 logger.config("Reading configuration from : " + file.getAbsolutePath());
                 try {
                         FileInputStream input = new FileInputStream(fileName);
-                        Scanner scanner = new Scanner(input);
-                        int lineNumber = 1;
-                        while (scanner.hasNextLine()) {
-                                String line = scanner.nextLine();
-                                if (!line.startsWith("#")) {
-                                        int index = line.indexOf("=");
-                                        if (index < 1) {
-                                                logger.fine("Disregarding line " + lineNumber + " due to missing = character");
-                                        } else {
-                                                String key = line.substring(0, index);
-                                                String value = line.substring(index + 1);
-                                                if (key.startsWith("custom.")) {
-                                                        customVariables.put(key.substring("custom.".length()), value);
-                                                } else if (key.equalsIgnoreCase("variable-file")) {
-                                                        // Read variables from the property file
-                                                        readVariablesFromPropertyFile(value);
+                        try (Scanner scanner = new Scanner(input)) {
+                                int lineNumber = 1;
+                                while (scanner.hasNextLine()) {
+                                        String line = scanner.nextLine();
+                                        if (!line.startsWith("#")) {
+                                                int index = line.indexOf("=");
+                                                if (index < 1) {
+                                                        logger.fine("Disregarding line " + lineNumber + " due to missing = character");
                                                 } else {
-                                                        list.add("--" + key, value);
+                                                        String key = line.substring(0, index);
+                                                        String value = line.substring(index + 1);
+                                                        if (key.startsWith("custom.")) {
+                                                                customVariables.put(key.substring("custom.".length()), value);
+                                                        } else if (key.equalsIgnoreCase("variable-file")) {
+                                                                // Read variables from the property file
+                                                                readVariablesFromPropertyFile(value);
+                                                        } else {
+                                                                list.add("--" + key, value);
+                                                        }
                                                 }
                                         }
+                                        lineNumber++;
                                 }
-                                lineNumber++;
                         }
                 } catch (IOException e) {
                         throw new RuntimeException("Exception trying to load file: " + file.getAbsolutePath(), e);
@@ -262,22 +263,23 @@ public class Configuration {
                 logger.config("Reading variables from : " + file.getAbsolutePath());
                 try {
                         FileInputStream input = new FileInputStream(fileName);
-                        Scanner scanner = new Scanner(input);
-                        int lineNumber = 1;
-                        while (scanner.hasNextLine()) {
-                                String line = scanner.nextLine();
-                                if (!line.startsWith("#")) {
-                                        int index = line.indexOf("=");
-                                        if (index < 1) {
-                                                logger.fine("Disregarding line " + lineNumber + " in " + file.getAbsolutePath() + " due to missing = character");
-                                        } else {
-                                                String key = line.substring(0, index);
-                                                String value = line.substring(index + 1);
-                                                logger.finer(key + ": " + value);
-                                                customVariables.put(key, value);
+                        try (Scanner scanner = new Scanner(input)) {
+                                int lineNumber = 1;
+                                while (scanner.hasNextLine()) {
+                                        String line = scanner.nextLine();
+                                        if (!line.startsWith("#")) {
+                                                int index = line.indexOf("=");
+                                                if (index < 1) {
+                                                        logger.fine("Disregarding line " + lineNumber + " in " + file.getAbsolutePath() + " due to missing = character");
+                                                } else {
+                                                        String key = line.substring(0, index);
+                                                        String value = line.substring(index + 1);
+                                                        logger.finer(key + ": " + value);
+                                                        customVariables.put(key, value);
+                                                }
                                         }
+                                        lineNumber++;
                                 }
-                                lineNumber++;
                         }
                 } catch (FileNotFoundException e) {
                         throw new RuntimeException(e);

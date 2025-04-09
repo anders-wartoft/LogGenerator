@@ -51,7 +51,7 @@ public class KvList {
     public void add(String k, String v) {
         list.add(new KV(k, v));
     }
-    public Iterator iterator() {
+    public Iterator<KV> iterator() {
         return list.iterator();
     }
     public String get(String k) {

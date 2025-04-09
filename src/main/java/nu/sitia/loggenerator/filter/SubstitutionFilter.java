@@ -19,11 +19,9 @@ package nu.sitia.loggenerator.filter;
 
 import nu.sitia.loggenerator.Configuration;
 import nu.sitia.loggenerator.filter.substituters.Substitution;
-import nu.sitia.loggenerator.inputitems.UDPInputItem;
 
 import java.util.*;
 import java.util.logging.Logger;
-import java.util.regex.Pattern;
 
 public class SubstitutionFilter extends AbstractProcessFilter  {
     static final Logger logger = Logger.getLogger(SubstitutionFilter.class.getName());

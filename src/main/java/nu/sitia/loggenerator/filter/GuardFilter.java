@@ -19,7 +19,6 @@ package nu.sitia.loggenerator.filter;
 
 
 import nu.sitia.loggenerator.Configuration;
-import nu.sitia.loggenerator.inputitems.UDPInputItem;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -59,8 +58,13 @@ public class GuardFilter extends AbstractProcessFilter {
     @Override
     public List<String> filter(List<String> toFilter) {
         List<String> result = new LinkedList<>();
-        toFilter.forEach(s -> result.add(filterLine(s)));
 
+        toFilter.forEach(s -> {
+            String filteredString = filterLine(s);
+            if (filteredString != null && filteredString.length() > 0) {
+                result.add(filterLine(s));
+            }
+        });
         return result;
     }
 
@@ -87,10 +91,10 @@ public class GuardFilter extends AbstractProcessFilter {
      * @return True iff toCheck contains a guard
      */
     public boolean removeLine(String toCheck) {
-        return (toCheck.startsWith(Configuration.BEGIN_TRANSACTION_TEXT)
-            ||  toCheck.startsWith(Configuration.END_TRANSACTION_TEXT)
-            ||  toCheck.startsWith(Configuration.BEGIN_FILE_TEXT)
-            ||  toCheck.startsWith(Configuration.END_FILE_TEXT));
+        return (toCheck.contains(Configuration.BEGIN_TRANSACTION_TEXT)
+            ||  toCheck.contains(Configuration.END_TRANSACTION_TEXT)
+            ||  toCheck.contains(Configuration.BEGIN_FILE_TEXT)
+            ||  toCheck.contains(Configuration.END_FILE_TEXT));
     }
 
     /**

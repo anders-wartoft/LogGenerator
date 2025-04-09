@@ -18,8 +18,6 @@
 package nu.sitia.loggenerator.filter;
 
 import nu.sitia.loggenerator.Configuration;
-import nu.sitia.loggenerator.ShutdownHandler;
-import nu.sitia.loggenerator.inputitems.UDPInputItem;
 import nu.sitia.loggenerator.util.gapdetector.GapDetector;
 
 import java.util.List;
@@ -46,7 +44,7 @@ public class GapDetectionFilter extends AbstractProcessFilter {
     private boolean duplicatesDetection = false;
 
     /** Should we report gaps continuously? */
-    private boolean isContinuousGapDetection;
+//    private boolean isContinuousGapDetection;
 
     /**
      * Create a guardFilter and set all parameters
@@ -86,7 +84,7 @@ public class GapDetectionFilter extends AbstractProcessFilter {
             return true;
         }
         if (key != null && (key.equalsIgnoreCase("--continuous") || key.equalsIgnoreCase("-c"))) {
-            this.isContinuousGapDetection = value.equalsIgnoreCase("true");
+//            this.isContinuousGapDetection = value.equalsIgnoreCase("true");
             logger.fine("isContinuousGapDetection " + value);
             return true;
         }

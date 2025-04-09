@@ -23,7 +23,6 @@ import nu.sitia.loggenerator.inputitems.InputItem;
 import nu.sitia.loggenerator.inputitems.TemplateFileInputItem;
 import nu.sitia.loggenerator.outputitems.OutputItem;
 import nu.sitia.loggenerator.templates.Template;
-import nu.sitia.loggenerator.templates.TemplateFactory;
 import nu.sitia.loggenerator.templates.TimeTemplate;
 import nu.sitia.loggenerator.util.LogStatistics;
 import sun.misc.Signal;
@@ -65,9 +64,6 @@ public class ItemProxy {
      */
     private List<ProcessItem> gapDetectors;
 
-    /** The configuration object */
-    private Configuration config;
-
     private void emitMessage(String message) {
         List<String> result = Arrays.asList(message);
         for (ProcessItem item : itemList) {
@@ -87,7 +83,6 @@ public class ItemProxy {
      * @param config The configuration
      */
     public ItemProxy(List<ProcessItem> itemList, Configuration config) {
-        this.config = config;
         this.itemList = itemList;
         if (config.isStatistics()) {
             statistics = new LogStatistics(config);
@@ -242,22 +237,6 @@ public class ItemProxy {
                 }
             } // end of throttling
         }
-    }
-
-    /**
-     * Traverse the list of processFilters and see if any would like to be called
-     * on exit.
-     * @param processFilters All filters
-     * @return A list of shutdown handlers
-     */
-    private List<ShutdownHandler> getShutdownHandlers(List<ProcessFilter> processFilters) {
-        List<ShutdownHandler> shutdownHandlerList = new LinkedList<>();
-        processFilters.forEach(s ->  {
-            if (ShutdownHandler.class.isInstance(s)) {
-                shutdownHandlerList.add((ShutdownHandler) s);
-            }
-        });
-        return shutdownHandlerList;
     }
 
 }

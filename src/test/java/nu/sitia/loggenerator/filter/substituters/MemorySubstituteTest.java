@@ -120,7 +120,6 @@ public class MemorySubstituteTest
      */
     public void testWithRecursion() {
         String template = "{ms:other/{oneOf:a,b,c,d}} {mr:other}";
-        String expected = "40 ";
 
         Substitution substitute = new Substitution();
         String actual = substitute.substitute(template, new HashMap<>(), new Date());

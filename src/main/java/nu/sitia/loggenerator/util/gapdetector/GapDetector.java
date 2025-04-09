@@ -192,7 +192,7 @@ public class GapDetector {
         Map<Long, Long> sortedMap = getSorted(this.duplicates);
         ArrayNode duplicateList = result.putArray("duplicates");
 
-        for (Map.Entry<Long, Long> entry : this.duplicates.entrySet()) {
+        for (Map.Entry<Long, Long> entry : sortedMap.entrySet()) {
             ObjectNode duplicateNode = mapper.createObjectNode();
             duplicateNode.put(entry.getKey().toString(), entry.getValue());
             duplicateList.add(duplicateNode);

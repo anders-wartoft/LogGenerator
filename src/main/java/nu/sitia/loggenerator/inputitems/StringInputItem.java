@@ -19,33 +19,25 @@ package nu.sitia.loggenerator.inputitems;
 
 import nu.sitia.loggenerator.Configuration;
 import nu.sitia.loggenerator.filter.substituters.Substitution;
-import nu.sitia.loggenerator.templates.Template;
-import nu.sitia.loggenerator.templates.TemplateFactory;
-import nu.sitia.loggenerator.templates.TimeTemplate;
-
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.util.*;
+import java.util.logging.Logger;
 
 /**
- * A TemplateFileInputItem is similar to a FileInputItem, but each row
- * in the file will be used as a template instead. The lines will be
- * loaded into an array and, if template is set to:
+ * A StringInputItem is similar to a TemplateInputItem, but 
+ * a string will be used as a template instead. 
+ * If string is set to:
  * - continuous:
- * A random line will be selected, expanded and sent. The array will not
- * change so the next line may be the same as the previous. This is good
- * for generating a lot of logs.
- * - file:
- * The contents will be sent one line at a time, but all variables will
+ * A random line will be selected, expanded and sent, using
+ * the string as a template. This is good for generating a lot of logs.
+ * - once:
+ * The contents will be sent once, but all variables will
  * be expanded (like {date:...}, {oneOf:...} etc).
  */
-public class TemplateFileInputItem extends FileInputItem {
-    /** Describes how this item should function */
-    private Template template;
+public class StringInputItem extends AbstractInputItem {
+    static final Logger logger = Logger.getLogger(StringInputItem.class.getName());
 
-    /** The lines from the file */
-    private final List<String> rows = new ArrayList<>();
+    /** Describes how this item should function */
+    private String template;
 
     /** Offset from the current time and date to use when evaluating variables */
     private long timeOffset = 0;
@@ -53,30 +45,40 @@ public class TemplateFileInputItem extends FileInputItem {
     /** The offset as a String */
     private String offset = "0";
 
+    /** Time value if template time:000 */
+    private long timeValue = 0;
+
+    /* The variable string */
+    private String from = "";
+
     /** The cached substitution handler */
     final Substitution substitution = new Substitution();
 
+    /** Are there more data to read */
+    private boolean hasNext = true;
 
     /**
      * Create a new TemplateFileInputItem
      */
-    public TemplateFileInputItem(Configuration config) {
+    public StringInputItem(Configuration config) {
         super(config);
     }
 
     @Override
     public boolean setParameter(String key, String value) {
         if (key != null && (key.equalsIgnoreCase("--help") || key.equalsIgnoreCase("-h"))) {
-            System.out.println("TemplateFileInputItem. Load a file as a template and resolve variables before sending.\n" +
+            System.out.println("StringInputItem. Load a string from the command line as a template and resolve variables before sending.\n" +
                     "Parameters:\n" +
-                    "--name <name> (-n <name>)\n" +
-                    "  The name of the file to read\n" +
+                    "--from <string> (-fr <string>)\n" +
+                    "  The string to use as a template. This string will be used as a template and all variables will be expanded.\n" +
+                    "  Example: --from \"This is a test {date:yyyy-MM-dd HH:mm:ss}\"\n" +
+                    "  Example: --from \"This is a test {date:yyyy-MM-dd HH:mm:ss} {oneOf:one,two,three}\"\n" +
+                    "  Example: --from \"This is a test {date:yyyy-MM-dd HH:mm:ss} {oneOf:one,two,three} {random:1,2,3}\"\n" +
                     "--template <template> (-t <template>)\n" +
-                    "  The template to use. One of: none, file, time:{number} or continuous\n" +
-                    "  none: Send the file without expanding the variables but in a random order\n" +
-                    "  continuous: Send a random row from the file with variables expanded. The same row can be sent several times. If you just want a specified number of events, add the -l (--limit) parameter to stop sending after the specified number of events.\n" +
+                    "  The template to use. One of: once, time:{number} or continuous\n" +
+                    "  once: Send the data once \n" +
+                    "  continuous: Send the string with variables expanded. If you just want a specified number of events, add the -l (--limit) parameter to stop sending after the specified number of events.\n" +
                     "  time:{number}: as 'continuous' but end the transmission after {number} ms\n" +
-                    "  file: send the file in random order with variables expanded\n" +
                     "--time-offset <long value> (-to <long value>)\n" +
                     "  The offset in milliseconds to use when evaluating variables\n" +
                     "  Example: --time-offset -10000 for setting the date to 10 seconds ago.\n");
@@ -85,8 +87,31 @@ public class TemplateFileInputItem extends FileInputItem {
         if (super.setParameter(key, value)) {
             return true;
         }
+        if (key != null && (key.equalsIgnoreCase("--from") || key.equalsIgnoreCase("-fr"))) {
+            if (value == null) {
+                throw new RuntimeException("Missing -from parameter");
+            }
+            this.from = value;
+            logger.fine("from " + value);
+            return true;
+        }
         if (key != null && (key.equalsIgnoreCase("--template") || key.equalsIgnoreCase("-t"))) {
-            template = TemplateFactory.getTemplate(value);
+            if (value == null) {
+                throw new RuntimeException("Missing -template parameter");
+            }
+            if (value.equals("once") || value.equals("continuous") || value.startsWith("time:")) {
+                this.template = value;
+            } else {
+                throw new RuntimeException("Invalid template: '" + value + "'");
+            }
+            if (value.startsWith("time:")) {
+                String time = value.substring(5);
+                try {
+                    this.timeValue = Long.parseLong(time) + new Date().getTime();
+                } catch (NumberFormatException e) {
+                    throw new RuntimeException("Invalid time value: " + time);
+                }
+            }
             logger.fine("template " + value);
             return true;
         }
@@ -103,6 +128,7 @@ public class TemplateFileInputItem extends FileInputItem {
         if (template == null) {
             throw new RuntimeException("Missing -template parameter");
         }
+
         try {
             this.timeOffset = Long.parseLong(offset);
         } catch (NumberFormatException e) {
@@ -116,18 +142,6 @@ public class TemplateFileInputItem extends FileInputItem {
      * Let the item prepare for reading
      */
     public void setup() throws RuntimeException {
-        FileInputStream input;
-        try {
-            input = new FileInputStream(fileName);
-            scanner = new Scanner(input);
-            while (scanner.hasNextLine()) {
-                rows.add(scanner.nextLine());
-            }
-
-        } catch (FileNotFoundException e) {
-            File file = new File(fileName);
-            throw new RuntimeException("File not found: " + file.getAbsolutePath(), e);
-        }
     }
 
     /**
@@ -135,7 +149,7 @@ public class TemplateFileInputItem extends FileInputItem {
      * @return True iff there are more messages
      */
     public boolean hasNext() {
-        return rows.size() > 0;
+        return this.hasNext;
     }
 
     /**
@@ -145,48 +159,31 @@ public class TemplateFileInputItem extends FileInputItem {
      */
     public List<String> next() {
         List<String> result = new ArrayList<>();
-        if (!initialized) {
-            initialized = true;
-            if (isStatistics) {
-                result.add(Configuration.BEGIN_FILE_TEXT + fileName);
-            }
-        }
-        if (template.isTime()) {
+        if (this.timeValue > 0) {
             // We are limited in time (for example with flag -t time:1000)
             long now = new Date().getTime();
-            if (now > ((TimeTemplate)template).getTime()) {
-                // We are done now. Make sure we won't continue but run the normal path
-                rows.clear();
+            if (now > this.timeValue) {
+                // We are done now
+                this.hasNext = false;
+                return result;
             }
         }
 
+        // Generate a new line or more
         int lines = this.batchSize;
-        Random random = new Random();
-        while (rows.size() > 0 && lines-- > 0) {
-            // Pick one line. lineNr will be in the range [0-rows.size()-1]
-            int lineNr = random.nextInt(rows.size());
-            String line = rows.get(lineNr);
-            if (!template.isNone()) {
-                // Do translation
-                // Create a new date that represents now. Then, add the
-                // offset provided by the user (positive for future and negative for in the past
-                final Date date = new Date(new Date().getTime() + this.timeOffset);
-                result.add(substitution.substitute(line, new HashMap<>(), date));
-            } else {
-                result.add(line);
+        Map<String, String> map = new HashMap<>();
+        StringBuilder sb = new StringBuilder();
+        while (lines-- > 0) {
+            String row = substitution.substitute(this.from, map, new Date(new Date().getTime() + timeOffset));
+            if (sb.length() > 0) {
+                sb.append(System.lineSeparator());
             }
-
-            // Should we remove the line? In that case the file content will be
-            // sent only once
-            if (template.isFile() ||
-                    template.isNone()) {
-                rows.remove(lineNr);
-            }
+            sb.append(row);
         }
-
-        if (rows.size() == 0 && isStatistics) {
-            // End of file
-            result.add(Configuration.END_FILE_TEXT + fileName);
+        result.add(sb.toString());
+        if (this.template.equals("once")) {
+            // We are done now
+            this.hasNext = false;
         }
         return result;
     }
@@ -195,16 +192,6 @@ public class TemplateFileInputItem extends FileInputItem {
      * Let the item teardown after reading
      */
     public void teardown() {
-        if (scanner != null) {
-            scanner.close();
-            // make sure we have to run setup() again before read()
-            scanner = null;
-        }
-    }
-
-    /** Get the template */
-    public Template getTemplate() {
-        return template;
     }
 
     /**
@@ -212,6 +199,6 @@ public class TemplateFileInputItem extends FileInputItem {
      * @return The filename for this item
      */
     public String toString() {
-        return"TemplateFileInputItem" + System.lineSeparator() + this.fileName;
+        return"StringInputItem" + System.lineSeparator() + this.from;
     }
 }
