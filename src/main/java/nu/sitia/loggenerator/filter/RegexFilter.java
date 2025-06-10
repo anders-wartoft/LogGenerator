@@ -25,6 +25,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -119,8 +120,10 @@ public class RegexFilter extends AbstractProcessFilter  {
             // Create a new date that represents now. Then, add the
             // offset provided by the user (positive for future and negative for in the past
             final Date date = new Date(new Date().getTime() + this.timeOffset);
-            String newValue = substitution.substitute(value, new HashMap<>(), date);
-            return toFilter.replaceAll(matcher.group(), newValue);
+            HashMap<String, String> replaceMap = new HashMap<>();
+            replaceMap.put("all", toFilter);
+            String newValue = substitution.substitute(value, replaceMap, date);
+            return matcher.replaceAll(Matcher.quoteReplacement(newValue));
         }
         return toFilter;
     }

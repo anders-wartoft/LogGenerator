@@ -18,6 +18,10 @@ java -jar target/LogGenerator{version}.jar -i kafka -ci test3 -t OUTPUT -b 192.1
 When running the last command, press Ctrl-C to see the gaps in the received data. Since we started the counter on 100, there should at least be one gap: 1-99.
 
 ### Latest Release Notes
+#### 1.1-3
+Added a parameter {all} to regex filter, so a regex filter can wrap the log in a new string. Also, fixed a bug that hindered the regex filter to escape quotes (changing " to \").
+Minor documentation updates.
+
 #### 1.1-2
 Update of documentation. E.g., -h is no longer valid as --hostname shorthand. Also, update of `-f guard`. In 1.1-1, the `-f guard` command removed all content in the event but not the event itself, so if the event was written to file, an empty line would be the result. In 1.1-2, the event is correctly removed.
 
@@ -387,7 +391,7 @@ There must be a capture group in the regex. The text matched by the capture grou
 
 Parameters: `-f regex --regex {regex to find} --value {value to insert instead of the part matched by the regex} [--time-offset {offset in milliseconds}]`
 
-Example: `-f regex --regex "<(\d+)>" -value "<2>"`
+Example: `-f regex --regex "<(\d+)>" --value "<2>"`
 
 If you have a file with a lot of logs, like:
 
@@ -398,6 +402,29 @@ Then the following invocation will change the date to today:
 `java -jar LogGenerator-{version}.jar -i file --name src/test/data/log-with-time.log -s true -l 10 -f regex --regex "([a-zA-Z]{3} [a-zA-Z]{3} \d\d \d\d:\d\d:\d\d\.\d{3})" --value "{date:EEE MMM HH:mm:ss.sss}" -o cmd`
 
 You can also use the --time-offset to change the date to a date that is not the current date. For example, if you want to send events with a date that is one day ago, use `-f regex --regex "([a-zA-Z]{3} [a-zA-Z]{3} \d\d \d\d:\d\d:\d\d\.\d{3})" --value "{date:EEE MMM HH:mm:ss.sss}" --time-offset -86400000`
+
+There is also a way to wrap the result. E.g., if you have a string
+`
+TestString
+`
+and want to wrap that in json, you can use
+```json
+java -jar LogGenerator-{version}.jar -i static --string TestString -f regex --regex "^.*$" --value "{\"parameter\": \"{all}\"}" -l 1 -o cmd
+```
+Result:
+```json
+{"parameter": "TestString"}
+```
+
+in case the static string contains quotes, then use a regex filter to change those first:
+```json
+java -jar LogGenerator-{version}.jar -i static --string "{\"parameter\":\"TestString\"}" -f regex --regex "\"" --value "\\\\\"" -f regex --regex "^.*$" --value "{\"parameter\": \"{all}\"}" -l 1 -o cmd
+```
+resulting in:
+```json
+{"parameter": "{\"a\":\"TestString\"}"}
+```
+
 
 #### Replace variables
 Variable substitution will be present for template, regex and header processing. If a file is loaded as "file" or template "none" then the (processor intensive) substitutions will not be loaded.

@@ -52,14 +52,14 @@ public class TCPOutputItem extends AbstractOutputItem implements SendListener {
         if (key != null && (key.equalsIgnoreCase("--help") || key.equalsIgnoreCase("-h"))) {
             System.out.println("TCPOutputItem. Write to TCP socket\n" +
                     "Parameters:\n" +
-                    "--hostname, -h <hostname> The hostname to connect to\n" +
+                    "--hostname, -hn <hostname> The hostname to connect to\n" +
                     "--port, -p <port> The port to connect to\n");
             System.exit(1);
         }
         if (super.setParameter(key, value)) {
             return true;
         }
-        if (key != null && (key.equalsIgnoreCase("--hostname") || key.equalsIgnoreCase("-h"))) {
+        if (key != null && (key.equalsIgnoreCase("--hostname") || key.equalsIgnoreCase("-hn"))) {
             this.hostName = value;
             logger.fine("hostname " + value);
             return true;

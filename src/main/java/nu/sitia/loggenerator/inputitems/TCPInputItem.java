@@ -49,7 +49,7 @@ public class TCPInputItem extends AbstractInputItem {
         if (key != null && (key.equalsIgnoreCase("--help") || key.equalsIgnoreCase("-h"))) {
             System.out.println("TCPInputItem. Read from a TCP socket\n" +
                     "Parameters:\n" +
-                    "--hostname <hostname> (-h <hostname>)\n" +
+                    "--hostname <hostname> (-hn <hostname>)\n" +
                     "  The hostname to bind to. If not specified, bind to all interfaces\n" +
                     "--port <port> (-p <port>)\n" +
                     "  The port to listen on\n");
@@ -58,7 +58,7 @@ public class TCPInputItem extends AbstractInputItem {
         if (super.setParameter(key, value)) {
             return true;
         }
-        if (key != null && (key.equalsIgnoreCase("--hostname") || key.equalsIgnoreCase("-h"))) {
+        if (key != null && (key.equalsIgnoreCase("--hostname") || key.equalsIgnoreCase("-hn"))) {
             this.hostName = value;
             logger.fine("hostname " + value);
             return true;
