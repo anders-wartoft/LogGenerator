@@ -2,3 +2,5 @@ target
 
 .vscode
 .DS_Store
+
+.fake

@@ -28,7 +28,7 @@ public class DateSubstitute extends AbstractSubstitute {
     private Date date;
 
     /** Regex for a date pattern */
-    private static final String dateRegex = "\\{date:(?<datepattern>[yYmMHhsz+-dD:\\d'T. ]+|epoch|epoch16)(/(?<locale>[^}]+))?}";
+    private static final String dateRegex = "\\{date:(?<datepattern>[yYmMHhszdD:\\d'T. +\\-]+|epoch|epoch16)(/(?<locale>[^}]+))?}";
     /** Cached pattern for getting date format string */
     private static final Pattern datePattern = Pattern.compile(dateRegex);
 
