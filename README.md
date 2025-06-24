@@ -18,6 +18,9 @@ java -jar target/LogGenerator{version}.jar -i kafka -ci test3 -t OUTPUT -b 192.1
 When running the last command, press Ctrl-C to see the gaps in the received data. Since we started the counter on 100, there should at least be one gap: 1-99.
 
 ### Latest Release Notes
+#### 1.1-4
+Changed kafka-clients dependency version from 3.7.1 to 3.9.1 due to CVE-2025-27817
+
 #### 1.1-3
 Added a parameter {all} to regex filter, so a regex filter can wrap the log in a new string. Also, fixed a bug that hindered the regex filter to escape quotes (changing " to \").
 Minor documentation updates.
