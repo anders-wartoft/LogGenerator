@@ -18,6 +18,11 @@ java -jar target/LogGenerator{version}.jar -i kafka -ci test3 -t OUTPUT -b 192.1
 When running the last command, press Ctrl-C to see the gaps in the received data. Since we started the counter on 100, there should at least be one gap: 1-99.
 
 ### Latest Release Notes
+
+### 1.1-5
+Added a property --print-keys (-pk) to the KafkaInputItem to print the Kafka key for lines read.
+Added a property --start-number (-sn) to the CounterInputItem to alter the start number 
+
 #### 1.1-4
 Changed kafka-clients dependency version from 3.7.1 to 3.9.1 due to CVE-2025-27817
 
@@ -162,7 +167,7 @@ Parameters and example, see below in the Q&A section.
 #### Fetch from Kafka topics
 Connect to a Kafka server and read from a topic
 
-Parameters: `-i kafka -ci {client id} -t {topic name} -b {boostrap server}`
+Parameters: `-i kafka -ci {client id} -t {topic name} -b {boostrap server} --print-keys {true/false}`
 
 Example: `-i kafka -ci test -t testtopic -b localhost:9092`
 
@@ -174,7 +179,7 @@ The main use case is to get one field from an index and send to a receiver, for 
 Parameters: `-i elastic --hostname {hostname or ip} -p {port number} -i {index name} -f {field to get} -ak {API key} -c {x.509 certificate in cer format} -q {query string in query dsl format}`
 
 Example:
-``` properties
+```ini
 # Elasticsearch
 input=elastic
 # Elastic instance to connect to
@@ -295,7 +300,7 @@ The main use case is to be able to generate events with _id set to some enumerab
 
 Parameters `-o elastic --hostname {hostname or ip} --port {port number} --index {index} --api-key {API Key} --regex {regex to find an id from input} --id {format for output id} --certificate-path {X.509 certificate for the elastic server in cer format}`
 
-``` properties
+```ini
 # Elasticsearch
 output=elastic
 # Elastic instance to connect to
@@ -728,7 +733,7 @@ A combination of parameters from the command line and property file is possible.
 The property file can have all short- or long names for configuration. Comment lines start with the hash character '#'.
 
 Example:
-```properties
+```ini
 # Start an udp proxy, listening on port 9999, rewriting dates to the current date. 
 # Dates are parsed  according to a specified format and finally sending the result
 # to a syslog server.
@@ -774,15 +779,15 @@ There are three ways to add custom variables:
 
 Example:
 Say you would like to always exchange the text `{company-name}` in a template with `sitia.nu`. Then add the following to a property file (let's call it variables.properties):
-```properties
+```ini
 company-name=sitia.nu
 ```
 and add that file to the property file loaded by `-pf` on the command to LogGenerator:
-```properties
+```ini
 variable-file=variables.properties
 ```
 If you only have a small number of custom variables, you could just load all of them in the property file loaded by `-p`:
-```properties
+```ini
 custom.company-name=sitia.nu
 ```
 Custom variables can contain variables.
@@ -1071,7 +1076,7 @@ Also, you can omit the escape:
 -f gap --regex "<(\d+)>"
 ```
 But, in the property file you have to write the regex as is, without extra escape characters, like
-```properties
+```ini
 filter=gap
 regex=<(\d+)>
 ```

@@ -4,7 +4,7 @@
 
   <groupId>nu.sitia.LogGenerator</groupId>
   <artifactId>LogGenerator</artifactId>
-  <version>1.1-4</version>
+  <version>1.1-5</version>
   <packaging>jar</packaging>
 
   <name>LogGenerator</name>

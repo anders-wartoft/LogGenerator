@@ -4,7 +4,7 @@
   <groupId>nu.sitia.LogGenerator</groupId>
   <artifactId>LogGenerator</artifactId>
   <name>LogGenerator</name>
-  <version>1.1-4</version>
+  <version>1.1-5</version>
   <url>http://maven.apache.org</url>
   <build>
     <plugins>

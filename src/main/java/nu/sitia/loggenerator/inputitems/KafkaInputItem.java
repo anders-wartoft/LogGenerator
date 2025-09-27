@@ -19,6 +19,7 @@ package nu.sitia.loggenerator.inputitems;
 
 import nu.sitia.loggenerator.Configuration;
 import org.apache.kafka.clients.consumer.*;
+import org.apache.kafka.common.errors.UnknownTopicIdException;
 
 import java.time.Duration;
 import java.util.ArrayList;
@@ -45,6 +46,10 @@ public class KafkaInputItem extends AbstractInputItem {
     /** The topic name */
     private String topicName;
 
+    /** Whether to print the keys read from Kafka */
+    private boolean printKeys = false;
+
+    /** The default Kafka batch size */
     private final static int DEFAULT_KAFKA_BATCHSIZE = 200;
 
     /**
@@ -65,7 +70,9 @@ public class KafkaInputItem extends AbstractInputItem {
                     "--topic <topic> (-t <topic>)\n" +
                     "  The topic to read from\n" +
                     "--bootstrap-server <hostname:port> (-b <hostname:port>)\n" +
-                    "  The hostname:port to connect to\n");
+                    "  The hostname:port to connect to\n" +
+                    "--print-keys <true|false> (-pk <true|false>)\n" +
+                    "  Whether to print the keys read from Kafka. Default false\n");
             super.setParameter(key, value);
         }
         if (super.setParameter(key, value)) {
@@ -84,6 +91,11 @@ public class KafkaInputItem extends AbstractInputItem {
         if (key != null && (key.equalsIgnoreCase("--bootstrap-server") || key.equalsIgnoreCase("-b"))) {
             this.bootstrapServer = value;
             logger.fine("bootstrapServer " + value);
+            return true;
+        }
+        if (key != null && (key.equalsIgnoreCase("--print-keys") || key.equalsIgnoreCase("-pk"))) {
+            this.printKeys = Boolean.parseBoolean(value);
+            logger.fine("printKeys " + value);
             return true;
         }
         return false;
@@ -114,10 +126,12 @@ public class KafkaInputItem extends AbstractInputItem {
         properties.put(ConsumerConfig.MAX_POLL_RECORDS_CONFIG, String.valueOf(batchSize));
         properties.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.StringDeserializer");
         properties.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.StringDeserializer");
+        properties.put(ConsumerConfig.METADATA_MAX_AGE_CONFIG, "1000");
 
         consumer = new KafkaConsumer<>(properties);
         logger.info("Connected to kafka " + this.bootstrapServer);
         consumer.subscribe(Collections.singletonList(this.topicName));
+        consumer.poll(Duration.ofSeconds(5)); // fetch metadata and leader info
         logger.info("Subscribed to topic " + this.topicName);
     }
 
@@ -136,13 +150,28 @@ public class KafkaInputItem extends AbstractInputItem {
      * @return The read input
      */
     public List<String> next() {
-        ConsumerRecords<Integer, String> records = consumer.poll(Duration.ofMillis(1000));
         List<String> result = new ArrayList<>();
-        for (ConsumerRecord<Integer, String> record: records) {
-            result.add(record.value());
+        while (true) {
+            try {
+                ConsumerRecords<Integer, String> records = consumer.poll(Duration.ofMillis(1000));
+                for (ConsumerRecord<Integer, String> record: records) {
+                    if (printKeys) {
+                        result.add(record.key() + ": " + record.value());
+                    } else {
+                        result.add(record.value());
+                    }
+                }
+                logger.log(Level.FINEST, result.toString());
+                return result;
+            } catch (UnknownTopicIdException e) {
+                try {
+                    // wait a bit and retry
+                    Thread.sleep(500);
+                } catch (InterruptedException e1) {
+                    return result;
+                }
+            }
         }
-        logger.log(Level.FINEST, result.toString());
-        return result;
     }
 
     /**

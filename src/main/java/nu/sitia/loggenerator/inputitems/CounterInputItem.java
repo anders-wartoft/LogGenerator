@@ -46,14 +46,23 @@ public class CounterInputItem extends AbstractInputItem {
             System.out.println("CounterInputItem. Return a string with an ever-increasing number\n" +
                     "Parameters:\n" +
                     "--string <string> (-st <string>)\n" +
-                    "  The string to return\n");
-            super.setParameter(key, value);
+                    "  The string to return\n" +
+                    "--start-number <number> (-sn <number>)\n" +
+                    "  The number to start with (default 1)\n");
         }
         if(super.setParameter(key, value)) {
             return true;
         }
         if (key != null && (key.equalsIgnoreCase("--string") || key.equalsIgnoreCase("-st"))) {
             this.string = value;
+            return true;
+        }
+        if (key != null && (key.equalsIgnoreCase("--start-number") || key.equalsIgnoreCase("-sn"))) {
+            try {
+                this.number = Long.parseLong(value);
+            } catch (NumberFormatException e) {
+                System.out.println("Invalid number format for --start-number");
+            }
             return true;
         }
         return false;
