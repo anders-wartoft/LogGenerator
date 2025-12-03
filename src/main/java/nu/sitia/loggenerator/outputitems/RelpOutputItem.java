@@ -44,6 +44,9 @@ public class RelpOutputItem extends AbstractOutputItem implements SendListener {
     /** Transaction number for RELP protocol */
     private int transactionNr = 1;
     
+    /** Flag to track if connection is open */
+    private volatile boolean connected = false;
+
     /**
      * Constructor. Add the callback method from this class.
      * @param config The command line arguments
@@ -117,25 +120,34 @@ public class RelpOutputItem extends AbstractOutputItem implements SendListener {
             }
         }
     }
-    
+
     /**
      * Send a single message via RELP protocol
      * @param message The message to send
      */
     private void sendRelpMessage(String message) {
         try {
+            if (!connected) {
+                throw new RuntimeException("Not connected to RELP server");
+            }
+            
             String relpFrame = createRelpFrame("syslog", message);
             logger.finest("Sending RELP frame: " + relpFrame);
             outputStream.write(relpFrame.getBytes());
             outputStream.flush();
             
-            // Read response
+            // Read response with timeout
             String response = inputReader.readLine();
-            if (response == null || !response.contains("rsp")) {
-                throw new RuntimeException("No response from RELP server or invalid response");
+            if (response == null) {
+                connected = false;
+                throw new RuntimeException("Connection closed by server");
+            }
+            if (!response.contains("rsp")) {
+                throw new RuntimeException("Invalid response from RELP server: " + response);
             }
             logger.finer("Received RELP response: " + response);
         } catch (IOException e) {
+            connected = false;
             throw new RuntimeException("Failed to send RELP message: " + e.getMessage(), e);
         }
     }
@@ -163,7 +175,7 @@ public class RelpOutputItem extends AbstractOutputItem implements SendListener {
             inputReader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
             
             // Send RELP OPEN command
-            String openFrame = createRelpFrame("open", "RELP_VERSION=0\nRELP_SOFTWARE=LogGenerator\nRELP_COMMANDS=syslog");
+            String openFrame = "1 open 0 \n";
             outputStream.write(openFrame.getBytes());
             outputStream.flush();
             
@@ -172,8 +184,12 @@ public class RelpOutputItem extends AbstractOutputItem implements SendListener {
             if (response == null || !response.contains("rsp")) {
                 throw new RuntimeException("Failed to open RELP connection");
             }
+            
+            connected = true;
+            transactionNr = 2; // Next transaction number after OPEN
             logger.info("Connected to RELP server " + hostname + ":" + port);
         } catch (IOException e) {
+            connected = false;
             throw new RuntimeException("Failed to connect to RELP server: " + e.getMessage(), e);
         }
     }
@@ -181,22 +197,35 @@ public class RelpOutputItem extends AbstractOutputItem implements SendListener {
     @Override
     public void teardown() {
         super.teardown();
+        connected = false;
         try {
             if (outputStream != null) {
                 String closeFrame = createRelpFrame("close", "");
                 outputStream.write(closeFrame.getBytes());
                 outputStream.flush();
+                inputReader.readLine(); // Read response
             }
+        } catch (Exception e) {
+            logger.warning("Error sending CLOSE: " + e.getMessage());
+        }
+        
+        try {
             if (inputReader != null) {
                 inputReader.close();
             }
+        } catch (IOException e) {
+            logger.warning("Error closing reader: " + e.getMessage());
+        }
+        
+        try {
             if (socket != null && !socket.isClosed()) {
                 socket.close();
             }
-            logger.info("Disconnected from RELP server");
         } catch (IOException e) {
-            logger.warning("Error closing RELP connection: " + e.getMessage());
+            logger.warning("Error closing socket: " + e.getMessage());
         }
+        
+        logger.info("Disconnected from RELP server");
     }
     
     /**

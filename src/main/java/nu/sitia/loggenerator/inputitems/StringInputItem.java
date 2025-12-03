@@ -169,18 +169,14 @@ public class StringInputItem extends AbstractInputItem {
             }
         }
 
-        // Generate a new line or more
+        // Generate batchSize lines as separate items
         int lines = this.batchSize;
         Map<String, String> map = new HashMap<>();
-        StringBuilder sb = new StringBuilder();
         while (lines-- > 0) {
             String row = substitution.substitute(this.from, map, new Date(new Date().getTime() + timeOffset));
-            if (sb.length() > 0) {
-                sb.append(System.lineSeparator());
-            }
-            sb.append(row);
+            result.add(row);
         }
-        result.add(sb.toString());
+        
         if (this.template.equals("once")) {
             // We are done now
             this.hasNext = false;

@@ -10,7 +10,7 @@ LogGenerator uses input modules, filters and output modules and combines that in
 Example: Read a log file, add a syslog header and write to a remote Kafka. In the syslog header, add a counter that starts at 100 and increases with each string. Also, add statistics messages (beginning of transaction etc.).
 When the events are stored in Kafka, start another LogGenerator that fetches the Kafka events, checks the counter and writes the events to null (to increase performance). Give a measurement of the time elapsed, how many items were received, the event per second and an estimate of the bandwidth usage as well as a list of missed events (counter integers that are missing) and the next counter number we are expecting.
 
-The example above is literally two commands. 
+The example above is literally two commands.
 
 ```bash
 java -jar target/LogGenerator{version}.jar -i file --name src/test/data/test.txt -f header -st "<{pri:}>{date:MMM dd HH:mm:ss} {oneOf:mymachine,yourmachine,localhost,{ipv4:192.168.0.0/16}} {string:a-z0-9/9}[{counter:a:100}]: " -o kafka -t OUTPUT -b 192.168.153.129:9092 -ci test2
@@ -53,7 +53,7 @@ CVE-2024-31141 Moderate severity.
 
 #### 1.1-SNAPSHOT
 
-- Major refactoring of the configuration system. 
+- Major refactoring of the configuration system.
   The main method now only accepts the following parameters:
   `-h` or `--help` to get help
   `-i` or `--input` to specify the input module
@@ -65,7 +65,7 @@ CVE-2024-31141 Moderate severity.
   `-e` or `--eps` to specify the number of events per second to send (0 means no limit)
   `-s` or `--statistics` to add statistics messages and printouts
 
-  After `-i {module}` you can add parameters for the input module. The parameters are module specific. 
+  After `-i {module}` you can add parameters for the input module. The parameters are module specific.
   After `-o {module}` you can add parameters for the output module. The parameters are module specific.
   After `-f {module}` you can add parameters for the filter module. The parameters are module specific.
   To see the available parameters for a module, use `-h` or `--help` after the module name, e.g., `-i file -h`.
@@ -77,7 +77,7 @@ CVE-2024-31141 Moderate severity.
 - DateSubstitute now supports epoch16 format
 - Headers, Regex and Templates now support different time offsets. This is useful when you want to send events with a timestamp that is not the current time.
 
-### Input modules:
+### Input modules
 
 There are input module for the following tasks:
 
@@ -116,9 +116,9 @@ Example: `-i file --name ./src/test/data/`
 
 #### Read files in a directory with globs
 
-Read all files in a directory that matches a glob. See https://javapapers.com/java/glob-with-java-nio/ for details on how to write globs.
+Read all files in a directory that matches a glob. See <https://javapapers.com/java/glob-with-java-nio/> for details on how to write globs.
 
-Parameters: `-i file --name {directory name -g "{glob}"`). 
+Parameters: `-i file --name {directory name -g "{glob}"`).
 
 Example: `-i file --name ./src/test/data/ -g "**.txt"`
 
@@ -135,7 +135,7 @@ Example: `-i json-file --name ./src/test/data/elasticsearch.json`
 If the file contains an array you would like to extract, use the parameter `--path` `-p`.
 E.g., the JSON output from an Elastic query is structured like this:
 
-``` 
+``` json
 {
   "took": 1,
   "timed_out": false,
@@ -166,7 +166,7 @@ The command line will then become:
 
 #### Receive UDP
 
-Set up a UDP server. 
+Set up a UDP server.
 
 Parameters: `-i udp [--name {host}][ -p portnumber`
 
@@ -174,7 +174,7 @@ Example: `-i udp --hostname localhost --port 5999` or `-i udp -p 5999`
 
 #### Receive TCP
 
-Set up a TCP server. 
+Set up a TCP server.
 
 Parameters: `-i tcp [--name {host}] -ip portnumber`
 
@@ -300,7 +300,7 @@ output=cmd
 
 #### Static string
 
-Send the same string over and over again. 
+Send the same string over and over again.
 
 Parameters: `-i static --string {the string to send}`
 
@@ -324,7 +324,8 @@ If you want to test the generation speed, use the `null` output since that is fa
 This input item works approximately like the Template item, but you can specify a string from the command line instead of a file.
 
 Parameters: `--from {the string to send, with variables} --template continuous --time-offset -10000`
-```
+
+``` bash
 --from, -fr - The string to use as a template
 --template, -t - [continuous, once, time:{time in ms}]
 --time-offset, -to - Time in ms to add or subtract from the current date, if used as a variable
@@ -356,7 +357,7 @@ Example: `-o file --name ./received.txt`
 
 #### Write to console
 
-Write the received events to the console. 
+Write the received events to the console.
 
 Parameters: `-o cmd`
 
@@ -573,7 +574,6 @@ resulting in:
 {"parameter": "{\"a\":\"TestString\"}"}
 ```
 
-
 #### Replace variables
 
 Variable substitution will be present for template, regex and header processing. If a file is loaded as "file" or template "none" then the (processor intensive) substitutions will not be loaded.
@@ -611,7 +611,7 @@ If an event is missing then this will be reported after the end of processing.
 Parameters `-f gap --regex {regex with caputure group}`
 Optional parameters
 
-``` 
+``` bash
 -dd   --duplicate-detection          If gap-detection is enabled, use this flag to also get a report on all serial numbers that occurs mote than once. Valid values are: false, true
 -j    --json                         Should the gap detector report in JSON format instead of printable format? Valid values are: false, true
 ```
@@ -628,7 +628,7 @@ For example, log events are generated with:
 
 `-e 100` will limit the generated events to 100 every second.
 
-You can now start a server and monitor for missing events. 
+You can now start a server and monitor for missing events.
 
 `java -jar LogGenerator.jar -i udp --port 9999 -f gap --regex '-(\d+)$' -c true -o null -s true`
 
@@ -658,7 +658,7 @@ So, the gap detection can detect events that should have been delivered earlier,
 
 #### Date
 
-A Date variable will take the current time and format according to a Java 
+A Date variable will take the current time and format according to a Java
 date format string. Epoch timestamps are supported but only the version with 13 digits.
 
 Syntax: `{date:(?<datepattern>[yYmMHhsz+-dD:\d'T. ]+|epoch)(/(?<locale>[^}]+))?}`
@@ -669,7 +669,7 @@ Example (at new year 2023)
 - `{date:MMM dd HH:mm:ss/en:US}` might be resolved to `Jan 01 00:00:00`
 - `{date:epoch}` might be resolved to e.g., `0946681200000` (for Jan 01, 2000)
 
-Date can also have an offset with the `-to` (`--time-offset`) parameter. Time offset can be used to add or remove a number of milliseconds from the date variable. 
+Date can also have an offset with the `-to` (`--time-offset`) parameter. Time offset can be used to add or remove a number of milliseconds from the date variable.
 
 Syntax: `-to` [offset in milliseconds]
 
@@ -681,7 +681,7 @@ Insert an ip address from a specified subnet.
 
 Syntax: `{ipv4:(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})/(\d{1,2})}`
 
-Example: 
+Example:
 
 - `{ipv4:192.168.1.182/24}` might be resolved to `192.168.1.14`
 
@@ -709,12 +709,12 @@ Example:
 
 #### OneFromFile
 
-OneFromFile works a bit like oneOf except the values come from an external file and the delimiter is not used. 
-Each line in the file will be a new option for oneFromFile. 
+OneFromFile works a bit like oneOf except the values come from an external file and the delimiter is not used.
+Each line in the file will be a new option for oneFromFile.
 
 Syntax: {oneFromFile:(?filename[^#]+)(#(?encoding.*))?}
 
-Example: 
+Example:
 
 - `{oneFromFile:/home/user/Desktop/test.txt}`
 - `{oneFromFile:/home/user/Desktop/test.txt#ISO-8859-1}`
@@ -747,7 +747,7 @@ Syntax: `{string:(?<characters>[^/]+)/(?<numberof>\d+)}`
 
 Example: `{string:a-c/8`} will for example create `aaaccaca`
 
-The first argument can be for example a-zA-Z0-9_\- to include letters, numbers, the underscore _ and the hyphen - characters.
+The first argument can be for example a-zA-Z0-9_\- to include letters, numbers, the underscore `_` and the hyphen - characters.
 
 #### Repeat
 
@@ -759,7 +759,7 @@ Example: `{repeat:5#a#}` will be substituted with `aaaaa`
 
 Example: `{repeat:5#a#-#}` will be substituted with `a-a-a-a-a`
 
-Example: `{repeat:{random:1-7}}#b#}` might be substituted with one to seven `b` 
+Example: `{repeat:{random:1-7}}#b#}` might be substituted with one to seven `b`
 
 The `torepeat` field can be another variable.
 
@@ -769,17 +769,17 @@ The Lorem variable will pick a number of random word from a list of words and ad
 
 Syntax: `{lorem:(?<length>\d+):(?<wordlist>.*)/(?<delimiter>.)}`
 
-Example: `{lorem:4:this is a nice story of random words that will be assembled but just four of the words/ }` 
+Example: `{lorem:4:this is a nice story of random words that will be assembled but just four of the words/ }`
 can for example be substituted with `words nice words is`.
 
 #### Counter
 
-A counter is an integer with a starting value that will be substituted with the value of the counter on the first invocation. 
+A counter is an integer with a starting value that will be substituted with the value of the counter on the first invocation.
 On subsequent invocations, the value is increased by 1 for each invocation.
 
 A counter can be named, so different counters may have different values. If no name is given, a default name `defaultName` will be used for that counter.
 
-To differentiate between counters each counter has its own unique name. 
+To differentiate between counters each counter has its own unique name.
 
 Syntax: `{counter:((?<name>[a-zA-Z0-9\-_]+):)?(?<startvalue>\d+)}`
 
@@ -859,7 +859,7 @@ Example:
 
 ### Read a file, change the date from the lines in the file to the date right now and print to the console
 
-Example: If a log looks like this: 
+Example: If a log looks like this:
 
 `Sat Dec 03 00:35:57.108 Usb Host Notification Apple80211Set: seqNum 5459 Total 1 chg 0 en0`
 
@@ -877,7 +877,7 @@ So far, we have only used variables in headers, but we can also use variables in
 - The header parameter is set on the command line
 - The template parameter is set to something other than 'none'
 
-The templates use regexes so if we can avoid to load and run them on each entry we can save a lot of processing power. 
+The templates use regexes so if we can avoid to load and run them on each entry we can save a lot of processing power.
 For applications that need lots of eps, try generating the events to file first and then use LogGenerator or other application to load from disk.
 
 ### Template files
@@ -941,11 +941,11 @@ Use the above property file:
 ### System variables
 
 Some variables are built-in, expanding to other variables and thus easier to use.
-To use the syslog-header built-in variable, add `{syslog-header}` to either the template file or the header command line argument. 
+To use the syslog-header built-in variable, add `{syslog-header}` to either the template file or the header command line argument.
 
 The following system variables can be used:
 
-- syslog-header: `<{pri:}>{date:MMM dd HH:mm:ss} {oneOf:mymachine,yourmachine,localhost,{ipv4:192.168.0.0/16}} {string:a-z0-9/9}[{random:1-65535}]: `
+- syslog-header: `<{pri:}>{date:MMM dd HH:mm:ss} {oneOf:mymachine,yourmachine,localhost,{ipv4:192.168.0.0/16}} {string:a-z0-9/9}[{random:1-65535}]:`
 - ip: `{ipv4:0.0.0.0/0}`
 - rfc1918: `{oneOf:{ipv4:192.168.0.0/16},{ipv4:172.16.0.0/12},{ipv4:10.0.0.0/8}}`
 
@@ -980,7 +980,7 @@ custom.company-name=sitia.nu
 
 Custom variables can contain variables.
 
-## Chaining LogGenerator 
+## Chaining LogGenerator
 
 Now that we have an understanding of the basics, we can progress to the more advanced use cases for LogGenerator.
 To locate bottlenecks or bad connections in a log chain, one or more components can be substituted with LogGenerator to create a known set of data to send and receive.
@@ -1002,7 +1002,7 @@ First, send to cmd, so we can see that the counter is working:
 
 `java -jar LogGenerator-{version}.jar -i file --name src/test/data/log-with-time.log -f header --string "<{counter:test:1}>" -o cmd`
 
-We should se some events starting with <1>, <2> etc. Since we'd like to be able to see if the Gap Detection is working, 
+We should se some events starting with <1>, <2> etc. Since we'd like to be able to see if the Gap Detection is working,
 set the initial value to, e.g., 42.
 
 Example with only one instance of LogGenerator:
@@ -1063,7 +1063,7 @@ Server: `java -jar LogGenerator-{version}.jar -i tcp --port 9999 -f gap --regex 
 
 ## Improving performance
 
-First, regexes can be really slow. If you want good performance, use the static or counter input module and no headers. 
+First, regexes can be really slow. If you want good performance, use the static or counter input module and no headers.
 A good way to improve performance is to create a lot of events in a file or Kafka, with all the bells and whistles of the template regexes and then use that precompiled data in the performance tuning.
 
 Also, you can batch some input and output items in mini batches that will sometimes improve the sending and receiving rate. A batch is one event with a number of lines, separated by newline-character.
@@ -1074,7 +1074,7 @@ Also, you can batch some input and output items in mini batches that will someti
 
 ### Why does my cmd printout have square brackets around every line?
 
-When using the -o cmd each batch of events will be printed on one line, separated by , and with [] around the batch. 
+When using the -o cmd each batch of events will be printed on one line, separated by , and with [] around the batch.
 This behaviour is to illustrate the batch mechanism and will not be present if you write to file with `-o file --name {filename}`.
 
 ### What is a good regex to use with the -i counter module?
@@ -1107,7 +1107,7 @@ Note that the package is developed with Java 11.
 
 Logging can be enabled by adding instructions to the logging framework. The amount of logging is not great though.
 
-Start the program as usual, but add `-Djava.util.logging.config.file=logging.properties` to java. 
+Start the program as usual, but add `-Djava.util.logging.config.file=logging.properties` to java.
 
 Example: `java -Djava.util.logging.config.file=logging.properties -jar target/LogGenerator-{version}.jar -i udp --hostname localhost --port 9999 -o cmd  -s true -l 100`
 
@@ -1117,11 +1117,11 @@ Example of sending a few lines to Kafka:
 
 Server:
 
-`java -Djava.util.logging.config.file=logging.properties -jar LogGenerator-{version}.jar -i kafka -ci testclient --topic test -b 192.168.1.116:9092  -f gap --regex "Test:(\d+)$" -s true -o cmd `
+`java -Djava.util.logging.config.file=logging.properties -jar LogGenerator-{version}.jar -i kafka -ci testclient --topic test -b 192.168.1.116:9092  -f gap --regex "Test:(\d+)$" -s true -o cmd`
 
 Client:
 
-`java -jar target/LogGenerator-{version}.jar -i counter --string "Test:" -o kafka -ci test2 --topic test -b 192.168.1.116:9092 --batch-size 10 --limit 100  -s true `
+`java -jar target/LogGenerator-{version}.jar -i counter --string "Test:" -o kafka -ci test2 --topic test -b 192.168.1.116:9092 --batch-size 10 --limit 100  -s true`
 
 ### How do I get a cer file for the Elastic module (input or output)?
 
@@ -1132,7 +1132,7 @@ Right-click on the padlock/triangle, choose certificate, info and Export... You 
 
 ### How do I get other data than _id from the Elastic input module?
 
-First, remove the _source from the query. _source will determine what fields are returned from the query. 
+First, remove the `_sourc`e from the query. `_source` will determine what fields are returned from the query.
 Optionally, you can set the `elastic-input-field=_source` to retrieve all fields from the query but remove everything from the search.
 
 In the query, instead of this:
@@ -1160,7 +1160,7 @@ If you are only interested in the _source, set `--field _source`. The result wil
 ```
 
 Note that the _id is not in the returned content here. For further selection, use a RegexFilter or a json-filter for processing.
-If the size of the data is large, you might want to consider just getting the _id with the _source parameter to minimize the impact on the cluster.
+If the size of the data is large, you might want to consider just getting the `_id` with the `_source` parameter to minimize the impact on the cluster.
 
 ``` json
 {"query": { "query_string": { "query": "*" }}, "_source": ["_id"]}
@@ -1186,9 +1186,9 @@ They are generated by some module but only if `-s true` is set (statistics).
 
 ### This is great but I need feature xxx
 
-This is open source, so "Use the Source, Luke". 
+This is open source, so "Use the Source, Luke".
 
-### The variables are not expanded. They are delivered as {date:... and not as 2023-01-01...
+### The variables are not expanded. They are delivered as `{date:...` and not as `2023-01-01...`
 
 On the sending side, use the template file input `-i template --template file` or similar (see above).
 
@@ -1200,13 +1200,13 @@ Example: to send random data from a template file to an udp listener on port 999
 
 Add `-s true` so that timestamps are updated.
 
-Example: 
+Example:
 
 `java -Djava.util.logging.config.file=logging.properties -jar target/LogGenerator-{version}.jar -i template --name src/test/data/template.txt -t continuous -o udp --hostname localhost --port 9999  --limit 100  -e 2 -s true`
 
 ### What about SSL. How do I get started with SSL sockets?
 
-Follow the instructions from https://unix.stackexchange.com/questions/347116/how-to-create-keystore-and-truststore-using-self-signed-certificate
+Follow the instructions from <https://unix.stackexchange.com/questions/347116/how-to-create-keystore-and-truststore-using-self-signed-certificate>
 
 To generate certificate and keystores for localhost, you can use these commands. `keytool` comes with Java.
 
@@ -1221,13 +1221,13 @@ N.B. Common Name (CN) must be equal to the server name.
 
 To examine the certificate:`keytool -printcert -v -file server.cer`
 
-If you get stuck, this is a nice reference to debugging ssl: help: https://stackoverflow.com/questions/17742003/how-to-debug-ssl-handshake-using-curl#22814663
+If you get stuck, this is a nice reference to debugging ssl: help: <https://stackoverflow.com/questions/17742003/how-to-debug-ssl-handshake-using-curl#22814663>
 
 You can also use the supplied keystore and truststore in src/test/data/certs. Both have the password: `changeit`. Also, check out the configuration file src/test/data/certs/ssl-server.properties for a working setup.
 
 To test the ssl connection, first copy the key- and truststore to the root of LogGenerator:
 
-LogGenerator % `cp src/test/data/certs/server.* . `
+LogGenerator % `cp src/test/data/certs/server.* .`
 
 Start a server (add the keystore and password as java runtime parameter):
 
@@ -1252,9 +1252,9 @@ ncat --ssl localhost 9999 < src/test/data/test.txt
 curl -iv https://localhost:9999
 ```
 
-or any browser with https://localhost:9999 (you will have to accept the certificate if the issuer path is not in the browser's truststore).
+or any browser with <https://localhost:9999> (you will have to accept the certificate if the issuer path is not in the browser's truststore).
 
-Note that ncat can both do ssl and delays (throttle) so that can be a nice tool to send prefabricated events with. 
+Note that ncat can both do ssl and delays (throttle) so that can be a nice tool to send prefabricated events with.
 Start by creating a large amount of events from a template and store in a file. Then use nc, ncat or similar to deliver the files, if the
 built-in networking is too slow.
 
@@ -1269,7 +1269,7 @@ Now you should be able to start an openssl server with:
 
 `openssl s_server -CAfile server.cer -accept 9999 -key server.key`
 
-Start by browsing to https://localhost:9999 to see if the openssl server is responding. The browser should wait for a response, but the server should write the HTTP header (GET / HTTP/1.1 ...) on the console.
+Start by browsing to <https://localhost:9999> to see if the openssl server is responding. The browser should wait for a response, but the server should write the HTTP header (GET / HTTP/1.1 ...) on the console.
 
 For more debugging information, you can start the openssl server with:
 
@@ -1281,9 +1281,9 @@ To start java with additional logging for ssl debugging, use:
 
 ### How do I know if a TCP input is working
 
-If you have started a TCP input with `-i tcp -ip 9999 -o cmd` then you can send data with 
+If you have started a TCP input with `-i tcp -ip 9999 -o cmd` then you can send data with
 `nc {ip-address or name} {port} < {filename}`, e.g., `nc localhost 9999 < /var/log/messages`.
-An even easier method is to use an Internet Browser and open http://localhost:9999. The browser won't receive any data but the command window should write a few lines beginning with GET, Host, User-Agent and similar.
+An even easier method is to use an Internet Browser and open <http://localhost:9999>. The browser won't receive any data but the command window should write a few lines beginning with GET, Host, User-Agent and similar.
 
 ### Gap Detection doesn't work when I use a property file
 

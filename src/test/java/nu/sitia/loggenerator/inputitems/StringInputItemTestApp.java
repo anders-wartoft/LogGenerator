@@ -90,23 +90,32 @@ public StringInputItemTestApp(String testName )
     }
 
     /**
-     * Test the StringInputItem
+     * Test the StringInputItem with batch size
      */
     public void testStringInputItemBatch() {
         StringInputItem input = new StringInputItem(null);
-        input.setParameter("--template", "once");
+        input.setParameter("--template", "continuous");
         input.setParameter("--from", "test");
         input.setParameter("-bs", "100");
+        input.setParameter("-l", "100");
         input.afterPropertiesSet();
         assertTrue(input.hasNext());
-        List<String> lines = input.next();
-        // print the result:
-        System.out.println("Lines: " + lines);
-        assertTrue(lines != null);
-        if (lines != null) {
-            assertTrue(lines.size() == 100);
-            assertTrue(lines.get(0).equals("test"));    
+        
+        List<String> allLines = new java.util.ArrayList<>();
+        while(input.hasNext() && allLines.size() < 100) {
+            List<String> lines = input.next();
+            System.out.println("Batch size: " + lines.size());
+            assertTrue(lines != null);
+            if (lines != null) {
+                allLines.addAll(lines);
+                for (String line : lines) {
+                    assertEquals("Each line should be 'test'", "test", line);
+                }
+            }
         }
+        
+        assertEquals("Expected 100 items but got " + allLines.size(), 100, allLines.size());
+        input.teardown();
     }
 
     /**

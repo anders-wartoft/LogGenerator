@@ -186,13 +186,13 @@ public class RelpOutputItemTest extends TestCase {
                 if (parts.length >= 3) {
                     String txnr = parts[0];
                     String command = parts[1];
-                    // int len = Integer.parseInt(parts[2]);
                     
                     if ("open".equalsIgnoreCase(command)) {
                         String response = txnr + " rsp 6 OK\n";
                         output.write(response.getBytes());
                         output.flush();
                     } else if ("syslog".equalsIgnoreCase(command)) {
+                        //int len = Integer.parseInt(parts[2]);
                         if (parts.length > 3) {
                             String data = parts[3];
                             receivedMessages.add(data);
