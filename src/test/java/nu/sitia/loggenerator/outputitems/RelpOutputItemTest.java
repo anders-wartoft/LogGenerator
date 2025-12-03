@@ -22,9 +22,10 @@ import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.List;
+import java.util.logging.Logger;
 
 public class RelpOutputItemTest extends TestCase {
-    
+    static final Logger logger = Logger.getLogger(RelpOutputItemTest.class.getName());
     private RelpOutputItem relpOutputItem;
     private MockRelpServer server;
     private Thread serverThread;
@@ -181,6 +182,7 @@ public class RelpOutputItemTest extends TestCase {
             
             String line;
             while ((line = reader.readLine()) != null && running) {
+                logger.fine("Mock server received: " + line);
                 // Parse RELP frame: txnr command len data
                 String[] parts = line.split(" ", 4);
                 if (parts.length >= 3) {
@@ -188,22 +190,28 @@ public class RelpOutputItemTest extends TestCase {
                     String command = parts[1];
                     
                     if ("open".equalsIgnoreCase(command)) {
-                        String response = txnr + " rsp 6 OK\n";
+                        // Send proper RELP response (single line, no embedded newlines)
+                        String responseData = "RELP_VERSION=0";
+                        String response = txnr + " rsp " + responseData.length() + " " + responseData + "\n";
                         output.write(response.getBytes());
                         output.flush();
+                        logger.fine("Sent OPEN response: " + response);
                     } else if ("syslog".equalsIgnoreCase(command)) {
-                        //int len = Integer.parseInt(parts[2]);
                         if (parts.length > 3) {
                             String data = parts[3];
                             receivedMessages.add(data);
                         }
-                        String response = txnr + " rsp 6 OK\n";
+                        String responseData = "OK";
+                        String response = txnr + " rsp " + responseData.length() + " " + responseData + "\n";
                         output.write(response.getBytes());
                         output.flush();
+                        logger.fine("Sent SYSLOG response");
                     } else if ("close".equalsIgnoreCase(command)) {
-                        String response = txnr + " rsp 6 OK\n";
+                        String responseData = "OK";
+                        String response = txnr + " rsp " + responseData.length() + " " + responseData + "\n";
                         output.write(response.getBytes());
                         output.flush();
+                        logger.fine("Sent CLOSE response");
                         break;
                     }
                 }
