@@ -117,7 +117,7 @@ public class KafkaOutputItem extends AbstractOutputItem implements SendListener 
      */
     @Override
     public void send(List<String> toSend) {
-        logger.info("Sending " + toSend.size() + " messages to " + topicName);
+        logger.fine("Sending " + toSend.size() + " messages to " + topicName);
         if (toSend.size() > 0) {
             try {
                 String message = String.join("\n", toSend);

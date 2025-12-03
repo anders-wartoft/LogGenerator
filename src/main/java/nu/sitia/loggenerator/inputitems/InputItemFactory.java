@@ -37,6 +37,7 @@ public class InputItemFactory {
         if (name.equalsIgnoreCase("static")) return new StaticInputItem(config);
         if (name.equalsIgnoreCase("counter")) return new CounterInputItem(config);
         if (name.equalsIgnoreCase("string")) return new StringInputItem(config);
+        if (name.equalsIgnoreCase("relp")) return new RelpInputItem(config);
         throw new RuntimeException("Illegal input item type: " + name);
     }
 

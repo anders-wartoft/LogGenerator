@@ -39,6 +39,7 @@ public class OutputItemFactory {
         if (name.equalsIgnoreCase("null")) return new NullOutputItem(config);
         if (name.equalsIgnoreCase("tcp")) return new TCPOutputItem(config);
         if (name.equalsIgnoreCase("file")) return new FileOutputItem(config);
+        if (name.equalsIgnoreCase("relp")) return new RelpOutputItem(config);
         throw new RuntimeException("Illegal output type: " + name);
     }
 }
