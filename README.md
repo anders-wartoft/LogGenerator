@@ -21,6 +21,10 @@ When running the last command, press Ctrl-C to see the gaps in the received data
 
 ## Latest Release Notes
 
+### 1.1-7 Fix for CVE-2026-35554
+
+Update for CVE-2026-35554: Apache Kafka Clients: Kafka Producer Message Corruption and Misrouting via Buffer Pool Race Condition
+
 ### 1.1-6
 
 Added support for RELP (rsyslog Reliable Event Logging Protocol) input and ouput.
