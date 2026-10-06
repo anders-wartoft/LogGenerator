@@ -25,9 +25,9 @@ import nu.sitia.loggenerator.outputitems.OutputItem;
 import nu.sitia.loggenerator.templates.Template;
 import nu.sitia.loggenerator.templates.TimeTemplate;
 import nu.sitia.loggenerator.util.LogStatistics;
-import sun.misc.Signal;
 
 import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -63,6 +63,24 @@ public class ItemProxy {
      * gaps every time the statistics has been printed.
      */
     private List<ProcessItem> gapDetectors;
+
+    /** Guards teardown/shutdown so they run exactly once across normal exit and the shutdown hook. */
+    private final AtomicBoolean shutdownDone = new AtomicBoolean(false);
+
+    /** Set by the shutdown hook so {@link #pump()} exits its loop promptly on SIGINT/SIGTERM. */
+    private volatile boolean stopRequested = false;
+
+    /**
+     * The thread running {@link #pump()} (always the JVM main thread in practice). Recorded so
+     * the shutdown hook thread (which the JVM runs concurrently with any still-running
+     * application thread) can wait for pump() to actually finish before tearing items down —
+     * without this, a shutdown hook that races a pump() loop still mid-batch would read the
+     * (non-thread-safe) per-item state, e.g. GapDetector's duplicate map, half-updated.
+     */
+    private volatile Thread pumpThread;
+
+    /** Bounded wait for {@link #pumpThread} to quiesce before the shutdown hook tears down. */
+    private static final long PUMP_JOIN_TIMEOUT_MS = 15_000;
 
     private void emitMessage(String message) {
         List<String> result = Arrays.asList(message);
@@ -115,20 +133,46 @@ public class ItemProxy {
 
         this.sentEvents = 0;
 
-        // Ctrl-C
-        Signal.handle(new Signal("INT"),  // SIGINT
-                signal -> {
-                    System.out.println("Sigint");
-                    if (this.statistics != null) {
-                        statistics.calculateStatistics(Configuration.END_TRANSACTION);
-                        // Send end message (maybe filtered)
-                        emitMessage(Configuration.END_TRANSACTION_TEXT);
-                    }
-                    itemList.forEach(item -> item.teardown());
-                    shutdownHandlers.forEach(ShutdownHandler::shutdown);
-                    System.exit(-1);
-                });
+        // Covers SIGINT (Ctrl-C), SIGTERM (kill, systemd/k8s stop) and normal System.exit.
+        //
+        // IMPORTANT: the JVM runs shutdown hooks on their own thread(s) *concurrently* with any
+        // other still-running application thread — it does not wait for pump()'s main thread to
+        // quiesce first. So after flagging stopRequested, join() the pump thread (bounded, in
+        // case it's blocked somewhere that doesn't check stopRequested promptly) and let it reach
+        // its own doShutdown(false) call cleanly. doShutdown() is idempotent (guarded by
+        // shutdownDone), so if pump() wins the race this hook's own doShutdown(true) call below
+        // becomes a no-op; if the join times out (pump() truly stuck) we still fall through and
+        // tear down from here so the process can exit.
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            logger.info("Shutdown signal received");
+            stopRequested = true;
+            Thread t = pumpThread;
+            if (t != null && t != Thread.currentThread()) {
+                try {
+                    t.join(PUMP_JOIN_TIMEOUT_MS);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
+            }
+            doShutdown(true);
+        }, "LogGenerator-shutdown"));
+    }
 
+    /**
+     * Flush statistics, tear down items and run shutdown handlers. Idempotent: safe to call
+     * from both the normal end of {@link #pump()} and the JVM shutdown hook.
+     * @param interrupted true when invoked from the shutdown hook (SIGINT/SIGTERM path)
+     */
+    private void doShutdown(boolean interrupted) {
+        if (!shutdownDone.compareAndSet(false, true)) {
+            return;
+        }
+        if (statistics != null) {
+            statistics.calculateStatistics(Configuration.END_TRANSACTION);
+            emitMessage(Configuration.END_TRANSACTION_TEXT);
+        }
+        itemList.forEach(item -> item.teardown());
+        shutdownHandlers.forEach(handler -> handler.shutdown());
     }
 
 
@@ -155,6 +199,7 @@ public class ItemProxy {
      * cached items.
      */
     public void pump() {
+        pumpThread = Thread.currentThread();
         logger.fine("ItemProxy starting up...");
         itemList.forEach(item -> item.setup());
 
@@ -171,7 +216,7 @@ public class ItemProxy {
         boolean firstTime = true;
         logger.finer("ItemProxy pumping messages...");
         // Grab inputs as long as we have input and the limit is not reached and the time limit has not been reached
-        while (hasNext && (limit == 0 || sentEvents < limit) && (endTime == 0 || new Date().getTime() < endTime)) {
+        while (!stopRequested && hasNext && (limit == 0 || sentEvents < limit) && (endTime == 0 || new Date().getTime() < endTime)) {
             hasNext = false;
             for (ProcessItem item : itemList) {
                 if (InputItem.class.isInstance(item)) {
@@ -208,12 +253,7 @@ public class ItemProxy {
             throttle(statistics);
             messages.clear();
         }
-        if (statistics != null) {
-            emitMessage(Configuration.END_TRANSACTION_TEXT);
-            statistics.calculateStatistics(Configuration.END_TRANSACTION);
-        }
-        itemList.forEach(item -> item.teardown());
-        shutdownHandlers.forEach(ShutdownHandler::shutdown);
+        doShutdown(false);
     }
 
 
