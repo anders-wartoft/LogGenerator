@@ -20,16 +20,13 @@ package nu.sitia.loggenerator.outputitems;
 
 import nu.sitia.loggenerator.Configuration;
 import javax.net.ssl.*;
-import java.io.*;
+import java.io.IOException;
 import java.net.Socket;
-import java.util.List;
-import java.util.logging.Logger;
 
+/**
+ * Like TCPOutputItem (including reconnect handling), but wraps the connection in TLS.
+ */
 public class SSLTCPOutputItem extends TCPOutputItem {
-    static final Logger logger = Logger.getLogger(SSLTCPOutputItem.class.getName());
-
-    /** The socket to use */
-    private Socket sslSocket;
 
     /**
      * Constructor. Add the callback method from this class.
@@ -39,71 +36,17 @@ public class SSLTCPOutputItem extends TCPOutputItem {
         super(config);
     }
 
-
-    /**
-     * Write to console
-     * @param elements The element to write
-     * @throws RuntimeException Not thrown here
-     */
     @Override
-    public void write(List<String> elements) throws RuntimeException {
-        super.write(elements);
-    }
-
-    @Override
-    public void setup() throws RuntimeException {
-        // do NOT call super.setup() here. If so, another socket will be created to
-        // hostName:port, but not with SSL. That will ruin this connection...
+    protected Socket createSocket(String host, int portNumber) throws IOException {
+        Socket plain = super.createSocket(host, portNumber);
         try {
-            int portNumber = Integer.parseInt(this.port);
-
             SSLSocketFactory sslSf = (SSLSocketFactory) SSLSocketFactory.getDefault();
-            sslSocket = sslSf
-                    .createSocket(hostName, portNumber);
-        } catch (Exception e) {
-            throw new RuntimeException("Exception trying to create client ssl socket to: " + hostName + ":" + port, e);
-        }
-    }
-
-
-    /**
-     * Callback. What to do when the cache is full.
-     * Writes to hostname:port
-     * @param toSend String to send
-     */
-    @Override
-    public void send(List<String> toSend) {
-        try {
-            OutputStream output = sslSocket.getOutputStream();
-            logger.fine("Sending: " + toSend);
-            PrintWriter writer = new PrintWriter(output, true);
-            toSend.forEach(writer::println);
-            logger.finer("Sent message without exception");
+            SSLSocket sslSocket = (SSLSocket) sslSf.createSocket(plain, host, portNumber, true);
+            sslSocket.startHandshake();
+            return sslSocket;
         } catch (IOException e) {
-            throw new RuntimeException("Socket send exception", e);
+            plain.close();
+            throw e;
         }
     }
-
-    @Override
-    public void teardown() {
-        super.teardown();
-        try {
-            sslSocket.close();
-        } catch (IOException e) {
-            throw new RuntimeException("Socket close exception", e);
-        }
-    }
-
-
-    /**
-     * Print the configuration
-     * @return A printable string of the current configuration
-     */
-    @Override
-    public String toString() {
-        return "SSLTCPOutputItem" + System.lineSeparator() +
-                hostName + System.lineSeparator() +
-                port;
-    }
-
 }

@@ -27,6 +27,8 @@ import nu.sitia.loggenerator.templates.TimeTemplate;
 import nu.sitia.loggenerator.util.LogStatistics;
 
 import java.util.*;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -70,6 +72,9 @@ public class ItemProxy {
     /** Set by the shutdown hook so {@link #pump()} exits its loop promptly on SIGINT/SIGTERM. */
     private volatile boolean stopRequested = false;
 
+    /** Set when all items have been set up. If setup fails there is no transaction to end. */
+    private volatile boolean started = false;
+
     /**
      * The thread running {@link #pump()} (always the JVM main thread in practice). Recorded so
      * the shutdown hook thread (which the JVM runs concurrently with any still-running
@@ -79,8 +84,28 @@ public class ItemProxy {
      */
     private volatile Thread pumpThread;
 
+    /**
+     * Released when {@link #pump()} returns (normally or by exception). The shutdown hook waits
+     * on this rather than joining {@link #pumpThread}, since the pump thread may itself call
+     * System.exit() after pump() fails, and then never terminates while the hooks run.
+     */
+    private final CountDownLatch pumpDone = new CountDownLatch(1);
+
     /** Bounded wait for {@link #pumpThread} to quiesce before the shutdown hook tears down. */
     private static final long PUMP_JOIN_TIMEOUT_MS = 15_000;
+
+    /**
+     * Throttling baseline. -1 means "use the statistics transaction start". Moved to "now" when an
+     * output reconnects, so that eps throttling continues at the configured rate instead of
+     * bursting to catch up on the events that were not generated during the outage.
+     */
+    private long throttleStart = -1;
+
+    /** Number of transaction messages already sent at {@link #throttleStart} */
+    private long throttleMessageOffset = 0;
+
+    /** Sum of the outputs' reconnect counts the last time we checked */
+    private long lastReconnectCount = 0;
 
     private void emitMessage(String message) {
         List<String> result = Arrays.asList(message);
@@ -137,11 +162,11 @@ public class ItemProxy {
         //
         // IMPORTANT: the JVM runs shutdown hooks on their own thread(s) *concurrently* with any
         // other still-running application thread — it does not wait for pump()'s main thread to
-        // quiesce first. So after flagging stopRequested, join() the pump thread (bounded, in
+        // quiesce first. So after flagging stopRequested, wait for pump() to return (bounded, in
         // case it's blocked somewhere that doesn't check stopRequested promptly) and let it reach
         // its own doShutdown(false) call cleanly. doShutdown() is idempotent (guarded by
         // shutdownDone), so if pump() wins the race this hook's own doShutdown(true) call below
-        // becomes a no-op; if the join times out (pump() truly stuck) we still fall through and
+        // becomes a no-op; if the wait times out (pump() truly stuck) we still fall through and
         // tear down from here so the process can exit.
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             logger.info("Shutdown signal received");
@@ -149,7 +174,7 @@ public class ItemProxy {
             Thread t = pumpThread;
             if (t != null && t != Thread.currentThread()) {
                 try {
-                    t.join(PUMP_JOIN_TIMEOUT_MS);
+                    pumpDone.await(PUMP_JOIN_TIMEOUT_MS, TimeUnit.MILLISECONDS);
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
                 }
@@ -167,12 +192,22 @@ public class ItemProxy {
         if (!shutdownDone.compareAndSet(false, true)) {
             return;
         }
-        if (statistics != null) {
+        // Each step is guarded so that one failing item (e.g., a lost TCP connection) does not
+        // prevent the remaining items from being torn down.
+        if (statistics != null && started) {
             statistics.calculateStatistics(Configuration.END_TRANSACTION);
-            emitMessage(Configuration.END_TRANSACTION_TEXT);
+            runQuietly("emit end of transaction", () -> emitMessage(Configuration.END_TRANSACTION_TEXT));
         }
-        itemList.forEach(item -> item.teardown());
-        shutdownHandlers.forEach(handler -> handler.shutdown());
+        itemList.forEach(item -> runQuietly("teardown of " + item.getClass().getSimpleName(), item::teardown));
+        shutdownHandlers.forEach(handler -> runQuietly("shutdown of " + handler.getClass().getSimpleName(), handler::shutdown));
+    }
+
+    private static void runQuietly(String what, Runnable r) {
+        try {
+            r.run();
+        } catch (RuntimeException e) {
+            logger.warning("Failed " + what + ": " + e.getMessage());
+        }
     }
 
 
@@ -200,8 +235,25 @@ public class ItemProxy {
      */
     public void pump() {
         pumpThread = Thread.currentThread();
+        try {
+            doPump();
+        } catch (RuntimeException e) {
+            // E.g., an output that has lost its connection. Tear down what we can and let the
+            // caller exit with an error code so a process supervisor can restart us.
+            doShutdown(false);
+            throw e;
+        } finally {
+            // So the shutdown hook doesn't wait for a thread that is no longer pumping
+            // (e.g., when the caller calls System.exit() after an error).
+            pumpThread = null;
+            pumpDone.countDown();
+        }
+    }
+
+    private void doPump() {
         logger.fine("ItemProxy starting up...");
         itemList.forEach(item -> item.setup());
+        started = true;
 
         if (statistics != null) {
             statistics.setTransactionStart(new Date().getTime());
@@ -250,6 +302,7 @@ public class ItemProxy {
                 }
             }
             // Should we throttle the output to lower the eps?
+            resetThrottleOnReconnect(statistics);
             throttle(statistics);
             messages.clear();
         }
@@ -258,13 +311,34 @@ public class ItemProxy {
 
 
     /**
+     * If any output has reconnected since the last check, restart the throttling baseline.
+     * @param statistics The Statistics used for throttling
+     */
+    private void resetThrottleOnReconnect(LogStatistics statistics) {
+        long reconnects = 0;
+        for (ProcessItem item : itemList) {
+            if (OutputItem.class.isInstance(item)) {
+                reconnects += ((OutputItem) item).getReconnectCount();
+            }
+        }
+        if (reconnects != lastReconnectCount) {
+            lastReconnectCount = reconnects;
+            if (statistics != null) {
+                throttleStart = new Date().getTime();
+                throttleMessageOffset = statistics.getTransactionMessages();
+                logger.fine("Output reconnected, restarting eps throttling baseline");
+            }
+        }
+    }
+
+    /**
      * When eps is limited, throttle by using Thread.sleep()
      * @param statistics The Statistics to use to determine if we should throttle
      */
     private void throttle(LogStatistics statistics) {
         if (eps != 0 && statistics != null) {
-            long transactionStart = statistics.getTransactionStart();
-            long sentMessages = statistics.getTransactionMessages();
+            long transactionStart = throttleStart >= 0 ? throttleStart : statistics.getTransactionStart();
+            long sentMessages = statistics.getTransactionMessages() - throttleMessageOffset;
             long now = new Date().getTime();
             // how long time should we spend on sending these messages?
             long estimatedTime = (long)(1000 * sentMessages / eps);

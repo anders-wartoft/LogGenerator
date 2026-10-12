@@ -19,6 +19,7 @@ package nu.sitia.loggenerator;
 
 
 import java.util.List;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -47,6 +48,11 @@ public class App
 //        itemList.forEach(s -> logger.config(s.toString()));
 
         // Start pumping messages
-        proxy.pump();
+        try {
+            proxy.pump();
+        } catch (RuntimeException e) {
+            logger.log(Level.SEVERE, "Fatal error, exiting: " + e.getMessage(), e);
+            System.exit(1);
+        }
     }
 }

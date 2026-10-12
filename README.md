@@ -21,6 +21,10 @@ When running the last command, press Ctrl-C to see the gaps in the received data
 
 ## Latest Release Notes
 
+### Unreleased
+
+Fix: `-o tcp` and `-o ssltcp` never reconnected when the receiver closed the connection. Write errors were silently ignored, so LogGenerator kept counting events as sent although nothing was delivered. LogGenerator now reconnects (see `--reconnect-timeout`) and continues at the configured `-e` rate without a catch-up burst, and exits with exit code 1 if the connection cannot be re-established.
+
 ### 1.1-7 Fix for CVE-2026-35554
 
 Update for CVE-2026-35554: Apache Kafka Clients: Kafka Producer Message Corruption and Misrouting via Buffer Pool Race Condition
@@ -380,9 +384,13 @@ Example `-o udp --hostname localhost -p 5999`
 
 Send events with TCP.
 
-Parameters: `-o tcp --hostname hostname --port port`
+Parameters: `-o tcp --hostname hostname --port port [--reconnect-timeout seconds]`
 
-Example `-o tcp --name localhost -p 5999`
+Example `-o tcp --hostname localhost -p 5999`
+
+If the receiver closes the connection (e.g., it is restarted), LogGenerator reconnects and resends the current batch. While it is reconnecting, no new events are generated or counted. After a reconnect, `-e` throttling restarts from the time of the reconnect, so events are sent at the configured rate rather than in a burst to make up for the outage. `--reconnect-timeout` (`-rt`) sets for how many seconds to keep trying before giving up (default 300). `0` gives up immediately and `-1` retries forever. When LogGenerator gives up, it exits with exit code 1, so a process supervisor (e.g., systemd `Restart=`) can restart it. Events are only counted once they have been written to the socket. The same applies to `-o ssltcp`.
+
+Note that TCP has no application-level acknowledgements. If the receiver crashes without closing the connection, some events that were already handed to the operating system may be lost. Use `-o relp` if you need guaranteed delivery.
 
 ### Write to TCP SSL
 

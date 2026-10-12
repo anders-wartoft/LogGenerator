@@ -36,4 +36,13 @@ public interface OutputItem extends ProcessItem {
      */
     void write(List<String> element) throws RuntimeException;
 
+    /**
+     * How many times this output has re-established a lost connection.
+     * Used to restart the eps throttling after an outage instead of bursting to catch up.
+     * @return The number of reconnects so far, 0 for outputs without connections
+     */
+    default long getReconnectCount() {
+        return 0;
+    }
+
 }
