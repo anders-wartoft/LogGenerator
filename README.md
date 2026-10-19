@@ -21,7 +21,7 @@ When running the last command, press Ctrl-C to see the gaps in the received data
 
 ## Latest Release Notes
 
-### Unreleased
+### 1.1-8
 
 Fix: `-o tcp` and `-o ssltcp` never reconnected when the receiver closed the connection. Write errors were silently ignored, so LogGenerator kept counting events as sent although nothing was delivered. LogGenerator now reconnects (see `--reconnect-timeout`) and continues at the configured `-e` rate without a catch-up burst, and exits with exit code 1 if the connection cannot be re-established.
 
