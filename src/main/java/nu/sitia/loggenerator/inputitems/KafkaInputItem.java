@@ -23,7 +23,10 @@ import org.apache.kafka.common.errors.UnknownTopicIdException;
 
 import java.time.Duration;
 import java.util.ArrayList;
-import java.util.Collections;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Set;
+import org.apache.kafka.common.TopicPartition;
 import java.util.List;
 import java.util.Properties;
 import java.util.logging.Level;
@@ -49,6 +52,12 @@ public class KafkaInputItem extends AbstractInputItem {
     /** Whether to print the keys read from Kafka */
     private boolean printKeys = false;
 
+    /** Whether to start reading from the beginning of the topic */
+    private boolean fromBeginning = false;
+
+    /** Records fetched during setup, delivered by the first call to next() */
+    private final List<String> pending = new ArrayList<>();
+
     /** The default Kafka batch size */
     private final static int DEFAULT_KAFKA_BATCHSIZE = 200;
 
@@ -72,7 +81,9 @@ public class KafkaInputItem extends AbstractInputItem {
                     "--bootstrap-server <hostname:port> (-b <hostname:port>)\n" +
                     "  The hostname:port to connect to\n" +
                     "--print-keys <true|false> (-pk <true|false>)\n" +
-                    "  Whether to print the keys read from Kafka. Default false\n");
+                    "  Whether to print the keys read from Kafka. Default false\n" +
+                    "--from-beginning <true|false> (-fb <true|false>)\n" +
+                    "  Read the topic from the first available offset, ignoring committed offsets. Default false\n");
             super.setParameter(key, value);
         }
         if (super.setParameter(key, value)) {
@@ -96,6 +107,11 @@ public class KafkaInputItem extends AbstractInputItem {
         if (key != null && (key.equalsIgnoreCase("--print-keys") || key.equalsIgnoreCase("-pk"))) {
             this.printKeys = Boolean.parseBoolean(value);
             logger.fine("printKeys " + value);
+            return true;
+        }
+        if (key != null && (key.equalsIgnoreCase("--from-beginning") || key.equalsIgnoreCase("-fb"))) {
+            this.fromBeginning = Boolean.parseBoolean(value);
+            logger.fine("fromBeginning " + value);
             return true;
         }
         return false;
@@ -128,10 +144,36 @@ public class KafkaInputItem extends AbstractInputItem {
         properties.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.StringDeserializer");
         properties.put(ConsumerConfig.METADATA_MAX_AGE_CONFIG, "1000");
 
+        if (fromBeginning) {
+            properties.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
+        }
+
         consumer = new KafkaConsumer<>(properties);
         logger.info("Connected to kafka " + this.bootstrapServer);
-        consumer.subscribe(Collections.singletonList(this.topicName));
-        consumer.poll(Duration.ofSeconds(5)); // fetch metadata and leader info
+        if (fromBeginning) {
+            // Seek once per partition, so later rebalances don't cause rereads
+            final Set<TopicPartition> seeked = new HashSet<>();
+            consumer.subscribe(List.of(this.topicName), new ConsumerRebalanceListener() {
+                @Override
+                public void onPartitionsRevoked(Collection<TopicPartition> partitions) {
+                }
+
+                @Override
+                public void onPartitionsAssigned(Collection<TopicPartition> partitions) {
+                    List<TopicPartition> fresh = new ArrayList<>();
+                    for (TopicPartition tp : partitions) {
+                        if (seeked.add(tp)) {
+                            fresh.add(tp);
+                        }
+                    }
+                    consumer.seekToBeginning(fresh);
+                }
+            });
+        } else {
+            consumer.subscribe(List.of(this.topicName));
+        }
+        // Fetch metadata and leader info; keep returned records so they aren't lost
+        addRecords(pending, consumer.poll(Duration.ofSeconds(5)));
         logger.info("Subscribed to topic " + this.topicName);
     }
 
@@ -151,16 +193,14 @@ public class KafkaInputItem extends AbstractInputItem {
      */
     public List<String> next() {
         List<String> result = new ArrayList<>();
+        if (!pending.isEmpty()) {
+            result.addAll(pending);
+            pending.clear();
+            return result;
+        }
         while (true) {
             try {
-                ConsumerRecords<Integer, String> records = consumer.poll(Duration.ofMillis(1000));
-                for (ConsumerRecord<Integer, String> record: records) {
-                    if (printKeys) {
-                        result.add(record.key() + ": " + record.value());
-                    } else {
-                        result.add(record.value());
-                    }
-                }
+                addRecords(result, consumer.poll(Duration.ofMillis(1000)));
                 logger.log(Level.FINEST, result.toString());
                 return result;
             } catch (UnknownTopicIdException e) {
@@ -170,6 +210,16 @@ public class KafkaInputItem extends AbstractInputItem {
                 } catch (InterruptedException e1) {
                     return result;
                 }
+            }
+        }
+    }
+
+    private void addRecords(List<String> target, ConsumerRecords<Integer, String> records) {
+        for (ConsumerRecord<Integer, String> record : records) {
+            if (printKeys) {
+                target.add(record.key() + ": " + record.value());
+            } else {
+                target.add(record.value());
             }
         }
     }
@@ -192,6 +242,7 @@ public class KafkaInputItem extends AbstractInputItem {
                 "Bootstrap-server: " + bootstrapServer + System.lineSeparator() +
                 "Client-id: " + clientId + System.lineSeparator() +
                 "Topic: " + topicName + System.lineSeparator() +
+                "From beginning: " + fromBeginning + System.lineSeparator() +
                 "Batch size: " + batchSize + System.lineSeparator();
     }
 }

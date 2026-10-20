@@ -21,6 +21,10 @@ When running the last command, press Ctrl-C to see the gaps in the received data
 
 ## Latest Release Notes
 
+### 1.1-9
+
+Added a property --from-beginning (-fb) to the KafkaInputItem to read a topic from the beginning. Records fetched during startup are no longer dropped.
+
 ### 1.1-8
 
 Fix: `-o tcp` and `-o ssltcp` never reconnected when the receiver closed the connection. Write errors were silently ignored, so LogGenerator kept counting events as sent although nothing was delivered. LogGenerator now reconnects (see `--reconnect-timeout`) and continues at the configured `-e` rate without a catch-up burst, and exits with exit code 1 if the connection cannot be re-established.
@@ -262,9 +266,13 @@ LogGenerator supports the following RELP commands:
 
 Connect to a Kafka server and read from a topic
 
-Parameters: `-i kafka -ci {client id} -t {topic name} -b {boostrap server} --print-keys {true/false}`
+Parameters: `-i kafka -ci {client id} -t {topic name} -b {boostrap server} --print-keys {true/false} --from-beginning {true/false}`
+
+`--from-beginning` (`-fb`) reads the topic from the first available offset in every partition, ignoring offsets previously committed by the client id (consumer group). Default false.
 
 Example: `-i kafka -ci test -t testtopic -b localhost:9092`
+
+Example, read everything from the start: `-i kafka -ci test -t testtopic -b localhost:9092 --from-beginning true`
 
 #### Fetch from Elasticsearch index
 
