@@ -24,7 +24,7 @@ import org.apache.kafka.clients.producer.ProducerRecord;
 
 import java.util.List;
 import java.util.Properties;
-import java.util.concurrent.ExecutionException;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Logger;
 
 public class KafkaOutputItem extends AbstractOutputItem implements SendListener {
@@ -45,6 +45,9 @@ public class KafkaOutputItem extends AbstractOutputItem implements SendListener 
 
     /** The Kafka message number */
     private int messageNr = 1;
+
+    /** The first delivery error reported by an asynchronous send, if any */
+    private final AtomicReference<Exception> sendError = new AtomicReference<>();
 
     /**
      * Constructor. Add the callback method from this class.
@@ -113,25 +116,38 @@ public class KafkaOutputItem extends AbstractOutputItem implements SendListener 
     /**
      * Callback. What to do when the cache is full.
      * Writes to hostname:port
+     * Records are sent asynchronously so the producer can batch them.
+     * Delivery errors are recorded and reported on the next send or at teardown.
      * @param toSend String to send
      */
     @Override
     public void send(List<String> toSend) {
         logger.fine("Sending " + toSend.size() + " messages to " + topicName);
         if (toSend.size() > 0) {
-            try {
-                String message = String.join("\n", toSend);
-                logger.finest("Sending: " + message);
-                producer.send(new ProducerRecord<>(
-                        topicName,
-                        messageNr++,
-                        message)).get();
-                logger.finer("Sent message without exception");
-            } catch (InterruptedException e) {
-                // ignore (terminate)
-            } catch (ExecutionException e) {
-                throw new RuntimeException(e);
-            }
+            // Fail fast if an earlier asynchronous send has failed
+            checkSendError();
+            String message = String.join("\n", toSend);
+            logger.finest("Sending: " + message);
+            producer.send(new ProducerRecord<>(
+                    topicName,
+                    messageNr++,
+                    message),
+                    (metadata, exception) -> {
+                        if (exception != null) {
+                            sendError.compareAndSet(null, exception);
+                        }
+                    });
+        }
+    }
+
+    /**
+     * Throw if an asynchronous send has reported a delivery error.
+     * @throws RuntimeException If a record could not be delivered
+     */
+    private void checkSendError() throws RuntimeException {
+        Exception e = sendError.get();
+        if (e != null) {
+            throw new RuntimeException("Kafka delivery failed", e);
         }
     }
 
@@ -142,14 +158,26 @@ public class KafkaOutputItem extends AbstractOutputItem implements SendListener 
         properties.put("client.id", clientId);
         properties.put("key.serializer", "org.apache.kafka.common.serialization.IntegerSerializer");
         properties.put("value.serializer", "org.apache.kafka.common.serialization.StringSerializer");
+        // Wait for all in-sync replicas to acknowledge each record
+        properties.put("acks", "all");
+        // Allow the producer to gather records into larger batches
+        properties.put("linger.ms", "5");
         producer = new KafkaProducer<>(properties);
         logger.info("Connected to kafka " + this.bootstrapServer);
     }
 
     @Override
     public void teardown() {
+        // Sends any remaining cached elements
         super.teardown();
-        producer.close();
+        try {
+            // Wait for all in-flight records to be acknowledged
+            producer.flush();
+        } finally {
+            producer.close();
+        }
+        // Fail if any record could not be delivered
+        checkSendError();
     }
 
     /**

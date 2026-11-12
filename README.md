@@ -21,6 +21,10 @@ When running the last command, press Ctrl-C to see the gaps in the received data
 
 ## Latest Release Notes
 
+### 1.1-10
+
+Kafka output now sends records asynchronously to enable batching, waits for all in-sync replicas to acknowledge records, and flushes pending records on shutdown. Asynchronous delivery errors are reported on a subsequent send or during shutdown.
+
 ### 1.1-9
 
 Added a property --from-beginning (-fb) to the KafkaInputItem to read a topic from the beginning. Records fetched during startup are no longer dropped.
