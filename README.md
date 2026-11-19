@@ -21,6 +21,10 @@ When running the last command, press Ctrl-C to see the gaps in the received data
 
 ## Latest Release Notes
 
+### 1.1-11
+
+Changed the RELP unit tests to use OS-assigned ports instead of hard-coded ports.
+
 ### 1.1-10
 
 Kafka output now sends records asynchronously to enable batching, waits for all in-sync replicas to acknowledge records, and flushes pending records on shutdown. Asynchronous delivery errors are reported on a subsequent send or during shutdown.
@@ -1124,6 +1128,9 @@ For building the jar, use the following commands:
 `mvn clean package`
 
 The jar is now in a directory called `target`.
+
+The RELP unit tests bind to OS-assigned ports on loopback, so they do not
+require fixed ports to be free. The RELP CLI still requires a port from 1 to 65535.
 
 Note that the package is developed with Java 11.
 

@@ -19,23 +19,19 @@ package nu.sitia.loggenerator.inputitems;
 
 import junit.framework.TestCase;
 import java.io.*;
+import java.net.InetAddress;
 import java.net.Socket;
 import java.util.List;
 
 public class RelpInputItemTest extends TestCase {
     
     private RelpInputItem relpInputItem;
-    private static final int TEST_PORT = 10515;
+    private static final InetAddress LOOPBACK = InetAddress.getLoopbackAddress();
+    private int testPort;
     
-    @Override
-    protected void setUp() throws Exception {
-        super.setUp();
+    private void startServer() {
         relpInputItem = new RelpInputItem(null);
-        relpInputItem.setParameter("--port", String.valueOf(TEST_PORT));
-        relpInputItem.afterPropertiesSet();
-        relpInputItem.setup();
-        // Give server time to start
-        Thread.sleep(100);
+        testPort = relpInputItem.startListening(0, LOOPBACK);
     }
     
     @Override
@@ -101,6 +97,7 @@ public class RelpInputItemTest extends TestCase {
      * Test receiving a single message
      */
     public void testReceiveSingleMessage() throws Exception {
+        startServer();
         sendRelpMessage("Test message 1");
         
         List<String> messages = relpInputItem.next();
@@ -113,6 +110,7 @@ public class RelpInputItemTest extends TestCase {
  * Test receiving multiple messages
  */
 public void testReceiveMultipleMessages() throws Exception {
+    startServer();
     sendRelpMessage("Message 1");
     sendRelpMessage("Message 2");
     sendRelpMessage("Message 3");
@@ -139,6 +137,7 @@ public void testReceiveMultipleMessages() throws Exception {
      * Test receiving message with special characters
      */
     public void testReceiveMessageWithSpecialChars() throws Exception {
+        startServer();
         String specialMessage = "Special chars: \"quotes\", \\backslash\\, \ttab";
         sendRelpMessage(specialMessage);
         
@@ -152,6 +151,7 @@ public void testReceiveMultipleMessages() throws Exception {
      * Test timeout with no messages
      */
     public void testTimeoutNoMessages() throws Exception {
+        startServer();
         long startTime = System.currentTimeMillis();
         List<String> messages = relpInputItem.next();
         long elapsed = System.currentTimeMillis() - startTime;
@@ -165,17 +165,20 @@ public void testReceiveMultipleMessages() throws Exception {
      * Test toString
      */
     public void testToString() {
-        String result = relpInputItem.toString();
+        RelpInputItem item = new RelpInputItem(null);
+        item.setParameter("--port", "1514");
+        String result = item.toString();
         assertTrue(result.contains("RelpInputItem"));
         assertTrue(result.contains("Port"));
-        assertTrue(result.contains(String.valueOf(TEST_PORT)));
+        assertTrue(result.contains("1514"));
     }
     
     /**
      * Test RELP open/close handshake
      */
     public void testRelpHandshake() throws Exception {
-        Socket socket = new Socket("localhost", TEST_PORT);
+        startServer();
+        Socket socket = new Socket(LOOPBACK, testPort);
         OutputStream output = socket.getOutputStream();
         BufferedReader input = new BufferedReader(new InputStreamReader(socket.getInputStream()));
         
@@ -206,6 +209,7 @@ public void testReceiveMultipleMessages() throws Exception {
      * Test receiving large message
      */
     public void testReceiveLargeMessage() throws Exception {
+        startServer();
         String largeMessage = "A".repeat(10000);
         sendRelpMessage(largeMessage);
         
@@ -219,6 +223,7 @@ public void testReceiveMultipleMessages() throws Exception {
      * Test receiving message with newlines (edge case)
      */
     public void testReceiveMessageWithNewlines() throws Exception {
+        startServer();
         // Note: In RELP, newlines in data would need to be properly handled
         String messageWithNewlines = "Line 1\\nLine 2";
         sendRelpMessage(messageWithNewlines);
@@ -235,7 +240,7 @@ public void testReceiveMultipleMessages() throws Exception {
     private void sendRelpMessage(String message) throws Exception {
         new Thread(() -> {
             try {
-                Socket socket = new Socket("localhost", TEST_PORT);
+                Socket socket = new Socket(LOOPBACK, testPort);
                 OutputStream output = socket.getOutputStream();
                 BufferedReader input = new BufferedReader(new InputStreamReader(socket.getInputStream()));
                 

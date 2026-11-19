@@ -19,6 +19,7 @@ package nu.sitia.loggenerator.inputitems;
 
 import nu.sitia.loggenerator.Configuration;
 import java.io.*;
+import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.*;
@@ -87,8 +88,14 @@ public class RelpInputItem extends AbstractInputItem {
     
     @Override
     public void setup() throws RuntimeException {
+        startListening(port, null);
+    }
+
+    // Internal bind path: callers can request an ephemeral port without changing CLI validation.
+    int startListening(int listenPort, InetAddress bindAddress) {
         try {
-            serverSocket = new ServerSocket(port);
+            serverSocket = new ServerSocket(listenPort, 50, bindAddress);
+            int boundPort = serverSocket.getLocalPort();
             executorService = Executors.newFixedThreadPool(10);
             running = true;
             
@@ -96,7 +103,8 @@ public class RelpInputItem extends AbstractInputItem {
             acceptThread.setDaemon(true);
             acceptThread.start();
             
-            logger.info("RELP server listening on port " + port);
+            logger.info("RELP server listening on port " + boundPort);
+            return boundPort;
         } catch (IOException e) {
             throw new RuntimeException("Failed to start RELP server: " + e.getMessage(), e);
         }

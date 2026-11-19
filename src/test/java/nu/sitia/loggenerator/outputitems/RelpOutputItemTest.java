@@ -19,6 +19,7 @@ package nu.sitia.loggenerator.outputitems;
 
 import junit.framework.TestCase;
 import java.io.*;
+import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.List;
@@ -26,6 +27,7 @@ import java.util.logging.Logger;
 
 public class RelpOutputItemTest extends TestCase {
     static final Logger logger = Logger.getLogger(RelpOutputItemTest.class.getName());
+    private static final InetAddress LOOPBACK = InetAddress.getLoopbackAddress();
     private RelpOutputItem relpOutputItem;
     private MockRelpServer server;
     private Thread serverThread;
@@ -34,11 +36,6 @@ public class RelpOutputItemTest extends TestCase {
     protected void setUp() throws Exception {
         super.setUp();
         relpOutputItem = new RelpOutputItem(null);
-        server = new MockRelpServer(10514);
-        serverThread = new Thread(server);
-        serverThread.start();
-        // Give server time to start
-        Thread.sleep(100);
     }
     
     @Override
@@ -51,8 +48,10 @@ public class RelpOutputItemTest extends TestCase {
                 // ignore
             }
         }
-        server.stop();
-        serverThread.join(1000);
+        if (server != null) {
+            server.stop();
+            serverThread.join(1000);
+        }
     }
     
     /**
@@ -122,8 +121,11 @@ public class RelpOutputItemTest extends TestCase {
      * Test successful connection and send
      */
     public void testSuccessfulSend() throws Exception {
-        relpOutputItem.setParameter("--hostname", "localhost");
-        relpOutputItem.setParameter("--port", "10514");
+        server = new MockRelpServer();
+        serverThread = new Thread(server);
+        serverThread.start();
+        relpOutputItem.setParameter("--hostname", LOOPBACK.getHostAddress());
+        relpOutputItem.setParameter("--port", String.valueOf(server.getLocalPort()));
         relpOutputItem.afterPropertiesSet();
         relpOutputItem.setup();
         
@@ -154,12 +156,16 @@ public class RelpOutputItemTest extends TestCase {
      * Mock RELP Server for testing
      */
     private static class MockRelpServer implements Runnable {
-        private ServerSocket serverSocket;
+        private final ServerSocket serverSocket;
         private volatile boolean running = true;
         private java.util.List<String> receivedMessages = new java.util.ArrayList<>();
         
-        public MockRelpServer(int port) throws IOException {
-            this.serverSocket = new ServerSocket(port);
+        public MockRelpServer() throws IOException {
+            this.serverSocket = new ServerSocket(0, 50, LOOPBACK);
+        }
+
+        public int getLocalPort() {
+            return serverSocket.getLocalPort();
         }
         
         @Override
